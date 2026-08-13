@@ -1,0 +1,9 @@
+# This GitHub repo is an Odoo stack. The linked Vercel project must not
+# publish Compose files, Odoo config, or addons as a static site.
+*
+!docs/
+!docs/superpowers/
+!docs/superpowers/mocks/
+!docs/superpowers/mocks/**
+!vercel.json
+!.vercelignore
