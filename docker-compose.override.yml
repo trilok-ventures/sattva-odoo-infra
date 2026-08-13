@@ -1,0 +1,24 @@
+# Local development override (Cursor Cloud environment setup).
+#
+# The committed config/odoo.conf is incompatible with this docker-compose stack:
+#   - addons_path = /opt/odoo/odoo/addons does not exist in the official odoo:18.0
+#     image (base modules live in /usr/lib/python3/dist-packages/odoo/addons) and
+#     omits the mounted /mnt/extra-addons where sattva_compliance lives.
+#   - db_host/db_port/db_password = False break the Postgres connection
+#     ("invalid integer value False for connection option port").
+#
+# This override does NOT modify any committed files. It launches Odoo directly
+# with a corrected addons path and the DB credentials from docker-compose.yml.
+# The DB-manager master password falls back to the dev default ("admin") since
+# it can only be set via a config file; app login is admin / admin on init.
+services:
+  web:
+    entrypoint: ["odoo"]
+    command:
+      - "--addons-path=/mnt/extra-addons,/usr/lib/python3/dist-packages/odoo/addons"
+      - "--db_host=db"
+      - "--db_port=5432"
+      - "--db_user=odoo"
+      - "--db_password=sattva_db_secure_pass"
+      - "-c"
+      - "/dev/null"
