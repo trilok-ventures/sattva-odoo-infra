@@ -1,43 +1,46 @@
 # Sattva Middleware Portal
 
-The authenticated operations portal between people and the Sattva fabric
-(Odoo CE SoR, n8n bus, Nextcloud vault). Holds **no business state** — every
-read/write passes through a BFF layer to the fabric.
+Authenticated operations BFF between people and the Sattva fabric
+(Odoo CE SoR, n8n bus, Nextcloud vault). Holds **no business state**.
 
-**Source of truth for behavior:** `docs/superpowers/specs/2026-08-14-middleware-ux-design.md`
-**Lo-fi screens:** Figma file _Sattva Middleware_ (https://www.figma.com/design/NcyHhLoppe3f72fs5KjrvP)
+**Behavior spec:** `docs/superpowers/specs/2026-08-14-middleware-ux-design.md`  
+**GCP / HoldCo rewire:** `docs/superpowers/specs/2026-08-13-holdco-gcp-vercel-bff-rewire.md`  
+**Lo-fi + live HTML twin:** https://sattva-odoo-infra.vercel.app/
 
 ## Status
 
-Phase 1–2 scaffold. This directory currently contains the app shell, design
-tokens, and the BFF route contract stubs only — no business logic until the
-Phase 1 implementation plan is approved (see the integrated architecture spec,
-`docs/superpowers/specs/2026-08-14-integrated-system-architecture.md` §7).
+Phase 2 BFF contract is implemented in **mock mode** (`FABRIC_MODE=mock`).
+Live JSON-2/WebDAV adapters wait for Phase 1 Compose (n8n + Nextcloud) and
+GCP Secret Manager values. Do not treat mock KPIs as production SoR.
 
-## Vercel (this monorepo)
+## Two Vercel projects
 
-The GitHub-connected Vercel project must **not** publish the repo root as a
-static site: that 404s on `/` (no `index.html`) and would serve
-`docker-compose.yml` / `config/odoo.conf`. Root `vercel.json` deploys only
-`docs/superpowers/mocks/` (interactive dashboard twin). Production:
-https://sattva-odoo-infra.vercel.app/ (PR #12). Figma capture index:
-https://sattva-odoo-infra.vercel.app/figma-capture.html.
+The GitHub-connected project `sattva-odoo-infra` publishes **only**
+`docs/superpowers/mocks/` (PR #12). This `middleware/` app needs a **separate**
+Vercel project with Root Directory `middleware/` (`app.trilokventures.org`).
+Do not change the mocks project's Root Directory to this folder.
 
-When the Phase 2 BFF is funded, create a **separate** Vercel project (or set
-this project's Root Directory to `middleware/`) so `app.trilokventures.org`
-runs this Next.js app. Do not point the Odoo repo root at production.
+## Local
 
-## Stack (locked by fabric spec)
+```bash
+cp .env.example .env.local   # FABRIC_MODE=mock
+npm install
+npm run dev                  # http://127.0.0.1:3010
+npm run test                 # needs the server up, or runs unit strip checks
+```
 
-- Next.js (App Router) on Vercel, project `app.trilokventures.org` (Phase 2+)
-- Keycloak OIDC (authorization code + PKCE); Phase 1 local falls back to Odoo users
-- Tailwind + shadcn/ui tokens, per the UX spec §6
-- BFF route handlers call Odoo (JSON-2/XML-RPC), n8n webhooks, and Nextcloud
-  WebDAV **server-side only** — no fabric credentials ever reach the browser
+Mock persona: header `x-sattva-persona` (`sales` | `compliance` | `finance` |
+`it` | `buyer` | `supplier`). In `FABRIC_MODE=live`, every non-health `/api` route is 401 until Keycloak.
 
-## Hard rules (enforced in review by the fabric-architect subagent)
+## Hard rules
 
 1. No RED data (file bytes, PII, vault paths) in any client-bound payload.
-2. The supplier compliance gate is never bypassable from the portal.
-3. The only portal-local storage is the 30-day notifications inbox.
-4. Every BFF route declares its persona field allow-list; contract tests assert it.
+2. The supplier compliance gate is never bypassable (`confirm_anyway` is always false).
+3. The only portal-local storage allowed later is the 30-day notifications inbox.
+4. Never `NEXT_PUBLIC_` for Odoo, n8n, or Nextcloud URLs or keys.
+
+## Stack (locked)
+
+- Next.js App Router on Vercel (separate project)
+- Keycloak OIDC in Phase 3; mock header until then
+- BFF route handlers call Odoo / n8n / Nextcloud **server-side only**

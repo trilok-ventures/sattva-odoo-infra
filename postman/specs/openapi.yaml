@@ -1,0 +1,169 @@
+openapi: 3.0.3
+info:
+  title: Sattva Middleware BFF
+  version: 0.1.0
+  description: |
+    GREEN/AMBER edge API. Browsers never receive Nextcloud paths, PDF bytes,
+    or fabric credentials. Odoo remains the transactional SoR; n8n is the only bus.
+servers:
+  - url: http://127.0.0.1:3010
+    description: Local BFF
+  - url: https://app.trilokventures.org
+    description: Production BFF (separate Vercel project; not the HTML twin)
+security:
+  - PersonaHeader: []
+paths:
+  /api/health:
+    get:
+      security: []
+      summary: Fabric reachability without hostnames
+      responses:
+        "200":
+          description: Health payload
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Health"
+  /api/dashboard:
+    get:
+      summary: Employee KPI snapshot
+      responses:
+        "200":
+          description: Role-filtered aggregates
+        "400":
+          description: Unknown persona header
+        "401":
+          description: Live mode without Keycloak session
+  /api/compliance/queue:
+    get:
+      summary: PCP review queue
+      responses:
+        "200":
+          description: Rows without vault paths
+        "403":
+          description: Persona not allowed
+  /api/purchase/orders:
+    get:
+      summary: Purchase orders with gate state
+      responses:
+        "200":
+          description: Order list
+  /api/purchase/orders/{id}/confirm:
+    post:
+      summary: Request Odoo button_confirm
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            maxLength: 32
+            pattern: "^[A-Za-z0-9_-]+$"
+      responses:
+        "200":
+          description: Confirmed; state purchase
+        "401":
+          description: Live mode without Keycloak session
+        "403":
+          description: Persona not allowed
+        "409":
+          description: Compliance Gate Blocked (never includes Confirm anyway)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GateBlocked"
+        "429":
+          description: Rate limited (Cloudflare in Phase 3)
+  /api/lots:
+    get:
+      summary: GREEN lot metrics
+      responses:
+        "200":
+          description: moisture, mesh, pass, hash only
+  /api/documents:
+    post:
+      summary: Supplier document receipt (hash only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DocumentIn"
+      responses:
+        "200":
+          description: sha256 + filename
+        "400":
+          description: Client-supplied vault path rejected
+components:
+  securitySchemes:
+    PersonaHeader:
+      type: apiKey
+      in: header
+      name: x-sattva-persona
+      description: Mock/dev only. Not accepted as auth when FABRIC_MODE=live (401 until Keycloak).
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Keycloak access token (Phase 3)
+  schemas:
+    Health:
+      type: object
+      additionalProperties: false
+      required: [ok, service, fabric]
+      properties:
+        ok:
+          type: boolean
+        service:
+          type: string
+          maxLength: 64
+        fabric:
+          type: object
+          additionalProperties: false
+          properties:
+            mode:
+              type: string
+              enum: [mock, live]
+            odoo:
+              type: string
+              enum: [mock, unset, up, down]
+            n8n:
+              type: string
+              enum: [mock, unset, up, down]
+            nextcloud:
+              type: string
+              enum: [mock, unset, up, down]
+    GateBlocked:
+      type: object
+      additionalProperties: false
+      required: [ok, title, message, confirm_anyway]
+      properties:
+        ok:
+          type: boolean
+          enum: [false]
+        title:
+          type: string
+          maxLength: 80
+        message:
+          type: string
+          maxLength: 500
+        confirm_anyway:
+          type: boolean
+          enum: [false]
+    DocumentIn:
+      type: object
+      additionalProperties: false
+      required: [filename, sha256]
+      properties:
+        filename:
+          type: string
+          maxLength: 255
+        sha256:
+          type: string
+          minLength: 64
+          maxLength: 64
+          pattern: "^[a-fA-F0-9]{64}$"
+        path:
+          type: string
+          maxLength: 1
+          description: Must be omitted. Server chooses Nextcloud prefix.

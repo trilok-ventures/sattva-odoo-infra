@@ -1,0 +1,35 @@
+name: bff-contract
+
+on:
+  pull_request:
+    paths:
+      - middleware/**
+      - vercel.json
+      - .vercelignore
+      - postman/specs/**
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: middleware
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: middleware/package-lock.json
+      - run: npm ci
+      - run: npm run build
+      - name: Start BFF and run contract check
+        run: |
+          npm run start &
+          for i in $(seq 1 30); do
+            if curl -sf http://127.0.0.1:3010/api/health >/dev/null; then
+              break
+            fi
+            sleep 1
+          done
+          npm test

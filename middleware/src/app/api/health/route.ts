@@ -1,6 +1,14 @@
-import { NextResponse } from "next/server";
+import { fabricHealth } from "@/lib/adapters";
+import { isHealthy } from "@/lib/fabric";
+import { greenJson } from "@/lib/http";
 
-// Health endpoint for CI/uptime checks. Returns no fabric internals.
+export const dynamic = "force-dynamic";
+
 export async function GET() {
-  return NextResponse.json({ ok: true, service: "sattva-middleware" });
+  const fabric = await fabricHealth();
+  return greenJson({
+    ok: isHealthy(fabric.odoo) && isHealthy(fabric.n8n) && isHealthy(fabric.nextcloud),
+    service: "sattva-middleware",
+    fabric,
+  });
 }

@@ -2,15 +2,16 @@
   "name": "sattva-middleware",
   "version": "0.0.0",
   "private": true,
-  "description": "Sattva Brokers operations portal (BFF). Scaffold only until the Phase 1 plan is approved.",
+  "description": "Sattva Brokers operations BFF. Mock fabric contract until Phase 1 Compose + GCP secrets.",
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev --port 3010",
     "build": "next build",
-    "start": "next start",
-    "lint": "next lint"
+    "start": "next start --port 3010",
+    "lint": "next lint",
+    "test": "node scripts/contract-check.mjs"
   },
   "dependencies": {
-    "next": "15.1.6",
+    "next": "15.1.11",
     "react": "19.0.0",
     "react-dom": "19.0.0"
   },

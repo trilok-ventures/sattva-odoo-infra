@@ -1,9 +1,13 @@
-# This GitHub repo is an Odoo stack. The linked Vercel project must not
-# publish Compose files, Odoo config, or addons as a static site.
+# Default: ignore everything so the GitHub-connected mocks project cannot
+# publish Compose, Odoo config, or addons as a static site (PR #12).
 *
+# Phase 0 HTML twin (existing Vercel project, repo-root vercel.json)
 !docs/
 !docs/superpowers/
 !docs/superpowers/mocks/
 !docs/superpowers/mocks/**
+# Phase 2 BFF (separate Vercel project, Root Directory = middleware/)
+!middleware/
+!middleware/**
 !vercel.json
 !.vercelignore
