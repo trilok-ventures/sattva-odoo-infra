@@ -88,13 +88,24 @@ env.cr.commit()
 PY
 ```
 
+### CRITICAL gotcha: two Vercel projects — do not retarget the mocks deploy
+The GitHub-connected project `sattva-odoo-infra` publishes **only**
+`docs/superpowers/mocks/` (root `vercel.json`). The operations BFF lives in
+`middleware/` and needs a **separate** Vercel project with Root Directory
+`middleware/` (`app.trilokventures.org`). Never change root `vercel.json` to
+Next.js, never set `NEXT_PUBLIC_` fabric URLs, never `vercel --prod` this BFF
+onto the mocks project. GCP folders/projects: `deploy/gcp/`. Spec:
+`docs/superpowers/specs/2026-08-13-holdco-gcp-vercel-bff-rewire.md`.
+
 ### Lint / test / build
-- No linter or automated-test suite is configured in this repo, and the addon
-  ships no Odoo tests. "Lint" = Python syntax check; "test" = loading/updating
-  the module cleanly (`-u sattva_compliance --stop-after-init` must finish with
-  "Modules loaded." and no ERROR). There is no separate build step (Odoo runs
-  from source inside the image; the addon is bind-mounted).
-- Quick syntax check (writes no bytecode, avoids the read-only mount):
+- Odoo addon: no linter or automated-test suite. "Lint" = Python syntax check;
+  "test" = loading/updating the module cleanly (`-u sattva_compliance --stop-after-init`
+  must finish with "Modules loaded." and no ERROR). There is no separate Odoo
+  build step (Odoo runs from source inside the image; the addon is bind-mounted).
+- Middleware BFF (`middleware/`): `npm ci && npm run build && npm test`
+  (contract check). Start `npm run start` (port 3010) for HTTP assertions;
+  unit strip checks still pass if the server is down.
+- Quick Odoo syntax check (writes no bytecode, avoids the read-only mount):
   ```bash
   sudo docker exec sattva-odoo-web python3 -c "import ast,sys
   for f in sys.argv[1:]: ast.parse(open(f).read(), f); print('OK', f)" \
