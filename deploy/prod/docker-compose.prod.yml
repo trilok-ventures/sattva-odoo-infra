@@ -1,0 +1,124 @@
+# =============================================================================
+# Sattva / Trilok Ventures - PRODUCTION stack
+# =============================================================================
+# Odoo 18 + Postgres 15 + Caddy reverse proxy (automatic/origin TLS).
+#
+# Design goals:
+#   * Odoo (web) is NEVER published to the host - only Caddy exposes 80/443.
+#   * db is only reachable on the private `backend` network (not from Caddy).
+#   * Secrets come from deploy/prod/.env (see .env.example) - none are baked in.
+#   * db data + Odoo filestore live in named volumes so they survive redeploys.
+#
+# Run from THIS directory so `.env` is auto-loaded:
+#   cd deploy/prod
+#   docker compose -f docker-compose.prod.yml up -d
+# =============================================================================
+
+services:
+  db:
+    image: postgres:15
+    container_name: sattva-prod-db
+    env_file:
+      - .env
+    environment:
+      POSTGRES_DB: postgres        # Odoo needs a maintenance DB to connect to
+      POSTGRES_USER: odoo
+      # POSTGRES_PASSWORD comes from .env (env_file)
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - db-data:/var/lib/postgresql/data/pgdata
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U odoo -d postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+
+  web:
+    image: odoo:18.0
+    container_name: sattva-prod-web
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      # The official odoo image entrypoint reads these to reach Postgres; they
+      # also feed the odoo.conf render step below (POSTGRES_PASSWORD /
+      # ODOO_ADMIN_PASSWD come from .env via env_file).
+      HOST: db
+      PORT: "5432"
+      USER: odoo
+      PASSWORD: ${POSTGRES_PASSWORD:-}
+    volumes:
+      # Custom addon (read-only in prod - code is not edited on the server).
+      - ../../addons:/mnt/extra-addons:ro
+      # Hardened config TEMPLATE (rendered to /tmp/odoo.conf at start-up).
+      - ./odoo.conf:/etc/odoo/odoo.conf.template:ro
+      # Persistent Odoo filestore / attachments / sessions.
+      - odoo-data:/var/lib/odoo
+    # Render secrets from env into the real config (python3 ships in the image,
+    # so this needs no extra packages and is safe for passwords with any chars),
+    # then hand off to Odoo. /websocket + /longpolling are served on gevent 8072.
+    entrypoint: ["/bin/bash", "-c"]
+    command:
+      - |
+        set -euo pipefail
+        python3 - <<'PY'
+        import os
+        tpl = open('/etc/odoo/odoo.conf.template').read()
+        for key in ('POSTGRES_PASSWORD', 'ODOO_ADMIN_PASSWD'):
+            tpl = tpl.replace('$${%s}' % key, os.environ.get(key, ''))
+        with open('/tmp/odoo.conf', 'w') as fh:
+            fh.write(tpl)
+        PY
+        exec odoo -c /tmp/odoo.conf
+    # Internal-only. NOT published to the host. Caddy reaches these over the
+    # `frontend` network. 8069 = HTTP, 8072 = gevent (websocket/longpolling).
+    expose:
+      - "8069"
+      - "8072"
+    networks:
+      - backend
+      - frontend
+    restart: unless-stopped
+
+  caddy:
+    image: caddy:2
+    container_name: sattva-prod-caddy
+    depends_on:
+      - web
+    ports:
+      - "80:80"
+      - "443:443"
+      # QUIC / HTTP3 (optional). Harmless if unused; remove if UDP is blocked.
+      - "443:443/udp"
+    env_file:
+      - .env
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      # Cloudflare Origin Certificate + key go here (see README). Git-ignored.
+      - ./certs:/etc/caddy/certs:ro
+      # Caddy's own state (ACME certs/keys when using auto-TLS).
+      - caddy-data:/data
+      - caddy-config:/config
+    networks:
+      - frontend
+    restart: unless-stopped
+
+networks:
+  # db + web can talk here; Caddy is NOT on this network (db stays private).
+  backend:
+    driver: bridge
+  # web + Caddy talk here; this is the only path to the outside world.
+  frontend:
+    driver: bridge
+
+volumes:
+  db-data:
+  odoo-data:
+  caddy-data:
+  caddy-config:

@@ -1,0 +1,93 @@
+# =============================================================================
+# Sattva / Trilok Ventures - Caddy reverse proxy for Odoo 18
+# Public: https://sattva.trilokventures.org  ->  web:8069 (+ web:8072 for ws)
+# =============================================================================
+#
+# TLS / Cloudflare decision (READ THIS to avoid redirect loops):
+#
+#   Cloudflare SSL/TLS "Encryption mode" must be **Full (strict)** for this
+#   setup. That means: browser --TLS--> Cloudflare edge --TLS--> this origin.
+#   The origin therefore MUST present a valid certificate. Two supported ways:
+#
+#   (A) Cloudflare Origin Certificate  [DEFAULT / RECOMMENDED behind proxied CF]
+#       - Create it in Cloudflare dashboard: SSL/TLS -> Origin Server ->
+#         Create Certificate (hostname sattva.trilokventures.org, 15-yr).
+#       - Save the cert as deploy/prod/certs/origin.pem and the key as
+#         deploy/prod/certs/origin.key (both git-ignored).
+#       - Caddy serves it via the `tls <cert> <key>` line below. No ACME, so
+#         there is NO challenge to be intercepted by Cloudflare's proxy.
+#       - This is the block that is ACTIVE below.
+#
+#   (B) Automatic public TLS (Let's Encrypt) via DNS-01
+#       - Needed only if you want a publicly-trusted cert on the origin.
+#       - HTTP-01 / TLS-ALPN-01 challenges DO NOT WORK through a proxied
+#         (orange-cloud) Cloudflare record because CF terminates :80/:443 at the
+#         edge. You must use the DNS-01 challenge, which requires a custom Caddy
+#         image built with the `caddy-dns/cloudflare` plugin + a scoped API
+#         token (CLOUDFLARE_API_TOKEN in .env). See the commented block below.
+#
+#   AVOID Cloudflare "Flexible" mode: CF->origin over plain HTTP while the
+#   origin redirects HTTP->HTTPS produces an infinite "too many redirects" loop.
+#   Full (strict) + one of the cert options above avoids this.
+# =============================================================================
+{
+	# Contact email for ACME (only used in auto-TLS mode B). Harmless otherwise.
+	email {$ACME_EMAIL}
+	# Log admin-plane at INFO; drop the local admin API surface if not needed.
+	# admin off
+}
+
+sattva.trilokventures.org {
+	# ------------------------------------------------------------------ TLS ----
+	# (A) Cloudflare Origin Certificate (default). Files are mounted read-only
+	# at /etc/caddy/certs (see docker-compose.prod.yml).
+	tls /etc/caddy/certs/origin.pem /etc/caddy/certs/origin.key
+
+	# (B) Alternative: automatic Let's Encrypt via Cloudflare DNS-01.
+	#     Requires a Caddy image with the caddy-dns/cloudflare plugin, e.g.:
+	#       docker build with: xcaddy build --with github.com/caddy-dns/cloudflare
+	#     Then comment out the `tls` line above and uncomment this block:
+	# tls {
+	# 	dns cloudflare {$CLOUDFLARE_API_TOKEN}
+	# }
+
+	# --------------------------------------------------------------- Encoding --
+	encode zstd gzip
+
+	# --------------------------------------------------- Websocket / longpoll --
+	# Odoo 18 serves /websocket (and legacy /longpolling/*) from the gevent
+	# process on port 8072 whenever workers > 0. Route those there; Caddy
+	# upgrades websockets transparently (no extra Upgrade/Connection config).
+	# NOTE: if you set `workers = 0` in odoo.conf (dev/threaded mode), Odoo
+	# serves /websocket on 8069 instead - then point this at web:8069.
+	@ws path /websocket /longpolling/*
+	handle @ws {
+		reverse_proxy web:8072
+	}
+
+	# ---------------------------------------------------------- Main Odoo HTTP -
+	handle {
+		reverse_proxy web:8069
+	}
+
+	# --------------------------------------------------------------- Security --
+	header {
+		# HSTS (browsers only honour it over the CF edge TLS). 1 year.
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		# Odoo needs to frame some of its own content; keep this permissive-ish.
+		X-Frame-Options "SAMEORIGIN"
+		-Server
+	}
+
+	# Allow large attachment / compliance-doc uploads.
+	request_body {
+		max_size 100MB
+	}
+
+	log {
+		output stdout
+		format console
+	}
+}
