@@ -12,7 +12,7 @@
 This document is the operating spec for **how a foreign manufacturer becomes a purchasable supplier**. It consolidates the fragmented HR/policy pages into one How-To, maps every field and file to Odoo + Nextcloud, and defines a **scripted chat collector** as the human interface. Git wins if the Notion twin or Figma file drifts.
 
 Notion twin (created after this spec): Knowledge Base → SOPs → *Supplier onboarding (chat collector)*.  
-Figma: *Sattva Supplier Onboarding Chat* (screens listed in §8).
+Figma: [Sattva Supplier Onboarding Chat](https://www.figma.com/design/gv62Ar5Zngd62TxS323GVp) (file created 2026-08-13; canvas empty — Starter MCP quota blocked `use_figma`). Reviewable screens: `docs/superpowers/mocks/supplier-onboarding-chat.html`. Capture that gallery into the Figma file when quota resets.
 
 ---
 
@@ -202,7 +202,12 @@ E-sign vendor (DocuSign etc.) is Phase 3. Phase 0/2: upload signed PDF.
 
 ## 8. Figma screen inventory
 
-File name: **Sattva Supplier Onboarding Chat**. Desktop 1440: chat column (~60%) + dossier rail (~40%). Mobile 390: chat full-bleed; dossier as a bottom sheet.
+File: **Sattva Supplier Onboarding Chat** — https://www.figma.com/design/gv62Ar5Zngd62TxS323GVp  
+HTML gallery (source of truth for layout until Figma is filled): `docs/superpowers/mocks/supplier-onboarding-chat.html`
+
+Desktop 1440: chat column (~60%) + dossier rail (~40%). Mobile 390: chat full-bleed; dossier as a bottom sheet.
+
+**Figma blocker:** authenticated seat is View on Starter (`team::1669487108376139932`). `create_new_file` succeeded; `search_design_system` / `use_figma` / `generate_figma_design` returned the Starter monthly MCP cap. Do not retry until the quota resets or the seat is Full/Dev.
 
 **Desktop:** 01 Welcome, 02 Identity, 03 Certification choice, 04 Certificate upload, 05 Registration numbers, 06 Legal uploads, 07 Products / MOQ / lead time, 08 PCP pack checklist, 09 Agreements, 10 Review and submit, 11 Submitted pending review, 12 Need more docs.
 

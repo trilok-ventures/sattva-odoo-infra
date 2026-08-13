@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sattva — Supplier onboarding chat (screen gallery)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --sand: #f7f4ef;
+      --ink: #1c1917;
+      --muted: #57534e;
+      --forest: #1f4d3a;
+      --forest-2: #2d6a50;
+      --surface: #fff;
+      --line: #e7e0d6;
+      --amber: #b45309;
+      --rose: #9f1239;
+      --ok: #166534;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, system-ui, sans-serif;
+      background: #ebe4d8;
+      color: var(--ink);
+    }
+    .gallery-head {
+      max-width: 1480px;
+      margin: 0 auto;
+      padding: 32px 24px 8px;
+    }
+    .gallery-head p { color: var(--muted); max-width: 720px; }
+    .note {
+      background: #fef3c7;
+      border: 1px solid #f59e0b;
+      padding: 12px 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      max-width: 900px;
+    }
+    .board {
+      display: flex;
+      flex-direction: column;
+      gap: 48px;
+      padding: 24px;
+      max-width: 1600px;
+      margin: 0 auto 80px;
+    }
+    .label {
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+    .desktop {
+      width: 1440px;
+      height: 900px;
+      background: var(--sand);
+      border-radius: 12px;
+      overflow: hidden;
+      display: grid;
+      grid-template-columns: 1fr 380px;
+      box-shadow: 0 20px 50px rgba(28,25,23,.12);
+    }
+    .phone {
+      width: 390px;
+      height: 844px;
+      background: var(--sand);
+      border-radius: 28px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 20px 50px rgba(28,25,23,.12);
+      position: relative;
+    }
+    .phones { display: flex; flex-wrap: wrap; gap: 32px; }
+    .topbar {
+      grid-column: 1 / -1;
+      height: 64px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+    }
+    .brand { font-weight: 700; color: var(--forest); }
+    .pill {
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: #fde68a;
+      color: #92400e;
+    }
+    .pill.review { background: #ffedd5; color: var(--amber); }
+    .pill.ok { background: #dcfce7; color: var(--ok); }
+    .pill.block { background: #ffe4e6; color: var(--rose); }
+    .chat {
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+    .desktop .chat { height: 836px; }
+    .msgs {
+      flex: 1;
+      overflow: auto;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .bot, .me {
+      max-width: 72%;
+      padding: 12px 14px;
+      border-radius: 14px;
+      font-size: 14px;
+      line-height: 1.45;
+    }
+    .bot { background: var(--surface); border: 1px solid var(--line); align-self: flex-start; }
+    .me { background: var(--forest); color: #fff; align-self: flex-end; }
+    .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+    .chip {
+      border: 1px solid var(--line);
+      background: var(--surface);
+      padding: 8px 12px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 500;
+    }
+    .chip.on { border-color: var(--forest); background: #ecf6f0; color: var(--forest); }
+    .composer {
+      border-top: 1px solid var(--line);
+      background: var(--surface);
+      padding: 12px 16px;
+      display: flex;
+      gap: 8px;
+    }
+    .composer input, .composer .fake-input {
+      flex: 1;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px 12px;
+      font: inherit;
+      background: var(--sand);
+    }
+    .send {
+      background: var(--forest);
+      color: #fff;
+      border: 0;
+      border-radius: 10px;
+      padding: 10px 16px;
+      font-weight: 600;
+    }
+    .send[disabled] { opacity: .45; }
+    .rail {
+      background: var(--surface);
+      border-left: 1px solid var(--line);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .rail h3 { margin: 0 0 4px; font-size: 16px; }
+    .row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--line);
+    }
+    .tick { color: var(--ok); font-weight: 600; }
+    .miss { color: var(--amber); }
+    .upload {
+      border: 1px dashed var(--forest-2);
+      background: #f3faf6;
+      border-radius: 12px;
+      padding: 14px;
+      font-size: 13px;
+    }
+    .upload strong { display: block; margin-bottom: 4px; }
+    .hash { font-family: ui-monospace, monospace; font-size: 11px; color: var(--muted); }
+    .progress { font-size: 12px; color: var(--muted); }
+    .mbar {
+      height: 52px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      font-weight: 600;
+      font-size: 14px;
+    }
+    .sheet {
+      position: absolute;
+      left: 0; right: 0; bottom: 0;
+      background: var(--surface);
+      border-radius: 20px 20px 0 0;
+      padding: 16px;
+      box-shadow: 0 -8px 30px rgba(0,0,0,.08);
+      max-height: 42%;
+    }
+    .queue {
+      width: 1440px;
+      min-height: 720px;
+      background: var(--sand);
+      border-radius: 12px;
+      padding: 32px;
+      box-shadow: 0 20px 50px rgba(28,25,23,.12);
+    }
+    table { width: 100%; border-collapse: collapse; background: var(--surface); border-radius: 12px; overflow: hidden; }
+    th, td { text-align: left; padding: 12px 14px; font-size: 13px; border-bottom: 1px solid var(--line); }
+    th { background: #f3eee6; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }
+    .actions { display: flex; gap: 8px; }
+    .btn { border: 0; border-radius: 8px; padding: 8px 12px; font-weight: 600; font-size: 13px; }
+    .btn.ghost { background: #f5f0e8; }
+    .btn.warn { background: #ffe4e6; color: var(--rose); }
+    .btn.primary { background: var(--forest); color: #fff; }
+    .warn-copy { color: var(--amber); font-size: 13px; margin-top: 8px; }
+  </style>
+</head>
+<body>
+  <div class="gallery-head">
+    <h1>Sattva Brokers — supplier onboarding chat</h1>
+    <p>Scripted collector (not a freeform LLM). Left: conversation. Right: dossier mapped to Odoo + Nextcloud. Files show filename, hash, and vault path — never lab-page previews. Fictional supplier: Example Foods Pvt Ltd.</p>
+    <p class="note">Figma file <a href="https://www.figma.com/design/gv62Ar5Zngd62TxS323GVp">Sattva Supplier Onboarding Chat</a> was created empty: Starter MCP quota blocked <code>use_figma</code>. Capture this gallery into that file when the quota resets. Spec: <code>docs/superpowers/specs/2026-08-13-supplier-onboarding-chat-collector-design.md</code>.</p>
+  </div>
+
+  <div class="board">
+    <section>
+      <div class="label">01 Welcome — 1440</div>
+      <div class="desktop">
+        <div class="topbar">
+          <span class="brand">Sattva Brokers · Supplier pack</span>
+          <span class="pill">pending</span>
+        </div>
+        <div class="chat">
+          <div class="msgs">
+            <div class="bot">Welcome. This takes about 20 minutes. You can save and resume. We will collect company details, food-safety certificates, and a Preventive Control pack. PDFs go to the vault — this chat never stores the file bytes.</div>
+            <div class="bot">Ready to start as Example Foods Pvt Ltd?</div>
+          </div>
+          <div class="composer"><div class="fake-input">Type a reply…</div><button class="send">Start</button></div>
+        </div>
+        <aside class="rail">
+          <h3>Dossier</h3>
+          <div class="progress">0 of 12 required</div>
+          <div class="row"><span>Legal name</span><span class="miss">Missing</span></div>
+          <div class="row"><span>Addresses</span><span class="miss">Missing</span></div>
+          <div class="row"><span>QA contact</span><span class="miss">Missing</span></div>
+          <div class="row"><span>Certificate</span><span class="miss">Missing</span></div>
+          <div class="row"><span>PCP pack (5)</span><span class="miss">0/5</span></div>
+        </aside>
+      </div>
+    </section>
+
+    <section>
+      <div class="label">02 Identity — 1440</div>
+      <div class="desktop">
+        <div class="topbar"><span class="brand">Sattva Brokers · Supplier pack</span><span class="pill">pending</span></div>
+        <div class="chat">
+          <div class="msgs">
+            <div class="bot">What is the legal company name on the business registration?</div>
+            <div class="me">Example Foods Private Limited</div>
+            <div class="bot">Registered office address?</div>
+            <div class="me">12 Spice Park, Pune, MH 411001, India</div>
+            <div class="bot">Is the production plant at a different address?</div>
+          </div>
+          <div class="composer"><div class="fake-input">Plant address or “same”</div><button class="send">Send</button></div>
+        </div>
+        <aside class="rail">
+          <h3>Dossier</h3>
+          <div class="progress">2 of 12</div>
+          <div class="row"><span>Legal name</span><span class="tick">Uploaded</span></div>
+          <div class="row"><span>Addresses</span><span class="miss">In progress</span></div>
+          <div class="row"><span>QA contact</span><span class="miss">Missing</span></div>
+        </aside>
+      </div>
+    </section>
+
+    <section>
+      <div class="label">03 Certification choice — 1440</div>
+      <div class="desktop">
+        <div class="topbar"><span class="brand">Sattva Brokers · Supplier pack</span><span class="pill">pending</span></div>
+        <div class="chat">
+          <div class="msgs">
+            <div class="bot">Which current food-safety scheme do you hold? Pick one. If none, we still collect a PCP pack, mark high risk, and a third-party audit is required before approval. You cannot receive a PO until PCP Approved.</div>
+            <div class="chips">
+              <span class="chip">BRC</span>
+              <span class="chip on">FSSC 22000</span>
+              <span class="chip">ISO 22000</span>
+              <span class="chip">HACCP-only</span>
+              <span class="chip">None</span>
+            </div>
+          </div>
+          <div class="composer"><div class="fake-input">Or type the scheme name</div><button class="send">Continue</button></div>
+        </div>
+        <aside class="rail">
+          <h3>Dossier</h3>
+          <div class="progress">4 of 12</div>
+          <div class="row"><span>Scheme</span><span class="tick">FSSC 22000</span></div>
+          <div class="row"><span>haccp_certified</span><span class="tick">Will set true</span></div>
+          <div class="row"><span>Certificate file</span><span class="miss">Missing</span></div>
+        </aside>
+      </div>
+    </section>
+
+    <section>
+      <div class="label">04 Certificate upload — 1440</div>
+      <div class="desktop">
+        <div class="topbar"><span class="brand">Sattva Brokers · Supplier pack</span><span class="pill">pending</span></div>
+        <div class="chat">
+          <div class="msgs">
+            <div class="bot">Upload the current certificate PDF. We store it in Nextcloud. This thread shows filename and hash only — no page preview.</div>
+            <div class="upload">
+              <strong>FSSC-22000-ExampleFoods-2026.pdf</strong>
+              1.2 MB · sha256:8f3a…c91b<br />
+              <span class="hash">/Suppliers/Example Foods Pvt Ltd/Certificates/</span>
+            </div>
+            <div class="bot">Expiry date on that certificate?</div>
+          </div>
+          <div class="composer"><div class="fake-input">YYYY-MM-DD</div><button class="send">Send</button></div>
+        </div>
+        <aside class="rail">
+          <h3>Dossier</h3>
+          <div class="progress">5 of 12</div>
+          <div class="row"><span>Certificate</span><span class="tick">Uploaded</span></div>
+          <div class="row"><span>Expiry</span><span class="miss">Needed</span></div>
+        </aside>
+      </div>
+    </section>
+
+    <section>
+      <div class="label">05–07 Numbers, legal, products — 1440</div>
+      <div class="desktop">
+        <div class="topbar"><span class="brand">Sattva Brokers · Supplier pack</span><span class="pill">pending</span></div>
+        <div class="chat">
+          <div class="msgs">
+            <div class="bot">FSSAI licence number and IEC?</div>
+            <div class="me">FSSAI 10012011001234 · IEC 0500012345</div>
+            <div class="bot">Upload business registration and export licence into Legal.</div>
+            <div class="upload"><strong>CIN-U15400PN2019PTC123456.pdf</strong><span class="hash">/Suppliers/Example Foods Pvt Ltd/Legal/</span></div>
+            <div class="bot">Which products will you offer Sattva? Then MOQ and typical lead time.</div>
+            <div class="chips"><span class="chip on">Dehydrated onion</span><span class="chip on">Dehydrated garlic</span><span class="chip">Allied vegetables</span></div>
+            <p class="warn-copy">Chili or turmeric? Extra aflatoxin and pesticide testing applies per lot (Lot SOP) — not uploaded here.</p>
+          </div>
+          <div class="composer"><div class="fake-input">MOQ and lead time</div><button class="send">Send</button></div>
+        </div>
+        <aside class="rail">
+          <h3>Dossier</h3>
+          <div class="progress">8 of 12</div>
+          <div class="row"><span>FSSAI / IEC</span><span class="tick">Recorded</span></div>
+          <div class="row"><span>Legal files</span><span class="tick">1/2</span></div>
+          <div class="row"><span>SKUs</span><span class="tick">Onion, garlic</span></div>
+          <div class="row"><span>risk_band</span><span>medium</span></div>
+        </aside>
+      </div>
+    </section>
+
+    <section>
+      <div class="label">08 PCP pack — 1440</div>
+      <div class="desktop">
+        <div class="topbar"><span class="brand">Sattva Brokers · Supplier pack</span><span class="pill">pending</span></div>
+        <div class="chat">
+          <div class="msgs">
+            <div class="bot">Upload the five PCP files. Each slot must tick before Submit unlocks.</div>
+            <div class="upload"><strong>1/5 PCP-HACCP-summary.pdf</strong><span class="hash">/Suppliers/Example Foods Pvt Ltd/PCP/</span></div>
+            <div class="bot">Next: sanitation SOPs.</div>
+          </div>
+          <div class="composer"><div class="fake-input">Drop file or browse</div><button class="send">Upload</button></div>
+        </div>
+        <aside class="rail">
+          <h3>PCP pack</h3>
+          <div class="row"><span>PCP / HACCP summary</span><span class="tick">Uploaded</span></div>
+          <div class="row"><span>Sanitation SOPs</span><span class="miss">Missing</span></div>
+          <div class="row"><span>Pest control</span><span class="miss">Missing</span></div>
+          <div class="row"><span>Training matrix</span><span class="miss">Missing</span></div>
+          <div class="row"><span>Recall drill</span><span class="miss">Missing</span></div>
+        </aside>
+      </div>
+    </section>
+
+    <section>
+      <div class="label">10 Review and submit — 1440</div>
+      <div class="desktop">
+        <div class="topbar"><span class="brand">Sattva Brokers · Supplier pack</span><span class="pill">pending</span></div>
+        <div class="chat">
+          <div class="msgs">
+            <div class="bot">Review before submit. No PDF pages are shown here.</div>
+            <div class="bot">Example Foods Pvt Ltd · FSSC 22000 · onion, garlic · FSSAI on file · PCP 5/5 · SCD-01 and FSP-01 uploaded. After submit, status becomes <strong>review</strong>. A compliance officer must set <strong>approved</strong> in Odoo before any PO can confirm.</div>
+          </div>
+          <div class="composer"><div class="fake-input">Optional comment to compliance</div><button class="send">Submit pack</button></div>
+        </div>
+        <aside class="rail">
+          <h3>Dossier</h3>
+          <div class="progress">12 of 12 required</div>
+          <div class="row"><span>All required</span><span class="tick">Ready</span></div>
+        </aside>
+      </div>
+    </section>
+
+    <section>
+      <div class="label">11 Submitted + 12 Need more — 1440</div>
+      <div class="desktop">
+        <div class="topbar"><span class="brand">Sattva Brokers · Supplier pack</span><span class="pill review">review</span></div>
+        <div class="chat">
+          <div class="msgs">
+            <div class="bot">Pack received. You cannot ship or receive a confirmed PO until PCP Approved.</div>
+            <div class="bot">Compliance requested more documents: pest-control log is older than 12 months. Please upload a current file.</div>
+          </div>
+          <div class="composer"><div class="fake-input">Drop replacement file</div><button class="send">Upload</button></div>
+        </div>
+        <aside class="rail">
+          <h3>Dossier</h3>
+          <div class="row"><span>Pest control</span><span class="miss">Expired</span></div>
+          <div class="row"><span>PO confirm</span><span class="miss">Blocked</span></div>
+        </aside>
+      </div>
+    </section>
+
+    <section>
+      <div class="label">Mobile 390 — M1 Welcome, M2 Upload, M3 Checklist sheet, M4 Submitted</div>
+      <div class="phones">
+        <div>
+          <div class="label">M1</div>
+          <div class="phone">
+            <div class="mbar"><span>Sattva pack</span><span class="pill">pending</span></div>
+            <div class="msgs">
+              <div class="bot">20 minutes. Save anytime. PDFs go to the vault, not this chat.</div>
+            </div>
+            <div class="composer"><button class="send" style="width:100%">Start</button></div>
+          </div>
+        </div>
+        <div>
+          <div class="label">M2</div>
+          <div class="phone">
+            <div class="mbar"><span>Certificate</span><span class="pill">pending</span></div>
+            <div class="msgs">
+              <div class="bot">Upload current FSSC PDF.</div>
+              <div class="upload"><strong>FSSC-22000.pdf</strong><span class="hash">sha256:8f3a… · Certificates/</span></div>
+            </div>
+            <div class="composer"><button class="send" style="width:100%">Continue</button></div>
+          </div>
+        </div>
+        <div>
+          <div class="label">M3</div>
+          <div class="phone">
+            <div class="mbar"><span>PCP pack</span><span class="pill">pending</span></div>
+            <div class="msgs"><div class="bot">Four files still missing.</div></div>
+            <div class="sheet">
+              <div class="row"><span>Sanitation</span><span class="miss">Missing</span></div>
+              <div class="row"><span>Pest</span><span class="miss">Missing</span></div>
+              <div class="row"><span>Training</span><span class="miss">Missing</span></div>
+              <div class="row"><span>Recall</span><span class="miss">Missing</span></div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="label">M4</div>
+          <div class="phone">
+            <div class="mbar"><span>Submitted</span><span class="pill review">review</span></div>
+            <div class="msgs">
+              <div class="bot">Cannot ship until PCP Approved in Odoo. We will message if files are missing.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="label">C1 Compliance review queue — 1440</div>
+      <div class="queue">
+        <div class="topbar" style="grid-column:auto;margin:-32px -32px 24px;border-radius:12px 12px 0 0">
+          <span class="brand">Sattva · Compliance</span>
+          <span class="pill review">officer</span>
+        </div>
+        <h2 style="margin-top:0">Supplier packs in review</h2>
+        <table>
+          <thead><tr><th>Partner (Odoo)</th><th>Status</th><th>Missing</th><th>Risk</th><th></th></tr></thead>
+          <tbody>
+            <tr>
+              <td>Example Foods Pvt Ltd</td>
+              <td><span class="pill review">review</span></td>
+              <td>Pest log expired</td>
+              <td>medium</td>
+              <td><button class="btn ghost">Open dossier</button></td>
+            </tr>
+            <tr>
+              <td>Uncertified dehydrator (demo)</td>
+              <td><span class="pill">pending</span></td>
+              <td>Cert none · audit required</td>
+              <td>high</td>
+              <td><button class="btn ghost">Open dossier</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section>
+      <div class="label">C2 Dossier decide — 1440</div>
+      <div class="queue">
+        <div class="topbar" style="margin:-32px -32px 24px;border-radius:12px 12px 0 0">
+          <span class="brand">Example Foods Pvt Ltd</span>
+          <span class="pill review">review</span>
+        </div>
+        <p>Vault pointers only. Approve writes <code>supplier_pcp_status = approved</code> in Odoo — this screen does not bypass the gate.</p>
+        <div class="row"><span>/Certificates/FSSC-22000-ExampleFoods-2026.pdf</span><span class="tick">sha256:8f3a…</span></div>
+        <div class="row"><span>/PCP/sanitation-SOP.pdf</span><span class="tick">ok</span></div>
+        <div class="row"><span>/PCP/pest-control.pdf</span><span class="miss">expired</span></div>
+        <div class="actions" style="margin-top:24px">
+          <button class="btn ghost">Request more</button>
+          <button class="btn warn">Block in Odoo</button>
+          <button class="btn primary">Approve in Odoo</button>
+        </div>
+      </div>
+    </section>
+  </div>
+</body>
+</html>
