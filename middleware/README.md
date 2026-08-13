@@ -14,6 +14,17 @@ tokens, and the BFF route contract stubs only — no business logic until the
 Phase 1 implementation plan is approved (see the integrated architecture spec,
 `docs/superpowers/specs/2026-08-14-integrated-system-architecture.md` §7).
 
+## Vercel (this monorepo)
+
+The GitHub-connected Vercel project must **not** publish the repo root as a
+static site: that 404s on `/` (no `index.html`) and would serve
+`docker-compose.yml` / `config/odoo.conf`. Root `vercel.json` deploys only
+`docs/superpowers/mocks/` (interactive dashboard twin).
+
+When the Phase 2 BFF is funded, create a **separate** Vercel project (or set
+this project's Root Directory to `middleware/`) so `app.trilokventures.org`
+runs this Next.js app. Do not point the Odoo repo root at production.
+
 ## Stack (locked by fabric spec)
 
 - Next.js (App Router) on Vercel, project `app.trilokventures.org` (Phase 2+)
