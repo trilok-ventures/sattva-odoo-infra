@@ -21,3 +21,9 @@ class ResPartner(models.Model):
     
     # Hidden backend link for the API to know where to upload/retrieve files
     nextcloud_folder_path = fields.Char(string="Nextcloud Vault Path", readonly=True, help="Path in Nextcloud for compliance docs.")
+
+    nextcloud_folder_checksum = fields.Char(
+        string="Nextcloud Folder Checksum",
+        readonly=True,
+        help="SHA-256 of the latest vault evidence package pointer (not PDF bytes).",
+    )
