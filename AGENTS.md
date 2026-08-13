@@ -1,5 +1,15 @@
 # AGENTS.md
 
+## Canonical specs (read before changing anything structural)
+
+- `docs/superpowers/specs/2026-08-13-sattva-brokers-system-fabric-design.md` — **locked**
+  system fabric: one SoR per domain, RED/AMBER/GREEN data classes, phase gating, stop list.
+- `docs/superpowers/specs/2026-08-14-integrated-system-architecture.md` — operational
+  architecture: GCP VM + Cloudflare proxy, Keycloak IdP, repo-as-source-of-truth layout.
+- `docs/superpowers/specs/2026-08-13-sattva-versioned-kb.md` — knowledge-plane rules.
+- `.cursor/agents/fabric-architect.md` — project subagent that enforces the above; use it
+  to review any change touching Odoo, n8n, Nextcloud, Keycloak, GCP, Cloudflare, or Vercel.
+
 ## Cursor Cloud specific instructions
 
 ### What this repo is
