@@ -19,7 +19,9 @@ Phase 1 implementation plan is approved (see the integrated architecture spec,
 The GitHub-connected Vercel project must **not** publish the repo root as a
 static site: that 404s on `/` (no `index.html`) and would serve
 `docker-compose.yml` / `config/odoo.conf`. Root `vercel.json` deploys only
-`docs/superpowers/mocks/` (interactive dashboard twin).
+`docs/superpowers/mocks/` (interactive dashboard twin). Production:
+https://sattva-odoo-infra.vercel.app/ (PR #12). Figma capture index:
+https://sattva-odoo-infra.vercel.app/figma-capture.html.
 
 When the Phase 2 BFF is funded, create a **separate** Vercel project (or set
 this project's Root Directory to `middleware/`) so `app.trilokventures.org`

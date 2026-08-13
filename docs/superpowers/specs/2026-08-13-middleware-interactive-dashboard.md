@@ -1,17 +1,18 @@
 # Middleware Interactive Dashboard and End-to-End Flows
 
-**Status:** Proposed (Phase 0 UX; extends Workstream 2)  
+**Status:** Proposed (Phase 0 UX; extends Workstream 2) — HTML twin **live** on Vercel  
 **Date:** 2026-08-13  
 **Owner:** IPCo  
 **Depends on:** `2026-08-14-middleware-ux-design.md` (PR #8), `2026-08-13-supplier-onboarding-chat-collector-design.md`, locked fabric spec  
 **Figma:** [Sattva Middleware](https://www.figma.com/design/NcyHhLoppe3f72fs5KjrvP) (`NcyHhLoppe3f72fs5KjrvP`)  
-**Clickable twin (source of truth while MCP is capped):** `docs/superpowers/mocks/sattva-middleware-portal.html`
+**Live twin:** https://sattva-odoo-infra.vercel.app/ (PR #12). Hash-free capture index: `docs/superpowers/mocks/figma-capture.html`  
+**Progress log:** `2026-08-13-phase0-vercel-live-progress.md`
 
 The Workstream 2 file already has lo-fi frames (persona index, E1, E2, B2, P2). This spec is the **interactive ops dashboard**: every KPI, row, and resource chip is a live jump to another dashboard, and three end-to-end flows can be walked without leaving the portal metaphor.
 
-Figma MCP on the Starter/View seat is at the monthly tool-call cap (`whoami` still works; `use_figma` / `get_metadata` do not). Prototype connections below are the exact reactions to apply in file `NcyHhLoppe3f72fs5KjrvP` when a Full/Dev seat or a new month is available. Until then, the HTML twin is the reviewable interactive artifact.
+Figma MCP on the Starter/View seat is at the monthly tool-call cap (`whoami` still works; `use_figma` / `get_metadata` / `generate_figma_design` return 429). **Do not mutate existing lo-fi frames until MCP writes succeed.** Prototype connections below are the exact reactions to apply in file `NcyHhLoppe3f72fs5KjrvP` when a Full/Dev seat or a new month is available. Until then, the live HTML twin is the reviewable interactive artifact.
 
-Open the twin locally (`python3 -m http.server` from `docs/superpowers/mocks/`) and land on `#/map`.
+Open the twin at https://sattva-odoo-infra.vercel.app/sattva-middleware-portal.html?view=map (Figma capture must use `?view=`, not `#/`). Hash routes (`#/map`) still work for in-app clicks.
 
 ---
 
@@ -168,9 +169,16 @@ HTML: `#/flows` then Play employee / buyer / seller. The dock pulses the next ho
 
 ## 5. Figma pass when MCP quota resets
 
-File [Sattva Middleware](https://www.figma.com/design/NcyHhLoppe3f72fs5KjrvP). Existing frames: `00 · Persona Index`, `E1 · Ops Dashboard`, `E2 · Compliance Review Queue`, `B2 · Buyer Order Detail`, `P2 · Supplier Document Upload`.
+File [Sattva Middleware](https://www.figma.com/design/NcyHhLoppe3f72fs5KjrvP). Existing frames: `00 · Persona Index`, `E1 · Ops Dashboard`, `E2 · Compliance Review Queue`, `B2 · Buyer Order Detail`, `P2 · Supplier Document Upload`. Chat file [Sattva Supplier Onboarding Chat](https://www.figma.com/design/gv62Ar5Zngd62TxS323GVp) is empty.
 
-Add frames to match §2 (Map, Flows, S1–S4, E3–E7, B1, B3, P1, P3, E4 overlay). Capture the HTML twin with `generate_figma_design` (write path; listed as rate-limit exempt) from `http://127.0.0.1:<port>/sattva-middleware-portal.html#/<screen>` if `use_figma` is still capped.
+Add frames to match §2 (Map, Flows, S1–S4, E3–E7, B1, B3, P1, P3, E4 overlay). Capture the **live** twin with `generate_figma_design` using **query URLs only** (no hash fragments on the external host):
+
+- Index: https://sattva-odoo-infra.vercel.app/figma-capture.html
+- Example: https://sattva-odoo-infra.vercel.app/sattva-middleware-portal.html?view=e1&persona=sales
+- Gate overlay: `?view=e4&persona=sales&modal=gate`
+- Chat gallery: https://sattva-odoo-infra.vercel.app/supplier-onboarding-chat.html
+
+On 2026-08-13 `generate_figma_design` still 429’d on this Starter/View connection despite being listed as rate-limit exempt. Retry after a Full/Dev seat or monthly reset. Do not overwrite the lo-fi frames until the capture lands on a new page named `Live Vercel YYYY-MM-DD`.
 
 Prototype reactions (ON_CLICK → NAVIGATE, instant; overlay for the gate dialog):
 
@@ -218,4 +226,4 @@ Live Odoo/n8n wiring, Keycloak, real Nextcloud uploads, HubSpot, LifeOS, storing
 
 ## 7. Promotion
 
-Git is canonical. Notion Workstream 2 row should point at this spec, the HTML twin (`#/map`), and the Figma file. Do not put event payloads with partner PII in GREEN Content.
+Git is canonical. Notion Workstream 2 row should point at this spec, the live twin (https://sattva-odoo-infra.vercel.app/), the capture index, and the Figma file. Do not put event payloads with partner PII in GREEN Content.

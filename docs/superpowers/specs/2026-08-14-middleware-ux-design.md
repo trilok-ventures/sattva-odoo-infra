@@ -4,7 +4,8 @@
 **Date:** 2026-08-14
 **Owner:** IPCo
 **Depends on:** `2026-08-13-sattva-brokers-system-fabric-design.md` (locked), `2026-08-14-integrated-system-architecture.md`
-**Figma reference:** _Sattva Middleware_ file (link added after Workstream 2 Figma pass)
+**Figma reference:** [Sattva Middleware](https://www.figma.com/design/NcyHhLoppe3f72fs5KjrvP) (lo-fi; live HTML twin is source of truth while MCP is capped)  
+**Live Phase 0 twin:** https://sattva-odoo-infra.vercel.app/
 
 This spec defines the **middleware portal**: the single authenticated web surface between people and the Sattva fabric. It is the "MW" role router in the Ops Dashboard brainstorm. It holds **no business state** — every read and write passes through to Odoo (operational SoR), n8n (integration bus), or Nextcloud (RED vault, server-side only).
 

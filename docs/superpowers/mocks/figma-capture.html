@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sattva Middleware — Figma capture index</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root { --sand: #f7f4ef; --ink: #1c1917; --forest: #1f4d3a; --muted: #57534e; --line: #e7e0d6; --chip: #ecf6f0; }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: Inter, system-ui, sans-serif; background: var(--sand); color: var(--ink); }
+    main { max-width: 980px; margin: 0 auto; padding: 36px 20px 80px; }
+    h1 { font-size: 28px; margin: 0 0 8px; }
+    h2 { font-size: 16px; margin: 28px 0 10px; }
+    p, li { color: var(--muted); line-height: 1.5; }
+    .callout { background: #fff7ed; border: 1px solid #fdba74; border-radius: 12px; padding: 14px 16px; color: var(--ink); }
+    .ok { background: #ecfdf3; border-color: #86efac; }
+    a { color: var(--forest); }
+    table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 12px; overflow: hidden; }
+    th, td { text-align: left; padding: 10px 12px; font-size: 13px; border-bottom: 1px solid var(--line); vertical-align: top; }
+    th { background: #f3eee6; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }
+    code { font-size: 12px; background: var(--chip); padding: 1px 6px; border-radius: 6px; }
+    .chip { display: inline-block; font-size: 11px; font-weight: 700; background: var(--chip); color: var(--forest); padding: 2px 8px; border-radius: 999px; }
+    nav { display: flex; gap: 14px; flex-wrap: wrap; margin: 8px 0 20px; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <main>
+    <nav>
+      <a href="./">Landing</a>
+      <a href="./sattva-middleware-portal.html?view=map">Portal map</a>
+      <a href="./supplier-onboarding-chat.html">Chat gallery</a>
+    </nav>
+    <h1>Figma capture index</h1>
+    <p>Hash-free URLs for the live Phase 0 twin. Figma <code>generate_figma_design</code> must not open hash fragments on external sites — use <code>?view=</code> instead.</p>
+    <div class="callout">
+      <strong>Blocked on 2026-08-13:</strong> Figma MCP on Starter / View (Arch Neo) hit the monthly tool-call cap.
+      <code>whoami</code> works; <code>use_figma</code>, <code>get_metadata</code>, and <code>generate_figma_design</code> return 429
+      even though Figma lists some write tools as rate-limit exempt. Existing lo-fi frames in
+      <a href="https://www.figma.com/design/NcyHhLoppe3f72fs5KjrvP">Sattva Middleware</a> were <strong>not mutated</strong>.
+      Chat file <a href="https://www.figma.com/design/gv62Ar5Zngd62TxS323GVp">Sattva Supplier Onboarding Chat</a> is still empty.
+      Capture into those files when a Full/Dev seat or a new month is available.
+    </div>
+
+    <h2>Live production (after PR #12)</h2>
+    <p>Canonical host: <a href="https://sattva-odoo-infra.vercel.app/">https://sattva-odoo-infra.vercel.app/</a>. This Vercel project publishes only <code>docs/superpowers/mocks/</code>. It is not the Phase 2 BFF and not the Workstream 3 marketing site.</p>
+    <div class="callout ok">
+      Capture recipe: call <code>generate_figma_design</code> with fileKey <code>NcyHhLoppe3f72fs5KjrvP</code> (portal)
+      or <code>gv62Ar5Zngd62TxS323GVp</code> (chat), then open each URL below. After frames land, wire ON_CLICK → NAVIGATE
+      per spec §5 in <code>docs/superpowers/specs/2026-08-13-middleware-interactive-dashboard.md</code>.
+    </div>
+
+    <h2>Portal screens (no hash)</h2>
+    <table>
+      <thead>
+        <tr><th>Frame name</th><th>Query URL</th><th>Persona</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>00 · Landing</td><td><a href="./index.html"><code>./index.html</code></a></td><td>—</td></tr>
+        <tr><td>01 · Map</td><td><a href="./sattva-middleware-portal.html?view=map"><code>?view=map</code></a></td><td>sales</td></tr>
+        <tr><td>02 · Flows</td><td><a href="./sattva-middleware-portal.html?view=flows"><code>?view=flows</code></a></td><td>sales</td></tr>
+        <tr><td>S1 Sign-in</td><td><a href="./sattva-middleware-portal.html?view=s1"><code>?view=s1</code></a></td><td>—</td></tr>
+        <tr><td>S2 Role router</td><td><a href="./sattva-middleware-portal.html?view=s2"><code>?view=s2</code></a></td><td>—</td></tr>
+        <tr><td>S3 Notifications</td><td><a href="./sattva-middleware-portal.html?view=s3"><code>?view=s3</code></a></td><td>sales</td></tr>
+        <tr><td>S4 Profile</td><td><a href="./sattva-middleware-portal.html?view=s4"><code>?view=s4</code></a></td><td>sales</td></tr>
+        <tr><td>E1 Ops dashboard</td><td><a href="./sattva-middleware-portal.html?view=e1&amp;persona=sales"><code>?view=e1&amp;persona=sales</code></a></td><td>sales</td></tr>
+        <tr><td>E2 Compliance queue</td><td><a href="./sattva-middleware-portal.html?view=e2&amp;persona=compliance"><code>?view=e2&amp;persona=compliance</code></a></td><td>compliance</td></tr>
+        <tr><td>E3 Supplier dossier</td><td><a href="./sattva-middleware-portal.html?view=e3&amp;persona=compliance"><code>?view=e3&amp;persona=compliance</code></a></td><td>compliance</td></tr>
+        <tr><td>E4 PO gate</td><td><a href="./sattva-middleware-portal.html?view=e4&amp;persona=sales"><code>?view=e4&amp;persona=sales</code></a></td><td>sales</td></tr>
+        <tr><td>E4 overlay · Compliance Gate Blocked</td><td><a href="./sattva-middleware-portal.html?view=e4&amp;persona=sales&amp;modal=gate"><code>?view=e4&amp;modal=gate</code></a></td><td>sales</td></tr>
+        <tr><td>E5 Lot board</td><td><a href="./sattva-middleware-portal.html?view=e5&amp;persona=sales"><code>?view=e5</code></a></td><td>sales</td></tr>
+        <tr><td>E6 Invoices</td><td><a href="./sattva-middleware-portal.html?view=e6&amp;persona=finance"><code>?view=e6&amp;persona=finance</code></a></td><td>finance</td></tr>
+        <tr><td>E7 Health</td><td><a href="./sattva-middleware-portal.html?view=e7&amp;persona=it"><code>?view=e7&amp;persona=it</code></a></td><td>it</td></tr>
+        <tr><td>B1 Buyer orders</td><td><a href="./sattva-middleware-portal.html?view=b1&amp;persona=buyer"><code>?view=b1&amp;persona=buyer</code></a></td><td>buyer</td></tr>
+        <tr><td>B2 Order detail</td><td><a href="./sattva-middleware-portal.html?view=b2&amp;persona=buyer"><code>?view=b2&amp;persona=buyer</code></a></td><td>buyer</td></tr>
+        <tr><td>B3 Quotes</td><td><a href="./sattva-middleware-portal.html?view=b3&amp;persona=buyer"><code>?view=b3&amp;persona=buyer</code></a></td><td>buyer</td></tr>
+        <tr><td>P1 Seller home</td><td><a href="./sattva-middleware-portal.html?view=p1&amp;persona=supplier"><code>?view=p1&amp;persona=supplier</code></a></td><td>supplier</td></tr>
+        <tr><td>P2 Uploads</td><td><a href="./sattva-middleware-portal.html?view=p2&amp;persona=supplier"><code>?view=p2&amp;persona=supplier</code></a></td><td>supplier</td></tr>
+        <tr><td>P3 CAPA</td><td><a href="./sattva-middleware-portal.html?view=p3&amp;persona=supplier"><code>?view=p3&amp;persona=supplier</code></a></td><td>supplier</td></tr>
+        <tr><td>Chat gallery</td><td><a href="./supplier-onboarding-chat.html"><code>supplier-onboarding-chat.html</code></a></td><td>supplier</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Do not capture</h2>
+    <ul>
+      <li>Repo root files (<code>docker-compose.yml</code>, <code>config/odoo.conf</code>) — they must 404 on this Vercel project.</li>
+      <li>The Next.js scaffold at <code>middleware/</code> — not what this Vercel project serves.</li>
+      <li>Odoo on <code>:8069</code> — employees-only back office, not the GREEN edge.</li>
+    </ul>
+
+    <h2>Locks (do not regress in Figma)</h2>
+    <p><span class="chip">scripted chat</span> <span class="chip">no Confirm anyway</span> <span class="chip">four PCP statuses</span> <span class="chip">no vault hostnames for buyer/seller</span> <span class="chip">SoD: sales cannot Approve</span></p>
+  </main>
+</body>
+</html>
