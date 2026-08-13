@@ -136,8 +136,9 @@
     <header class="top">
       <strong>Sattva Middleware</strong>
       <a href="#/map">Prototype map</a>
+      <a href="./figma-capture.html">Figma capture</a>
       <a href="https://www.figma.com/design/NcyHhLoppe3f72fs5KjrvP" target="_blank" rel="noreferrer">Figma file</a>
-      <span class="muted" style="color:#c5ddd0">BFF · no vault in browser</span>
+      <span class="muted" style="color:#c5ddd0">Phase 0 twin · no vault in browser</span>
       <div class="persona" role="tablist" aria-label="Persona">
         <button type="button" data-set-persona="sales" class="on">Sales</button>
         <button type="button" data-set-persona="compliance">Compliance</button>
@@ -591,8 +592,23 @@
     const modal = document.getElementById('gate-modal');
     const flowBar = document.getElementById('flow-bar');
 
+    function queryParams() {
+      return new URLSearchParams(location.search);
+    }
+
     function currentName() {
-      return location.hash.replace('#/', '') || 'map';
+      const hash = location.hash.replace(/^#\/?/, '');
+      if (hash && titles[hash]) return hash;
+      const view = queryParams().get('view') || queryParams().get('screen');
+      if (view && titles[view]) return view;
+      return 'map';
+    }
+
+    function applyQueryChrome() {
+      const persona = queryParams().get('persona');
+      if (persona && homes[persona]) setPersona(persona);
+      const modalFlag = queryParams().get('modal');
+      if (modalFlag === 'gate' || modalFlag === '1') modal.classList.add('on');
     }
 
     function setPersona(p) {
@@ -656,6 +672,7 @@
         a.classList.toggle('on', a.getAttribute('href') === '#/' + name);
       });
       document.getElementById('here').textContent = titles[name] || name;
+      document.title = 'Sattva Middleware — ' + (titles[name] || name);
       document.getElementById('crumbs').innerHTML = '<a href="#/map">Map</a> · ' + (crumbs[name] || name);
       paintRefs(name);
       if (name === 'e4' && approved) {
@@ -720,7 +737,10 @@
       document.getElementById('seller-banner').innerHTML = 'PCP status <strong>review</strong>. Compliance will verify. You still cannot receive a confirmed PO.';
       document.getElementById('seller-banner').classList.add('ok');
     });
-    if (!location.hash) location.hash = '#/map';
+    applyQueryChrome();
+    if (!location.hash && !queryParams().get('view') && !queryParams().get('screen')) {
+      location.hash = '#/map';
+    }
     route();
   </script>
 </body>

@@ -12,7 +12,7 @@
 This document is the operating spec for **how a foreign manufacturer becomes a purchasable supplier**. It consolidates the fragmented HR/policy pages into one How-To, maps every field and file to Odoo + Nextcloud, and defines a **scripted chat collector** as the human interface. Git wins if the Notion twin or Figma file drifts.
 
 Notion twin (created after this spec): Knowledge Base → SOPs → *Supplier onboarding (chat collector)*.  
-Figma: [Sattva Supplier Onboarding Chat](https://www.figma.com/design/gv62Ar5Zngd62TxS323GVp) (file created 2026-08-13; canvas empty — Starter MCP quota blocked `use_figma`). Reviewable screens: `docs/superpowers/mocks/supplier-onboarding-chat.html`. Capture that gallery into the Figma file when quota resets.
+Figma: [Sattva Supplier Onboarding Chat](https://www.figma.com/design/gv62Ar5Zngd62TxS323GVp) (file created 2026-08-13; canvas empty — Starter MCP quota blocked `use_figma`). Live gallery: https://sattva-odoo-infra.vercel.app/supplier-onboarding-chat.html. Capture index: https://sattva-odoo-infra.vercel.app/figma-capture.html. Capture that gallery into the Figma file when quota resets.
 
 ---
 
