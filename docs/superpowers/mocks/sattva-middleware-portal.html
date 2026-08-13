@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sattva Middleware — interactive prototype</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --sand: #f7f4ef; --ink: #1c1917; --muted: #57534e; --forest: #1f4d3a;
+      --surface: #fff; --line: #e7e0d6; --amber: #b45309; --rose: #9f1239; --ok: #166534;
+      --nav: #143528; --chip: #ecf6f0; --pulse: #86efac;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; font-family: Inter, system-ui, sans-serif; color: var(--ink); background: var(--sand); }
+    a { color: var(--forest); }
+    .app { display: grid; grid-template-rows: 56px 1fr auto; min-height: 100vh; }
+    .top {
+      background: var(--nav); color: #fff; display: flex; align-items: center; gap: 14px;
+      padding: 0 16px; font-size: 13px; position: sticky; top: 0; z-index: 10;
+    }
+    .top strong { letter-spacing: .02em; }
+    .top a { color: #d7eadf; text-decoration: none; }
+    .persona { margin-left: auto; display: flex; flex-wrap: wrap; gap: 4px; justify-content: flex-end; }
+    .persona button, .btn, .flow-bar button {
+      border: 0; border-radius: 8px; padding: 7px 10px; font: inherit; font-weight: 600; cursor: pointer;
+    }
+    .persona button { background: #1f4d3a; color: #fff; border: 1px solid #2d6a50; font-size: 12px; }
+    .persona button.on { background: #fff; color: var(--nav); }
+    .shell { display: grid; grid-template-columns: 210px 1fr 250px; min-height: 0; }
+    .side, .rail { background: var(--surface); border-right: 1px solid var(--line); padding: 14px 10px; overflow: auto; }
+    .rail { border-right: 0; border-left: 1px solid var(--line); }
+    .side a, .rail a {
+      display: block; padding: 7px 10px; border-radius: 8px; text-decoration: none; color: var(--ink); font-size: 13px;
+    }
+    .side a:hover, .rail a:hover, .side a.on { background: var(--chip); }
+    .nav-label { font-size: 10px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); margin: 12px 10px 6px; }
+    .main { overflow: auto; padding: 22px 26px 28px; }
+    .view { display: none; }
+    .view.on { display: block; }
+    .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .card {
+      background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px;
+      text-decoration: none; color: inherit; display: block;
+    }
+    a.card:hover, .hotspot.pulse { border-color: var(--forest); box-shadow: 0 0 0 3px rgba(31,77,58,.18); }
+    .card .n { font-size: 26px; font-weight: 700; line-height: 1.1; }
+    .card .t { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; margin-bottom: 6px; }
+    .dest {
+      display: inline-block; margin-top: 8px; font-size: 11px; font-weight: 700; color: var(--forest);
+      background: var(--chip); padding: 3px 8px; border-radius: 999px; text-decoration: none;
+    }
+    table { width: 100%; border-collapse: collapse; background: var(--surface); border-radius: 12px; overflow: hidden; }
+    th, td { text-align: left; padding: 10px 12px; font-size: 13px; border-bottom: 1px solid var(--line); }
+    th { background: #f3eee6; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }
+    .pill { font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 999px; }
+    .pending { background: #fde68a; color: #92400e; }
+    .review { background: #ffedd5; color: var(--amber); }
+    .approved { background: #dcfce7; color: var(--ok); }
+    .blocked { background: #ffe4e6; color: var(--rose); }
+    .banner { background: #fff7ed; border: 1px solid #fdba74; padding: 12px 14px; border-radius: 10px; margin-bottom: 16px; font-size: 14px; }
+    .banner.ok { background: #ecfdf3; border-color: #86efac; }
+    .banner.info { background: #eff6ff; border-color: #93c5fd; }
+    .crumbs { font-size: 12px; color: var(--muted); margin: 0 0 12px; }
+    .crumbs a { color: var(--muted); }
+    .modal-bg {
+      display: none; position: fixed; inset: 0; background: rgba(28,25,23,.45); align-items: center; justify-content: center; z-index: 30;
+    }
+    .modal-bg.on { display: flex; }
+    .modal { background: #fff; width: 500px; max-width: calc(100% - 32px); border-radius: 14px; padding: 22px; }
+    .btn.primary { background: var(--forest); color: #fff; }
+    .btn.ghost { background: #f5f0e8; }
+    .btn.warn { background: #ffe4e6; color: var(--rose); }
+    .timeline { border-left: 2px solid var(--line); margin-left: 8px; padding-left: 16px; }
+    .timeline div { margin: 0 0 14px; font-size: 14px; }
+    .muted { color: var(--muted); font-size: 13px; }
+    .upload { border: 1px dashed var(--forest); background: #f3faf6; border-radius: 12px; padding: 14px; margin: 8px 0; font-size: 13px; }
+    .hash { font-family: ui-monospace, monospace; font-size: 11px; color: var(--muted); }
+    .kanban { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+    .kanban .col { background: #f3eee6; border-radius: 12px; padding: 10px; min-height: 160px; }
+    .kanban h3 { margin: 0 0 8px; font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+    .flow-bar {
+      background: #10281e; color: #fff; padding: 10px 16px; display: none; align-items: center; gap: 10px; flex-wrap: wrap;
+    }
+    .flow-bar.on { display: flex; }
+    .flow-bar .steps { display: flex; gap: 4px; flex-wrap: wrap; flex: 1; }
+    .flow-bar .step {
+      font-size: 11px; padding: 4px 8px; border-radius: 999px; background: #1f4d3a; color: #d7eadf; border: 0; cursor: pointer;
+    }
+    .flow-bar .step.now { background: #fff; color: var(--nav); }
+    .flow-bar .step.done { background: #2d6a50; }
+    .hotspot.pulse { animation: pulse 1.4s ease-in-out infinite; }
+    @keyframes pulse { 50% { box-shadow: 0 0 0 6px rgba(134,239,172,.45); } }
+    .map { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+    .map .card small { display: block; margin-top: 8px; color: var(--muted); font-size: 12px; }
+    .starts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 16px 0 24px; }
+    .edge { font-size: 11px; color: var(--muted); }
+    h1 { font-size: 22px; margin: 0 0 6px; }
+    h2 { font-size: 15px; margin: 22px 0 10px; }
+    .row-links { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 14px; }
+
+    body[data-persona="buyer"] .emp-only,
+    body[data-persona="supplier"] .emp-only,
+    body[data-persona="sales"] .finance-only,
+    body[data-persona="sales"] .it-only,
+    body[data-persona="compliance"] .finance-only,
+    body[data-persona="compliance"] .it-only,
+    body[data-persona="finance"] .it-only,
+    body[data-persona="it"] .finance-only { display: none !important; }
+
+    body[data-persona="buyer"] .emp-nav,
+    body[data-persona="supplier"] .emp-nav,
+    body[data-persona="sales"] .buyer-nav,
+    body[data-persona="compliance"] .buyer-nav,
+    body[data-persona="finance"] .buyer-nav,
+    body[data-persona="it"] .buyer-nav,
+    body[data-persona="sales"] .sup-nav,
+    body[data-persona="compliance"] .sup-nav,
+    body[data-persona="finance"] .sup-nav,
+    body[data-persona="it"] .sup-nav,
+    body[data-persona="buyer"] .sup-nav,
+    body[data-persona="supplier"] .buyer-nav { display: none !important; }
+
+    @media (max-width: 980px) {
+      .shell { grid-template-columns: 1fr; }
+      .side, .rail { display: none; }
+      .map, .starts, .kanban, .grid-3, .grid-2 { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body data-persona="sales">
+  <div class="app">
+    <header class="top">
+      <strong>Sattva Middleware</strong>
+      <a href="#/map">Prototype map</a>
+      <a href="https://www.figma.com/design/NcyHhLoppe3f72fs5KjrvP" target="_blank" rel="noreferrer">Figma file</a>
+      <span class="muted" style="color:#c5ddd0">BFF · no vault in browser</span>
+      <div class="persona" role="tablist" aria-label="Persona">
+        <button type="button" data-set-persona="sales" class="on">Sales</button>
+        <button type="button" data-set-persona="compliance">Compliance</button>
+        <button type="button" data-set-persona="finance">Finance</button>
+        <button type="button" data-set-persona="it">IT</button>
+        <button type="button" data-set-persona="buyer">Buyer</button>
+        <button type="button" data-set-persona="supplier">Seller</button>
+      </div>
+    </header>
+    <div class="shell">
+      <nav class="side" aria-label="Dashboards">
+        <div class="nav-label">Prototype</div>
+        <a href="#/map">Dashboard map</a>
+        <a href="#/flows">E2E starting points</a>
+        <div class="nav-label">Shared</div>
+        <a href="#/s1">S1 Sign-in</a>
+        <a href="#/s2">S2 Role router</a>
+        <a href="#/s3">S3 Notifications</a>
+        <a href="#/s4">S4 Profile</a>
+        <div class="nav-label emp-nav emp-only">Employees</div>
+        <a class="emp-nav emp-only" href="#/e1">E1 Ops dashboard</a>
+        <a class="emp-nav emp-only" href="#/e2">E2 Compliance queue</a>
+        <a class="emp-nav emp-only" href="#/e3">E3 Supplier dossier</a>
+        <a class="emp-nav emp-only" href="#/e4">E4 PO gate</a>
+        <a class="emp-nav emp-only" href="#/e5">E5 Lot board</a>
+        <a class="emp-nav finance-only" href="#/e6">E6 Invoices</a>
+        <a class="emp-nav it-only" href="#/e7">E7 Health</a>
+        <div class="nav-label buyer-nav">Buyer</div>
+        <a class="buyer-nav" href="#/b1">B1 Orders</a>
+        <a class="buyer-nav" href="#/b2">B2 Order detail</a>
+        <a class="buyer-nav" href="#/b3">B3 Quotes</a>
+        <div class="nav-label sup-nav">Seller</div>
+        <a class="sup-nav" href="#/p1">P1 Home</a>
+        <a class="sup-nav" href="#/p2">P2 Uploads</a>
+        <a class="sup-nav" href="#/p3">P3 CAPA</a>
+        <a class="sup-nav" href="supplier-onboarding-chat.html">Onboarding chat</a>
+      </nav>
+      <main class="main">
+        <p class="crumbs" id="crumbs"></p>
+
+        <section id="view-map" class="view">
+          <h1>Interactive dashboard map</h1>
+          <p class="muted">Figma-style canvas for <a href="https://www.figma.com/design/NcyHhLoppe3f72fs5KjrvP">Sattva Middleware</a>. Every tile is a live jump. Edges are the prototype connections to wire in Figma when MCP quota resets.</p>
+          <div class="starts">
+            <a class="card hotspot" data-hotspot="start-employee" href="#/flows">
+              <div class="t">Starting point</div>
+              <div class="n">Employee</div>
+              Quote → blocked PO → SoD approve → confirm
+            </a>
+            <a class="card hotspot" data-hotspot="start-buyer" href="#/flows">
+              <div class="t">Starting point</div>
+              <div class="n">Buyer</div>
+              Orders → GREEN lot metrics · no vault
+            </a>
+            <a class="card hotspot" data-hotspot="start-seller" href="#/flows">
+              <div class="t">Starting point</div>
+              <div class="n">Seller</div>
+              PCP pack → chat/upload → review
+            </a>
+          </div>
+          <h2>Shared</h2>
+          <div class="map">
+            <a class="card" href="#/s1"><div class="t">S1</div><div class="n">Sign-in</div><small>→ S2 role router</small></a>
+            <a class="card" href="#/s2"><div class="t">S2</div><div class="n">Role router</div><small>→ E1 · B1 · P1</small></a>
+            <a class="card" href="#/s3"><div class="t">S3</div><div class="n">Notifications</div><small>→ E4 · E3 · E5</small></a>
+            <a class="card" href="#/s4"><div class="t">S4</div><div class="n">Profile</div><small>groups · sign out</small></a>
+          </div>
+          <h2>Employee dashboards</h2>
+          <div class="map">
+            <a class="card" href="#/e1"><div class="t">E1</div><div class="n">Ops</div><small>KPIs → E2 E4 E5 E6 E7</small></a>
+            <a class="card" href="#/e2"><div class="t">E2</div><div class="n">Queue</div><small>row → E3 dossier</small></a>
+            <a class="card" href="#/e3"><div class="t">E3</div><div class="n">Dossier</div><small>→ E2 · P1 peek · Odoo</small></a>
+            <a class="card" href="#/e4"><div class="t">E4</div><div class="n">PO gate</div><small>blocked overlay → E3</small></a>
+            <a class="card" href="#/e5"><div class="t">E5</div><div class="n">Lots</div><small>→ B2 GREEN · P3 CAPA</small></a>
+            <a class="card" href="#/e6"><div class="t">E6</div><div class="n">Invoices</div><small>finance only</small></a>
+            <a class="card" href="#/e7"><div class="t">E7</div><div class="n">Health</div><small>IT only · n8n</small></a>
+          </div>
+          <h2>Buyer · Seller</h2>
+          <div class="map">
+            <a class="card" href="#/b1"><div class="t">B1</div><div class="n">Orders</div><small>card → B2</small></a>
+            <a class="card" href="#/b2"><div class="t">B2</div><div class="n">Order detail</div><small>GREEN metrics · → B3</small></a>
+            <a class="card" href="#/b3"><div class="t">B3</div><div class="n">Quotes</div><small>accepted → B1</small></a>
+            <a class="card" href="#/p1"><div class="t">P1</div><div class="n">Seller home</div><small>→ P2 · chat · P3</small></a>
+            <a class="card" href="#/p2"><div class="t">P2</div><div class="n">Uploads</div><small>hash receipt → P1 review</small></a>
+            <a class="card" href="#/p3"><div class="t">P3</div><div class="n">CAPA</div><small>→ P1</small></a>
+          </div>
+        </section>
+
+        <section id="view-flows" class="view">
+          <h1>End-to-end starting points</h1>
+          <p class="muted">Play a flow. The dock highlights the next hotspot — same connections as the Figma prototype pass.</p>
+          <div class="starts">
+            <button class="card hotspot" data-hotspot="play-employee" type="button" data-flow="employee">
+              <div class="t">Play</div>
+              <div class="n">Employee</div>
+              10 steps · sales + compliance SoD · P00042
+            </button>
+            <button class="card hotspot" data-hotspot="play-buyer" type="button" data-flow="buyer">
+              <div class="t">Play</div>
+              <div class="n">Buyer</div>
+              5 steps · Northshore Foods · SO-1042
+            </button>
+            <button class="card hotspot" data-hotspot="play-seller" type="button" data-flow="seller">
+              <div class="t">Play</div>
+              <div class="n">Seller</div>
+              6 steps · Example Foods · pending → review
+            </button>
+          </div>
+          <p class="edge">Fictional names only. Gate never offers Confirm anyway. Buyers/sellers never see vault or n8n hostnames.</p>
+        </section>
+
+        <section id="view-s1" class="view">
+          <h1>S1 · Sign in</h1>
+          <p>No local password. Identity is Keycloak (<code>auth.trilokventures.org</code>).</p>
+          <p><button class="btn primary hotspot" data-hotspot="employee:0 buyer:0 seller:0" id="btn-signin">Sign in with Trilok ID</button></p>
+          <p class="muted">Prototype: current persona chip is the Keycloak group you will land as.</p>
+        </section>
+
+        <section id="view-s2" class="view">
+          <h1>S2 · Role router</h1>
+          <p class="muted">Post-login landing. Employees → ops, buyers → orders, sellers → PCP home.</p>
+          <div class="grid-3">
+            <a class="card hotspot" data-hotspot="employee:1" href="#/e1"><div class="t">Employee</div><div class="n">E1 Ops</div><span class="dest">sales / compliance / finance / IT</span></a>
+            <a class="card hotspot" data-hotspot="buyer:1" href="#/b1"><div class="t">Buyer</div><div class="n">B1 Orders</div><span class="dest">GREEN lot status</span></a>
+            <a class="card hotspot" data-hotspot="seller:1" href="#/p1"><div class="t">Seller</div><div class="n">P1 Home</div><span class="dest">PCP pack</span></a>
+          </div>
+        </section>
+
+        <section id="view-s3" class="view">
+          <h1>S3 · Notifications</h1>
+          <p class="muted">GREEN/AMBER events only. Each row is an active dashboard link.</p>
+          <table>
+            <thead><tr><th>Event</th><th>Ref</th><th>Open dashboard</th></tr></thead>
+            <tbody>
+              <tr><td><code>po.blocked</code></td><td>P00042</td><td><a class="dest" href="#/e4">E4 PO gate →</a></td></tr>
+              <tr><td><code>vendor.pcp_status_changed</code></td><td>Example Foods · review</td><td><a class="dest" href="#/e3">E3 dossier →</a></td></tr>
+              <tr><td><code>lot.coa_verified</code></td><td>L-882 · pass</td><td><a class="dest" href="#/e5">E5 lots →</a></td></tr>
+              <tr><td><code>invoice.posted</code></td><td>INV/2026/0018</td><td><a class="dest finance-only" href="#/e6">E6 invoices →</a></td></tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section id="view-s4" class="view">
+          <h1>S4 · Profile</h1>
+          <p>Session: Arch Neo · persona = <strong id="profile-persona">sales</strong></p>
+          <p class="muted">No self-service role edits. Sign-out returns to S1.</p>
+          <p><a class="btn ghost" href="#/s1">Sign out</a></p>
+        </section>
+
+        <section id="view-e1" class="view">
+          <h1>E1 · Ops dashboard</h1>
+          <p class="muted">Today at a glance. KPI cards are prototype links — the portal stores no CRM state.</p>
+          <div class="kpis">
+            <a class="card hotspot" data-hotspot="employee:2" href="#/e2">
+              <div class="t">Pending PCP reviews</div><div class="n">4</div>
+              <span class="dest">Open E2 queue →</span>
+            </a>
+            <a class="card hotspot" data-hotspot="employee:2b" href="#/e4">
+              <div class="t">PO confirms blocked</div><div class="n">2</div>
+              <span class="dest">Open E4 gate →</span>
+            </a>
+            <a class="card" href="#/e5">
+              <div class="t">Lots in quarantine</div><div class="n">3</div>
+              <span class="dest">Open E5 board →</span>
+            </a>
+            <a class="card finance-only" href="#/e6">
+              <div class="t">Unpaid invoices</div><div class="n">6</div>
+              <span class="dest">Open E6 →</span>
+            </a>
+          </div>
+          <h2>Fabric activity</h2>
+          <table>
+            <thead><tr><th>When</th><th>Event</th><th>Jump</th></tr></thead>
+            <tbody>
+              <tr><td>14:02 ET</td><td>P00042 blocked — supplier not approved</td><td><a class="dest" href="#/e4">E4 →</a></td></tr>
+              <tr><td>13:40 ET</td><td>Example Foods → review</td><td><a class="dest" href="#/e3">E3 →</a></td></tr>
+              <tr><td>11:15 ET</td><td>Lot L-882 COA pass (GREEN)</td><td><a class="dest" href="#/e5">E5 →</a></td></tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section id="view-e2" class="view">
+          <h1>E2 · Compliance review queue</h1>
+          <p class="muted"><code>compliance.officer</code> only for Approve / Block. Sales may open a dossier read-only.</p>
+          <table>
+            <thead><tr><th>Supplier</th><th>Status</th><th>Evidence</th><th>Age</th><th></th></tr></thead>
+            <tbody>
+              <tr>
+                <td>Example Foods Pvt Ltd</td>
+                <td><span class="pill review">review</span></td>
+                <td>Pest log expired</td>
+                <td>2d</td>
+                <td><a class="dest hotspot" data-hotspot="employee:7" href="#/e3">Open E3 →</a></td>
+              </tr>
+              <tr>
+                <td>Uncertified dehydrator (demo)</td>
+                <td><span class="pill pending">pending</span></td>
+                <td>No GFSI · audit required</td>
+                <td>5d</td>
+                <td><a class="dest" href="#/e3">Open E3 →</a></td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section id="view-e3" class="view">
+          <h1>E3 · Supplier dossier — Example Foods Pvt Ltd</h1>
+          <p><span class="pill review" id="dossier-pill">review</span> · risk medium · FSSC 22000</p>
+          <p class="muted">Pointers and hashes. Sales cannot download RED. Approve writes Odoo <code>supplier_pcp_status</code>.</p>
+          <table>
+            <thead><tr><th>Vault pointer (employees)</th><th>Hash</th><th>State</th></tr></thead>
+            <tbody>
+              <tr><td>/Certificates/FSSC-22000.pdf</td><td class="hash">8f3a…c91b</td><td>ok</td></tr>
+              <tr><td>/PCP/pest-control.pdf</td><td class="hash">aa12…90e</td><td>expired</td></tr>
+            </tbody>
+          </table>
+          <div class="row-links">
+            <a class="btn ghost" href="#/e2">← E2 queue</a>
+            <a class="btn ghost hotspot" data-hotspot="employee:5" href="#/p1">Seller home (what they see)</a>
+            <a class="btn ghost" href="#/e4">Related PO P00042 →</a>
+            <button class="btn warn" type="button" id="btn-block">Block in Odoo</button>
+            <button class="btn primary hotspot" data-hotspot="employee:8" type="button" id="btn-approve">Approve in Odoo</button>
+          </div>
+          <p id="approve-msg" class="muted"></p>
+        </section>
+
+        <section id="view-e4" class="view">
+          <h1>E4 · PO gate console</h1>
+          <p class="muted">Confirm calls Odoo <code>button_confirm</code>. The gate is never bypassable.</p>
+          <table>
+            <thead><tr><th>PO</th><th>Supplier</th><th>Gate</th><th></th></tr></thead>
+            <tbody>
+              <tr>
+                <td>P00042</td>
+                <td><a href="#/e3">Example Foods Pvt Ltd</a></td>
+                <td><span class="pill review" id="gate-pill">review</span></td>
+                <td><button class="btn primary hotspot" data-hotspot="employee:3 employee:9" type="button" id="btn-confirm">Confirm order</button></td>
+              </tr>
+              <tr>
+                <td>P00041</td>
+                <td>Approved mill (demo)</td>
+                <td><span class="pill approved">approved</span></td>
+                <td><span class="muted">already purchase</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section id="view-e5" class="view">
+          <h1>E5 · Lot verification board</h1>
+          <div class="kanban">
+            <div class="col"><h3>Quarantine · 3</h3><div class="card">L-879 waiting COA</div></div>
+            <div class="col"><h3>Verifying</h3><div class="card">L-881 hash pending</div></div>
+            <div class="col"><h3>Available</h3>
+              <a class="card" href="#/b2">L-882 · 8f3a… <span class="dest">Buyer GREEN view →</span></a>
+            </div>
+            <div class="col"><h3>CAPA</h3>
+              <a class="card" href="#/p3">L-870 fail <span class="dest">Seller CAPA →</span></a>
+            </div>
+          </div>
+        </section>
+
+        <section id="view-e6" class="view">
+          <h1>E6 · Invoice console</h1>
+          <p class="muted">AMBER amounts. Finance only. Not shown to buyers.</p>
+          <table>
+            <thead><tr><th>Invoice</th><th>Partner</th><th>Status</th><th></th></tr></thead>
+            <tbody>
+              <tr><td>INV/2026/0018</td><td>Northshore Foods Inc</td><td>posted</td><td><a class="dest" href="#/b1">Buyer order (display) →</a></td></tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section id="view-e7" class="view">
+          <h1>E7 · Health</h1>
+          <p class="muted">IT only. n8n queue, webhook failures, reachability. No business records.</p>
+          <div class="kpis">
+            <div class="card"><div class="t">n8n queue</div><div class="n">0</div></div>
+            <a class="card" href="#/s3"><div class="t">Webhook fails (24h)</div><div class="n">1</div><span class="dest">S3 event inbox →</span></a>
+          </div>
+        </section>
+
+        <section id="view-b1" class="view">
+          <h1>B1 · Orders</h1>
+          <p class="muted">Northshore Foods Inc — own orders. GREEN status only.</p>
+          <a class="card hotspot" data-hotspot="buyer:2" href="#/b2">
+            <div class="t">SO-1042 · dehydrated onion 500 kg</div>
+            <div class="n">Lot L-882 · pass</div>
+            Expected window 12–18 Sep
+            <span class="dest">Open B2 detail →</span>
+          </a>
+        </section>
+
+        <section id="view-b2" class="view">
+          <h1>B2 · Order detail SO-1042</h1>
+          <div class="timeline">
+            <div>Contract signed</div>
+            <div>Production · Example Foods (display name only)</div>
+            <div>COA GREEN: moisture 4.8% · mesh pass · hash 8f3a…</div>
+            <div>CFIA clear</div>
+            <div>Delivered window</div>
+          </div>
+          <p class="muted">No vault path, no PDF bytes, no other buyers’ orders.</p>
+          <p><a class="dest hotspot" data-hotspot="buyer:3" href="#/b3">B3 Quotes &amp; contracts →</a></p>
+        </section>
+
+        <section id="view-b3" class="view">
+          <h1>B3 · Quotes &amp; contracts</h1>
+          <table>
+            <thead><tr><th>Quote</th><th>State</th></tr></thead>
+            <tbody><tr><td>Q-220</td><td>accepted → <a class="dest hotspot" data-hotspot="buyer:4" href="#/b1">B1 orders →</a></td></tr></tbody>
+          </table>
+        </section>
+
+        <section id="view-p1" class="view">
+          <h1>P1 · Seller home</h1>
+          <div class="banner" id="seller-banner">PCP status <strong>pending</strong>. Complete the pack. You cannot receive a confirmed PO until PCP Approved.</div>
+          <div class="kpis">
+            <a class="card hotspot" data-hotspot="seller:2" href="#/p2"><div class="t">Uploads</div><div class="n">4 / 12</div><span class="dest">P2 remaining files →</span></a>
+            <a class="card hotspot" data-hotspot="seller:3" href="supplier-onboarding-chat.html"><div class="t">Chat collector</div><div class="n">Continue</div><span class="dest">Scripted onboarding →</span></a>
+            <a class="card" href="#/p3"><div class="t">CAPA</div><div class="n">1 open</div><span class="dest">P3 →</span></a>
+          </div>
+        </section>
+
+        <section id="view-p2" class="view">
+          <h1>P2 · Document upload</h1>
+          <p class="muted">Files stream to Nextcloud via the BFF. Response is a hash, never a vault URL.</p>
+          <div class="upload"><strong>Drop pest-control.pdf</strong><div class="hash">On success: sha256 shown here · path withheld</div></div>
+          <p><a class="btn primary hotspot" data-hotspot="seller:4" href="#/p1" id="upload-done">Return home (mark review)</a></p>
+        </section>
+
+        <section id="view-p3" class="view">
+          <h1>P3 · CAPA</h1>
+          <p>Open CAPA from lot fail. Response text + attachment → vault via BFF; Odoo updated through n8n.</p>
+          <p><a class="dest hotspot" data-hotspot="seller:5" href="#/p1">Back to P1 →</a></p>
+        </section>
+      </main>
+      <aside class="rail">
+        <div class="nav-label">This dashboard</div>
+        <p id="here" class="muted" style="padding:0 10px">—</p>
+        <div class="nav-label">Active references</div>
+        <div id="refs"></div>
+        <div class="nav-label emp-only emp-nav">Employee resources</div>
+        <a class="emp-only emp-nav" href="#/e1">Ops dashboard</a>
+        <a class="emp-only emp-nav" href="#/e2">Compliance</a>
+        <a class="emp-only emp-nav" href="#/e4">PO gate</a>
+        <a class="emp-only emp-nav" href="https://app.notion.com/p/3bbe8d8c60c7810a91f0c9fbdeda8d1b">Onboarding SOP (Notion)</a>
+        <div class="nav-label buyer-nav">Buyer resources</div>
+        <a class="buyer-nav" href="#/b1">My orders</a>
+        <a class="buyer-nav" href="#/b2">Lot status</a>
+        <div class="nav-label sup-nav">Seller resources</div>
+        <a class="sup-nav" href="#/p1">PCP home</a>
+        <a class="sup-nav" href="supplier-onboarding-chat.html">Chat collector</a>
+        <p class="muted" style="padding:10px">Buyers/sellers never see vault or n8n hostnames.</p>
+      </aside>
+    </div>
+    <div class="flow-bar" id="flow-bar" aria-live="polite">
+      <strong id="flow-title">Flow</strong>
+      <div class="steps" id="flow-steps"></div>
+      <button class="btn ghost" type="button" id="flow-back">Back</button>
+      <button class="btn primary" type="button" id="flow-next">Next</button>
+      <button class="btn ghost" type="button" id="flow-exit">Exit</button>
+    </div>
+  </div>
+
+  <div class="modal-bg" id="gate-modal">
+    <div class="modal">
+      <h2 style="margin-top:0">Compliance Gate Blocked</h2>
+      <p>PO <strong>P00042</strong> cannot be confirmed — Example Foods Pvt Ltd is <strong>review</strong>.</p>
+      <p>Missing: current pest-control log. There is no Confirm anyway.</p>
+      <p>
+        <a class="btn primary hotspot" data-hotspot="employee:4" href="#/e3" id="gate-to-dossier">View supplier compliance → E3</a>
+        <button class="btn ghost" type="button" id="gate-close">Close</button>
+      </p>
+    </div>
+  </div>
+
+  <script>
+    const titles = {
+      map: 'Dashboard map', flows: 'E2E starting points',
+      s1: 'Sign-in', s2: 'Role router', s3: 'Notifications', s4: 'Profile',
+      e1: 'Ops dashboard', e2: 'Compliance queue', e3: 'Supplier dossier',
+      e4: 'PO gate', e5: 'Lot board', e6: 'Invoices', e7: 'Health',
+      b1: 'Buyer orders', b2: 'Order detail', b3: 'Quotes',
+      p1: 'Seller home', p2: 'Uploads', p3: 'CAPA'
+    };
+    const crumbs = {
+      map: 'Prototype / Map',
+      flows: 'Prototype / Starting points',
+      s1: 'Shared / S1', s2: 'Shared / S2', s3: 'Shared / S3', s4: 'Shared / S4',
+      e1: 'Employees / E1', e2: 'Employees / E2', e3: 'Employees / E3',
+      e4: 'Employees / E4', e5: 'Employees / E5', e6: 'Employees / E6', e7: 'Employees / E7',
+      b1: 'Buyer / B1', b2: 'Buyer / B2', b3: 'Buyer / B3',
+      p1: 'Seller / P1', p2: 'Seller / P2', p3: 'Seller / P3'
+    };
+    const refs = {
+      map: [['#/flows', 'Play E2E flows'], ['#/e1', 'E1 Ops'], ['#/b1', 'B1 Orders'], ['#/p1', 'P1 Seller']],
+      flows: [['#/map', 'Dashboard map']],
+      s1: [['#/s2', 'S2 Role router']],
+      s2: [['#/e1', 'E1'], ['#/b1', 'B1'], ['#/p1', 'P1']],
+      s3: [['#/e4', 'E4'], ['#/e3', 'E3'], ['#/e5', 'E5']],
+      s4: [['#/s1', 'Sign out → S1']],
+      e1: [['#/e2', 'E2 queue'], ['#/e4', 'E4 gate'], ['#/e5', 'E5 lots'], ['#/s3', 'S3 inbox']],
+      e2: [['#/e3', 'E3 dossier'], ['#/e1', 'E1 ops']],
+      e3: [['#/e2', 'E2 queue'], ['#/e4', 'E4 PO'], ['#/p1', 'Seller P1 peek']],
+      e4: [['#/e3', 'E3 dossier'], ['#/e1', 'E1 ops']],
+      e5: [['#/b2', 'Buyer B2 GREEN'], ['#/p3', 'Seller P3']],
+      e6: [['#/e1', 'E1 ops']],
+      e7: [['#/s3', 'S3 inbox']],
+      b1: [['#/b2', 'B2 detail'], ['#/b3', 'B3 quotes']],
+      b2: [['#/b1', 'B1 orders'], ['#/b3', 'B3 quotes']],
+      b3: [['#/b1', 'B1 orders']],
+      p1: [['#/p2', 'P2 uploads'], ['supplier-onboarding-chat.html', 'Onboarding chat'], ['#/p3', 'P3 CAPA']],
+      p2: [['#/p1', 'P1 home']],
+      p3: [['#/p1', 'P1 home']]
+    };
+    const homes = { sales: '#/e1', compliance: '#/e2', finance: '#/e6', it: '#/e7', buyer: '#/b1', supplier: '#/p1' };
+    const flows = {
+      employee: [
+        { hash: '#/s1', persona: 'sales', note: 'Sign in as sales.exec', hot: 'employee:0' },
+        { hash: '#/s2', persona: 'sales', note: 'Role router → employee ops', hot: 'employee:1' },
+        { hash: '#/e1', persona: 'sales', note: 'Ops: 2 confirms blocked → E4', hot: 'employee:2b' },
+        { hash: '#/e4', persona: 'sales', note: 'Confirm P00042 (will block)', hot: 'employee:3' },
+        { hash: '#/e4', persona: 'sales', note: 'Dialog: View supplier compliance → E3', hot: 'employee:4', modal: true },
+        { hash: '#/e3', persona: 'sales', note: 'Dossier is read-only for sales (SoD)', hot: 'employee:5' },
+        { hash: '#/s1', persona: 'compliance', note: 'Re-enter as compliance.officer', hot: 'employee:0' },
+        { hash: '#/e2', persona: 'compliance', note: 'Queue → open Example Foods', hot: 'employee:7' },
+        { hash: '#/e3', persona: 'compliance', note: 'Approve in Odoo', hot: 'employee:8' },
+        { hash: '#/e4', persona: 'sales', note: 'Sales confirms — gate is green', hot: 'employee:9' }
+      ],
+      buyer: [
+        { hash: '#/s1', persona: 'buyer', note: 'Sign in as buyer', hot: 'buyer:0' },
+        { hash: '#/s2', persona: 'buyer', note: 'Router → B1 orders', hot: 'buyer:1' },
+        { hash: '#/b1', persona: 'buyer', note: 'SO-1042 card', hot: 'buyer:2' },
+        { hash: '#/b2', persona: 'buyer', note: 'GREEN lot metrics, no vault', hot: 'buyer:3' },
+        { hash: '#/b3', persona: 'buyer', note: 'Quotes loop back to orders', hot: 'buyer:4' }
+      ],
+      seller: [
+        { hash: '#/s1', persona: 'supplier', note: 'Sign in as provisioned supplier', hot: 'seller:0' },
+        { hash: '#/s2', persona: 'supplier', note: 'Router → P1 home', hot: 'seller:1' },
+        { hash: '#/p1', persona: 'supplier', note: 'Pending pack — open uploads', hot: 'seller:2' },
+        { hash: '#/p2', persona: 'supplier', note: 'Upload remaining PCP file', hot: 'seller:4' },
+        { hash: '#/p1', persona: 'supplier', note: 'Banner becomes review', hot: 'seller:5' },
+        { hash: '#/p3', persona: 'supplier', note: 'CAPA is separate from approval', hot: 'seller:5' }
+      ]
+    };
+
+    let flowName = null;
+    let flowIdx = -1;
+    let approved = false;
+    const modal = document.getElementById('gate-modal');
+    const flowBar = document.getElementById('flow-bar');
+
+    function currentName() {
+      return location.hash.replace('#/', '') || 'map';
+    }
+
+    function setPersona(p) {
+      document.body.dataset.persona = p;
+      document.querySelectorAll('.persona button').forEach((b) => b.classList.toggle('on', b.dataset.setPersona === p));
+      document.getElementById('profile-persona').textContent = p;
+    }
+
+    function paintRefs(name) {
+      const box = document.getElementById('refs');
+      box.innerHTML = (refs[name] || []).map(([href, label]) =>
+        '<a href="' + href + '">' + label + '</a>'
+      ).join('');
+    }
+
+    function highlightHot(hot) {
+      document.querySelectorAll('.hotspot').forEach((el) => el.classList.remove('pulse'));
+      if (!hot) return;
+      document.querySelectorAll('.hotspot').forEach((el) => {
+        const keys = (el.getAttribute('data-hotspot') || '').split(/\s+/);
+        if (keys.includes(hot)) el.classList.add('pulse');
+      });
+    }
+
+    function renderFlowBar() {
+      if (!flowName) { flowBar.classList.remove('on'); highlightHot(null); return; }
+      const steps = flows[flowName];
+      flowBar.classList.add('on');
+      document.getElementById('flow-title').textContent = flowName[0].toUpperCase() + flowName.slice(1) + ' flow';
+      document.getElementById('flow-steps').innerHTML = steps.map((s, i) =>
+        '<button type="button" class="step' + (i === flowIdx ? ' now' : i < flowIdx ? ' done' : '') + '" data-i="' + i + '">' + (i + 1) + '</button>'
+      ).join('');
+      document.getElementById('flow-steps').querySelectorAll('button').forEach((b) => {
+        b.onclick = () => goFlow(+b.dataset.i);
+      });
+      const step = steps[flowIdx];
+      if (step) highlightHot(step.hot);
+    }
+
+    function goFlow(i) {
+      const steps = flows[flowName];
+      if (!steps || i < 0 || i >= steps.length) return;
+      flowIdx = i;
+      const step = steps[i];
+      setPersona(step.persona);
+      location.hash = step.hash;
+      if (step.modal) modal.classList.add('on');
+      else modal.classList.remove('on');
+      renderFlowBar();
+    }
+
+    function startFlow(name) {
+      flowName = name;
+      goFlow(0);
+    }
+
+    function route() {
+      const name = currentName();
+      document.querySelectorAll('.view').forEach((el) => el.classList.toggle('on', el.id === 'view-' + name));
+      document.querySelectorAll('.side a').forEach((a) => {
+        a.classList.toggle('on', a.getAttribute('href') === '#/' + name);
+      });
+      document.getElementById('here').textContent = titles[name] || name;
+      document.getElementById('crumbs').innerHTML = '<a href="#/map">Map</a> · ' + (crumbs[name] || name);
+      paintRefs(name);
+      if (name === 'e4' && approved) {
+        document.getElementById('gate-pill').className = 'pill approved';
+        document.getElementById('gate-pill').textContent = 'approved';
+      }
+      if (name === 'e3' && approved) {
+        document.getElementById('dossier-pill').className = 'pill approved';
+        document.getElementById('dossier-pill').textContent = 'approved';
+      }
+      renderFlowBar();
+    }
+
+    window.addEventListener('hashchange', route);
+    document.querySelectorAll('[data-set-persona]').forEach((b) => {
+      b.addEventListener('click', () => {
+        setPersona(b.dataset.setPersona);
+        location.hash = homes[b.dataset.setPersona];
+      });
+    });
+    document.querySelectorAll('[data-flow]').forEach((b) => {
+      b.addEventListener('click', () => startFlow(b.dataset.flow));
+    });
+    document.getElementById('flow-next').addEventListener('click', () => {
+      if (!flowName) return;
+      if (flowIdx >= flows[flowName].length - 1) { flowName = null; renderFlowBar(); return; }
+      goFlow(flowIdx + 1);
+    });
+    document.getElementById('flow-back').addEventListener('click', () => {
+      if (flowIdx > 0) goFlow(flowIdx - 1);
+    });
+    document.getElementById('flow-exit').addEventListener('click', () => {
+      flowName = null; flowIdx = -1; modal.classList.remove('on'); renderFlowBar();
+    });
+    document.getElementById('btn-signin').addEventListener('click', () => {
+      location.hash = '#/s2';
+    });
+    document.getElementById('btn-confirm').addEventListener('click', () => {
+      if (approved) {
+        alert('Odoo confirm succeeded. State is purchase. Portal displays only.');
+        return;
+      }
+      modal.classList.add('on');
+      highlightHot('employee:4');
+    });
+    document.getElementById('gate-close').addEventListener('click', () => modal.classList.remove('on'));
+    document.getElementById('gate-to-dossier').addEventListener('click', () => modal.classList.remove('on'));
+    document.getElementById('btn-approve').addEventListener('click', () => {
+      if (document.body.dataset.persona !== 'compliance') {
+        document.getElementById('approve-msg').textContent = 'Sales cannot approve. Sign in as compliance.officer (SoD).';
+        return;
+      }
+      approved = true;
+      document.getElementById('dossier-pill').className = 'pill approved';
+      document.getElementById('dossier-pill').textContent = 'approved';
+      document.getElementById('approve-msg').textContent = 'Odoo supplier_pcp_status = approved. PO confirm unblocked.';
+    });
+    document.getElementById('btn-block').addEventListener('click', () => {
+      document.getElementById('approve-msg').textContent = 'Odoo status blocked. PO remains gated.';
+    });
+    document.getElementById('upload-done').addEventListener('click', () => {
+      document.getElementById('seller-banner').innerHTML = 'PCP status <strong>review</strong>. Compliance will verify. You still cannot receive a confirmed PO.';
+      document.getElementById('seller-banner').classList.add('ok');
+    });
+    if (!location.hash) location.hash = '#/map';
+    route();
+  </script>
+</body>
+</html>
