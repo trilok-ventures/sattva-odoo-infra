@@ -70,7 +70,7 @@ Food-compliance liability stays in OpCo. Software stays in IPCo.
 | Leads, quotes, sales orders, POs, invoices, partners | Odoo CE | HubSpot, Notion databases, spreadsheets |
 | COA PDFs, PCP packs, certificates, labels | Nextcloud (+ GCS WORM in production) | Slack, email, local disks |
 | Workflow orchestration | n8n (pass-through only; no business state) | Ad-hoc scripts |
-| Policies, SOPs, decisions, meeting notes | Notion / LifeOS | Confluence |
+| Policies, SOPs, decisions, meeting notes | Notion KB (sibling of LifeOS) | Confluence; LifeOS personal pages |
 | Source code, IaC, n8n JSON | GitHub (IPCo) | Unversioned n8n UI copies |
 | Public marketing + buyer UI | Vercel | Odoo website module |
 | Secrets | GCP Secret Manager (AssetCo) | `.env` committed to git, Notion |
@@ -125,7 +125,7 @@ flowchart TB
     Web[Vercel Next.js site and buyer UI]
     Tavily[Tavily research]
     HF[Hugging Face GREEN models]
-    Notion[Notion LifeOS]
+    Notion[Notion KB]
   end
   subgraph amber [AMBER app zone GCP]
     IAP[IAP plus Cloud Armor]
@@ -209,9 +209,13 @@ Workflow JSON is committed to GitHub. UI-only edits in production are forbidden.
 
 WebDAV + webhooks only. No public share links for RED files.
 
-### 5.4 Notion / LifeOS (knowledge)
+### 5.4 Notion KB (knowledge)
 
-**Use:** SOPs, decisions, department wikis, this spec’s published twin. Transactional records do not originate here. Existing department pages under the Sattva Brokers hub remain the navigation surface.
+**Use:** Versioned policies, SOPs, decisions, and GREEN briefs. Transactional records do not originate here.
+
+**Placement:** workspace top-level page, sibling of LifeOS — not a child of it. Target home is a closed Trilok/Sattva teamspace. LifeOS stays private (personal + scratch). Existing department pages under the LifeOS Sattva hub remain a navigation surface until they are moved into that teamspace.
+
+**Architecture:** `docs/superpowers/specs/2026-08-13-sattva-versioned-kb.md`. Hub: https://app.notion.com/p/3bbe8d8c60c78198b879e272e52dd5d4
 
 ### 5.5 GitHub (IPCo)
 
@@ -321,7 +325,7 @@ Phase 3: IAP blocks unauthenticated Odoo; DLP job refuses a RED fixture destined
 
 ### Phase 0 — this document (complete when spec + Notion capture land)
 
-Write and publish this spec. Capture the same decisions in Notion under the Sattva Brokers hub. Do not change `docker-compose.yml`. Do not deploy GKE. Do not enable HubSpot.
+Write and publish this spec. Capture the same decisions in Notion under the Sattva Brokers hub, then stand up the versioned KB as a LifeOS sibling (`2026-08-13-sattva-versioned-kb.md`). Do not change `docker-compose.yml`. Do not deploy GKE. Do not enable HubSpot.
 
 ### Phase 1 — local fabric (separate implementation plan)
 
@@ -344,7 +348,7 @@ GCP OpCo runtime, dual portal, optional HubSpot overlay, WORM bucket, IAP, DLP, 
 | Operating hub | Odoo CE | HubSpot-centric OS | Already in repo; CRM + PO + invoice in one SoR; charter forbids two CRMs |
 | Integration bus | n8n | Point-to-point scripts, Confluence automation | Existing COA workflow design; GitHub-versionable JSON |
 | File vault | Nextcloud | Drive, Notion files, Odoo attachments as archive | Partner path field already exists; RED isolation |
-| Knowledge | Notion / LifeOS | Confluence | Hub and SOPs already live there |
+| Knowledge | Notion KB (sibling of LifeOS) | Confluence; mixing OpCo wiki into LifeOS | Closed teamspace + git-locked specs; LifeOS stays personal |
 | Production cloud | GCP | AWS, Proxmox-first | GCP page + classified zones already drawn; AssetCo KMS fit |
 | Public UI | Vercel | Odoo website | GREEN edge; existing Vercel team |
 | ML | HF GREEN-only, Vertex later | Models on vault PDFs | Classification rule |
@@ -365,7 +369,7 @@ Phase 0 does not modify those runtime files.
 
 ## 12. Scope boundary
 
-**In scope for Phase 0:** this spec, Notion knowledge capture, hub links.
+**In scope for Phase 0:** this spec, Notion knowledge capture, hub links, versioned KB sibling of LifeOS.
 
 **Out of scope until a later approved implementation plan:** Compose expansion, GCP, Vercel app, HubSpot, Tauri, PKI, rewriting department databases, a second money/lot SoR.
 
@@ -389,6 +393,15 @@ Notion twin (Sattva Brokers hub → System Fabric):
 
 Linked from the [Sattva Brokers hub](https://app.notion.com/p/21fe8d8c60c780f8b260e20d555ef456) and [IT & Data Management](https://app.notion.com/p/274e8d8c60c7806ba8eafaf5087da98a).
 
+Versioned company KB (sibling of LifeOS; not a child of it):
+
+| Page | URL |
+| --- | --- |
+| KB hub | https://app.notion.com/p/3bbe8d8c60c78198b879e272e52dd5d4 |
+| Access policy | https://app.notion.com/p/3bbe8d8c60c78152a991d1d236ef1808 |
+| Agent Instructions | https://app.notion.com/p/3bbe8d8c60c781c5bbb8ec48efaee81e |
+| Git architecture | `docs/superpowers/specs/2026-08-13-sattva-versioned-kb.md` |
+
 ---
 
 ## 14. Traceability
@@ -402,3 +415,4 @@ Linked from the [Sattva Brokers hub](https://app.notion.com/p/21fe8d8c60c780f8b2
 | OpCo vs IPCo | The Group | Section 2 |
 | Supplier firewall | `sattva_compliance` addon | Section 3.2 |
 | Stop list | Next-Steps | Section 3.6 |
+| OpCo knowledge vs LifeOS | Versioned KB request | `2026-08-13-sattva-versioned-kb.md`; fabric §5.4 |
