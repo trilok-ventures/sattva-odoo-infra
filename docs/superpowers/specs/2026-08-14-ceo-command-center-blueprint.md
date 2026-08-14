@@ -1,8 +1,8 @@
 # Sattva Brokers CEO Command Center Blueprint
 
-**Status:** Proposed (Phase 0 presentation contract)  
-**Date:** 2026-08-14  
-**Owner:** Sattva Brokers OpCo  
+**Status:** Proposed (Phase 0 presentation contract)
+**Date:** 2026-08-14
+**Owner:** Sattva Brokers OpCo
 **Companion specs:** `2026-08-13-sattva-brokers-system-fabric-design.md` (locked), `2026-08-13-sattva-versioned-kb.md` (locked), `2026-08-14-integrated-system-architecture.md`
 
 ## 1. Purpose
