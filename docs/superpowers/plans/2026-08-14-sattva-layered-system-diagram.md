@@ -61,8 +61,8 @@ flowchart TB
     Employee[Employees<br/>P0 CURRENT]:::current
     Compliance[Compliance officer<br/>P0 CURRENT]:::current
     Buyer[Buyer / supplier browser<br/>P2 PLANNED]:::planned
-    GitHub[GitHub<br/>SoR: code, specs, workflow JSON]:::sor
-    Notion[Notion<br/>SoR: policies, SOPs, decisions]:::sor
+    GitHub[GitHub<br/>P0 CURRENT · SoR: code, specs, workflow JSON]:::sor
+    Notion[Notion<br/>P0 CURRENT · SoR: policies, SOPs, decisions]:::sor
   end
 
   subgraph green["GREEN / PUBLIC edge"]
