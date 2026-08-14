@@ -1,8 +1,8 @@
 # Sattva Brokers CEO Dashboard Mockup Design
 
-**Status:** Proposed mockup contract  
-**Date:** 2026-08-14  
-**Owner:** Sattva Brokers OpCo  
+**Status:** Proposed mockup contract
+**Date:** 2026-08-14
+**Owner:** Sattva Brokers OpCo
 **Companion:** `2026-08-14-ceo-command-center-blueprint.md`, `2026-08-13-sattva-brokers-system-fabric-design.md` (locked)
 
 ## 1. Purpose
