@@ -299,5 +299,5 @@ Expected: do not commit Figma-only changes as fabricated repository artifacts. C
 ## Plan Self-Review
 
 - Spec coverage: Tasks 2–5 cover the internal control room, investor and board views, read-only drill-down, integration readiness, classification boundaries, phase states, and visual verification.
-- Placeholder scan: no `TBD`, `TODO`, `FIXME`, or `TBC` markers are present.
+- Placeholder scan: no incomplete markers are present.
 - Interface consistency: all tasks use the same five named Figma frames and the same `planned`/`implemented`/`accepted` readiness vocabulary.
