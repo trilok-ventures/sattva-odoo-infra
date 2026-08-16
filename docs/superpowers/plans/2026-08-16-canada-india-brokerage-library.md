@@ -66,13 +66,13 @@ Confirm that the GREEN Content inbox can represent this draft with the following
 
 ```text
 Title: Client & Supplier Onboarding Library — Canada–India Dehydrated Spices
-kb_layer: Inbox
+kb_layer = inbox
 classification: GREEN
 agent_ok: false
-status: Draft
+Status = inbox
 ```
 
-Expected result: the draft is explicitly excluded from automated-agent retrieval and from the published Library.
+Expected result: the `kb_layer = inbox` and `Status = inbox` values represent the draft/inbox state, explicitly excluding the draft from automated-agent retrieval and from the published Library.
 
 - [ ] **Step 3: Record the promotion owner**
 
@@ -91,10 +91,10 @@ Expected result: a person, not an agent, is accountable for promotion and any co
 Open the draft record and confirm all values match:
 
 ```text
-kb_layer = Inbox
+kb_layer = inbox
 classification = GREEN
 agent_ok = false
-status = Draft
+Status = inbox
 ```
 
 Expected: all four values are present; otherwise stop before creating page content.
@@ -124,11 +124,13 @@ Create the page in GREEN Content using:
 
 ```text
 Title: Client & Supplier Onboarding Library — Canada–India Dehydrated Spices
-kb_layer: Inbox
+kb_layer = inbox
 classification: GREEN
 agent_ok: false
-status: Draft
+Status = inbox
 ```
+
+These values represent the GREEN Content draft/inbox state.
 
 Use this exact parent-page body:
 
@@ -207,7 +209,7 @@ Verify:
 ```text
 Parent page count: 1
 Child page count: 6
-All pages: GREEN, Draft/In-box context
+All pages: GREEN, draft/inbox context under the parent with kb_layer = inbox and Status = inbox
 All pages: no file uploads, live tables, prices, party names, or vault URLs
 ```
 
