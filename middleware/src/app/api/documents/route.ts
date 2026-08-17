@@ -8,8 +8,8 @@ type Body = { filename?: string; sha256?: string; path?: string };
 export async function POST(req: Request) {
   const auth = readPersona(req);
   if ("error" in auth) return auth.error;
-  if (auth.persona !== "supplier") {
-    return forbid("Only the supplier persona may upload through this BFF.");
+  if (auth.persona !== "supplier" && auth.persona !== "buyer") {
+    return forbid("Only buyer and supplier personas may mint an origin upload URL.");
   }
   let body: Body;
   try {
@@ -19,7 +19,7 @@ export async function POST(req: Request) {
   }
   if (body.path) {
     return greenJson(
-      { error: "vault_path_not_accepted", message: "The BFF chooses the Nextcloud prefix." },
+      { error: "storage_path_not_accepted", message: "Client must not send a storage path." },
       400,
     );
   }

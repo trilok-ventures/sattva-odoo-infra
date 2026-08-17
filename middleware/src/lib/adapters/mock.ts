@@ -136,7 +136,12 @@ export const mockAdapter: FabricAdapter = {
     filename: string,
     sha256: string,
   ): Promise<DocumentReceipt> {
-    return { sha256, filename };
+    const origin = process.env.UPLOAD_ORIGIN_PUBLIC_URL;
+    return {
+      sha256,
+      filename,
+      ...(origin ? { upload_url: `${origin.replace(/\/$/, "")}/u/mock-token` } : {}),
+    };
   },
 
   async activities(persona: Persona): Promise<ActivityRow[]> {

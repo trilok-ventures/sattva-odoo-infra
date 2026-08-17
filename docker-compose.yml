@@ -91,6 +91,23 @@ services:
     networks:
       - sattva_cloud_net
 
+  upload-origin:
+    # Local T0 test sink only. Not Nextcloud. Not production upload.trilokventures.org.
+    image: node:22-alpine
+    container_name: sattva-upload-origin
+    working_dir: /app
+    command: ["node", "server.mjs"]
+    volumes:
+      - ./deploy/local/upload-origin:/app:ro
+    ports:
+      - "127.0.0.1:8091:8091"
+    environment:
+      - UPLOAD_ORIGIN_PORT=8091
+      - UPLOAD_ORIGIN_HOST=0.0.0.0
+    restart: always
+    networks:
+      - sattva_cloud_net
+
 volumes:
   odoo-web-data:
   odoo-db-data:

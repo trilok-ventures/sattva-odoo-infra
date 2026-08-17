@@ -174,6 +174,30 @@ try {
   assert("upload receipt 200", goodDoc.res.status === 200, String(goodDoc.res.status));
   assert("upload returns sha256", goodDoc.body.sha256?.length === 64);
   assert("upload has no path", goodDoc.body.path === undefined);
+  const minted = goodDoc.body.upload_url;
+  assert(
+    "upload_url omitted or origin",
+    minted === undefined ||
+      (/8091|upload\.trilokventures\.org/.test(minted) &&
+        !minted.includes("vercel") &&
+        !minted.includes("app.trilokventures.org")),
+  );
+  assert("health has no nextcloud key", health.body.fabric?.nextcloud === undefined);
+
+  const buyerDoc = await httpJson("/api/documents", {
+    method: "POST",
+    headers: { "x-sattva-persona": "buyer", "content-type": "application/json" },
+    body: JSON.stringify({
+      filename: "kyc.pdf",
+      sha256: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    }),
+  });
+  assert("buyer may mint metadata receipt", buyerDoc.res.status === 200);
+
+  if (process.env.UPLOAD_ORIGIN_PUBLIC_URL) {
+    assert("local origin mint present", typeof goodDoc.body.upload_url === "string");
+    assert("local origin mint host", goodDoc.body.upload_url.startsWith(process.env.UPLOAD_ORIGIN_PUBLIC_URL));
+  }
 
   const live = await fetch(base + "/api/dashboard");
   assert("mock allows missing persona", live.status === 200);

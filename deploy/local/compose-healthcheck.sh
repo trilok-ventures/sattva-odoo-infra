@@ -83,6 +83,17 @@ else:
     if env_map.get("QUEUE_BULL_REDIS_HOST") != "redis":
         errors.append("n8n-worker must use redis queue host")
 
+origin = services.get("upload-origin")
+if origin is None:
+    errors.append("missing service: upload-origin")
+else:
+    ports = origin.get("ports") or []
+    if not ports:
+        errors.append("upload-origin has no loopback port binding")
+    for port in ports:
+        if port.get("host_ip") != "127.0.0.1":
+            errors.append("upload-origin must bind 127.0.0.1")
+
 if errors:
     for error in errors:
         print(f"ERROR: {error}", file=sys.stderr)

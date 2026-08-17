@@ -45,7 +45,7 @@ export type ConfirmResult =
       confirm_anyway: false;
     };
 
-export type DocumentReceipt = { sha256: string; filename: string };
+export type DocumentReceipt = { sha256: string; filename: string; upload_url?: string };
 
 export type NotifyRole =
   | "sales.exec"

@@ -10,8 +10,10 @@ Authenticated operations BFF between people and the Sattva fabric
 ## Status
 
 Phase 2 BFF contract is implemented in **mock mode** (`FABRIC_MODE=mock`).
-Live JSON-2/WebDAV adapters wait for Phase 1 Compose (n8n + Nextcloud) and
-GCP Secret Manager values. Do not treat mock KPIs as production SoR.
+Live adapters are Odoo JSON-2 (`svc.portal.odoo`) and n8n webhooks
+(`svc.portal.n8n`) only. The BFF never speaks WebDAV. File bytes go to
+origin `upload.` (production) or `127.0.0.1:8091` (local T0 test sink).
+Do not treat mock KPIs as production SoR.
 
 ## Two Vercel projects
 
@@ -30,7 +32,7 @@ npm run test                 # needs the server up, or runs unit strip checks
 ```
 
 Mock persona: header `x-sattva-persona` (`sales` | `compliance` | `finance` |
-`it` | `buyer` | `supplier`). In `FABRIC_MODE=live`, every non-health `/api` route is 401 until Keycloak.
+`it` | `buyer` | `supplier` | `logistics`). In `FABRIC_MODE=live`, every non-health `/api` route is 401 until Keycloak.
 
 ## Hard rules
 
