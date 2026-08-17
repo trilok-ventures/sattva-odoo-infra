@@ -58,6 +58,31 @@ services:
     environment:
       - EXECUTIONS_MODE=queue
       - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY:?set N8N_ENCRYPTION_KEY}
+      - N8N_WEBHOOK_HMAC=${N8N_WEBHOOK_HMAC:?set N8N_WEBHOOK_HMAC}
+      - NEXTCLOUD_WEBDAV_BASE=http://nextcloud/remote.php/dav/files/${NEXTCLOUD_ADMIN_USER}
+      - ODOO_JSON2_URL=http://odoo:8069/jsonrpc
+      - ODOO_N8N_UID=${ODOO_N8N_UID:?set ODOO_N8N_UID}
+      - QUEUE_BULL_REDIS_HOST=redis
+    volumes:
+      - n8n-data:/home/node/.n8n
+    restart: always
+    networks:
+      - sattva_cloud_net
+
+  n8n-worker:
+    image: n8nio/n8n:latest
+    container_name: sattva-n8n-worker
+    command: ["worker"]
+    depends_on:
+      - redis
+      - n8n
+    environment:
+      - EXECUTIONS_MODE=queue
+      - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY:?set N8N_ENCRYPTION_KEY}
+      - N8N_WEBHOOK_HMAC=${N8N_WEBHOOK_HMAC:?set N8N_WEBHOOK_HMAC}
+      - NEXTCLOUD_WEBDAV_BASE=http://nextcloud/remote.php/dav/files/${NEXTCLOUD_ADMIN_USER}
+      - ODOO_JSON2_URL=http://odoo:8069/jsonrpc
+      - ODOO_N8N_UID=${ODOO_N8N_UID:?set ODOO_N8N_UID}
       - QUEUE_BULL_REDIS_HOST=redis
     volumes:
       - n8n-data:/home/node/.n8n
@@ -70,6 +95,23 @@ services:
     container_name: sattva-redis
     ports:
       - "127.0.0.1:6379:6379"
+    restart: always
+    networks:
+      - sattva_cloud_net
+
+  upload-origin:
+    # Local T0 test sink only. Not Nextcloud. Not production upload.trilokventures.org.
+    image: node:22-alpine
+    container_name: sattva-upload-origin
+    working_dir: /app
+    command: ["node", "server.mjs"]
+    volumes:
+      - ./deploy/local/upload-origin:/app:ro
+    ports:
+      - "127.0.0.1:8091:8091"
+    environment:
+      - UPLOAD_ORIGIN_PORT=8091
+      - UPLOAD_ORIGIN_HOST=0.0.0.0
     restart: always
     networks:
       - sattva_cloud_net
