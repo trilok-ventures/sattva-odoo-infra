@@ -1,6 +1,8 @@
 from odoo import api, models
 from odoo.exceptions import UserError
 
+from .service_security import require_n8n_fabric_service
+
 
 class FabricVault(models.AbstractModel):
     _name = "sattva.fabric.vault"
@@ -8,6 +10,7 @@ class FabricVault(models.AbstractModel):
 
     @api.model
     def set_partner_path(self, partner_id, requested_path, kind):
+        require_n8n_fabric_service(self.env)
         if kind not in ("supplier", "client"):
             raise UserError("unknown path kind")
         if not requested_path or ".." in str(requested_path):
