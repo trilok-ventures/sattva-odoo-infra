@@ -1,0 +1,48 @@
+{
+  "name": "wf.notify.role",
+  "nodes": [
+    {
+      "id": "notify-webhook",
+      "name": "Notify role webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, 0],
+      "webhookId": "wf-notify-role",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "notify-role",
+        "responseMode": "lastNode",
+        "options": {}
+      }
+    },
+    {
+      "id": "create-role-activity",
+      "name": "Create Odoo role activity",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [240, 0],
+      "credentials": {
+        "httpHeaderAuth": {
+          "name": "odooN8nFabric"
+        }
+      },
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.ODOO_JSON2_URL}}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\"jsonrpc\":\"2.0\",\"method\":\"call\",\"params\":{\"service\":\"object\",\"method\":\"execute_kw\",\"args\":[\"sattva\",\"{{$env.ODOO_N8N_UID}}\",\"{{$credentials.odooN8nFabric.apiKey}}\",\"sattva.fabric.notify\",\"create_role_activity\",[{{$json.lead_id}},\"{{$json.summary}}\",\"{{$json.role}}\"]]}}"
+      }
+    }
+  ],
+  "connections": {
+    "Notify role webhook": {
+      "main": [[{ "node": "Create Odoo role activity", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "saveDataSuccessExecution": "none",
+    "saveDataErrorExecution": "none",
+    "executionTimeout": 30
+  }
+}
