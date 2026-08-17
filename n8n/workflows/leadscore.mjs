@@ -7,7 +7,9 @@ export const LEAD_SCORE_ALLOWLIST = [
 ];
 
 export function assertGreenPayload(payload) {
-  if (payload == null || typeof payload !== "object") throw new Error("payload required");
+  if (payload == null || typeof payload !== "object" || Array.isArray(payload)) {
+    throw new Error("payload required");
+  }
   for (const key of Object.keys(payload)) {
     if (!LEAD_SCORE_ALLOWLIST.includes(key)) {
       throw new Error(`RED/AMBER key forbidden in lead score: ${key}`);

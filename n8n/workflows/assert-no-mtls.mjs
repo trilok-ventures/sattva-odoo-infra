@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { readdirSync, readFileSync, statSync } from "node:fs";
-import { join } from "node:path";
+import { join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const FORBIDDEN_NAME =
@@ -17,19 +17,22 @@ function isScannerFile(p) {
   return p === SCANNER_PATH;
 }
 
-function walk(dir, hits) {
+function walk(root, dir, hits) {
   for (const name of readdirSync(dir)) {
     if (name === "node_modules" || name === ".git" || name === ".next") continue;
     const p = join(dir, name);
     const st = statSync(p);
-    if (st.isDirectory()) walk(p, hits);
-    else inspect(p, name, hits);
+    if (st.isDirectory()) walk(root, p, hits);
+    else inspect(p, relative(root, p), hits);
   }
 }
 
-export function inspect(p, name, hits) {
-  if (FORBIDDEN_NAME.test(name) && !isScannerFile(p)) {
-    hits.push(`filename ${p}`);
+export function inspect(p, relativePath, hits) {
+  const hasForbiddenSegment = String(relativePath)
+    .split(/[\\/]/)
+    .some((segment) => FORBIDDEN_NAME.test(segment));
+  if (hasForbiddenSegment && !isScannerFile(p)) {
+    hits.push(`path ${p}`);
   }
   if (
     p.endsWith(".md") ||
@@ -48,7 +51,7 @@ export function inspect(p, name, hits) {
 
 export function runScan(root = ROOT) {
   const hits = [];
-  for (const dir of SCAN_DIRS) walk(join(root, dir), hits);
+  for (const dir of SCAN_DIRS) walk(root, join(root, dir), hits);
   for (const file of SCAN_FILES) {
     const path = join(root, file);
     if (file === "Caddyfile") {

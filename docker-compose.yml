@@ -58,6 +58,10 @@ services:
     environment:
       - EXECUTIONS_MODE=queue
       - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY:?set N8N_ENCRYPTION_KEY}
+      - N8N_WEBHOOK_HMAC=${N8N_WEBHOOK_HMAC:?set N8N_WEBHOOK_HMAC}
+      - NEXTCLOUD_WEBDAV_BASE=http://nextcloud/remote.php/dav/files/${NEXTCLOUD_ADMIN_USER}
+      - ODOO_JSON2_URL=http://odoo:8069/jsonrpc
+      - ODOO_N8N_UID=${ODOO_N8N_UID:?set ODOO_N8N_UID}
       - QUEUE_BULL_REDIS_HOST=redis
     volumes:
       - n8n-data:/home/node/.n8n
@@ -75,6 +79,10 @@ services:
     environment:
       - EXECUTIONS_MODE=queue
       - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY:?set N8N_ENCRYPTION_KEY}
+      - N8N_WEBHOOK_HMAC=${N8N_WEBHOOK_HMAC:?set N8N_WEBHOOK_HMAC}
+      - NEXTCLOUD_WEBDAV_BASE=http://nextcloud/remote.php/dav/files/${NEXTCLOUD_ADMIN_USER}
+      - ODOO_JSON2_URL=http://odoo:8069/jsonrpc
+      - ODOO_N8N_UID=${ODOO_N8N_UID:?set ODOO_N8N_UID}
       - QUEUE_BULL_REDIS_HOST=redis
     volumes:
       - n8n-data:/home/node/.n8n

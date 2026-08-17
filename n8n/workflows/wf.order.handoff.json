@@ -1,5 +1,6 @@
 {
   "name": "wf.order.handoff",
+  "id": "wf-order-handoff",
   "nodes": [
     {
       "id": "handoff-webhook",
@@ -16,11 +17,21 @@
       }
     },
     {
+      "id": "verify-handoff-hmac",
+      "name": "Verify handoff webhook HMAC",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [240, 0],
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\nconst headers = input.headers ?? {};\nconst provided = headers['x-sattva-webhook-hmac'] ?? headers['X-Sattva-Webhook-Hmac'];\nconst expected = $env.N8N_WEBHOOK_HMAC;\nif (typeof expected !== 'string' || !expected || typeof provided !== 'string' || provided !== expected) {\n  throw new Error('invalid x-sattva-webhook-hmac');\n}\nconst payload = input.body ?? input;\nif (payload == null || typeof payload !== 'object' || Array.isArray(payload)) throw new Error('payload required');\nreturn [{ json: payload }];"
+      }
+    },
+    {
       "id": "create-po-intent",
       "name": "Create draft PO intent",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [240, 0],
+      "position": [480, 0],
       "credentials": {
         "httpHeaderAuth": {
           "name": "odooN8nFabric"
@@ -29,14 +40,19 @@
       "parameters": {
         "method": "POST",
         "url": "={{$env.ODOO_JSON2_URL}}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "{\"jsonrpc\":\"2.0\",\"method\":\"call\",\"params\":{\"service\":\"object\",\"method\":\"execute_kw\",\"args\":[\"sattva\",\"{{$env.ODOO_N8N_UID}}\",\"{{$credentials.odooN8nFabric.apiKey}}\",\"sattva.fabric.handoff\",\"create_po_intent\",[{{$json.supplier_id}},{{JSON.stringify($json.line_vals)}}]]}}"
+        "jsonBody": "{\"jsonrpc\":\"2.0\",\"method\":\"call\",\"params\":{\"service\":\"object\",\"method\":\"execute_kw\",\"args\":[\"sattva\",\"{{$env.ODOO_N8N_UID}}\",\"{{$credentials.odooN8nFabric.value}}\",\"sattva.fabric.handoff\",\"create_po_intent\",[{{$json.supplier_id}},{{JSON.stringify($json.line_vals)}}]]}}"
       }
     }
   ],
   "connections": {
     "Never call button_confirm": {
+      "main": [[{ "node": "Verify handoff webhook HMAC", "type": "main", "index": 0 }]]
+    },
+    "Verify handoff webhook HMAC": {
       "main": [[{ "node": "Create draft PO intent", "type": "main", "index": 0 }]]
     }
   },
