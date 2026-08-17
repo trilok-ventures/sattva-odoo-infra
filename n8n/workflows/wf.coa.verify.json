@@ -30,11 +30,21 @@
       }
     },
     {
+      "id": "coa-map-green",
+      "name": "Map COA GREEN metadata",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [240, 90],
+      "parameters": {
+        "jsCode": "const payload = $input.first().json.body || $input.first().json;\nconst forbidden = ['bytes','pdf','path','nextcloud_folder_path','file_bytes'];\nfor (const k of Object.keys(payload)) {\n  if (forbidden.includes(k)) {\n    throw new Error('RED key forbidden in COA mapper: ' + k);\n  }\n}\nreturn [{ json: {\n  filename: payload.filename,\n  sha256: payload.sha256,\n  moisture_pct: payload.moisture_pct,\n  mesh_pass: payload.mesh_pass,\n  spec_moisture_max: payload.spec_moisture_max,\n  spec_mesh_required: payload.spec_mesh_required\n} }];"
+      }
+    },
+    {
       "id": "coa-compare",
       "name": "Compare GREEN metrics",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [240, 0],
+      "position": [480, 90],
       "parameters": {
         "jsCode": "const b = $input.first().json;\nconst forbidden = ['bytes','pdf','path','nextcloud_folder_path','file_bytes'];\nfor (const k of Object.keys(b)) { if (forbidden.includes(k)) { throw new Error('RED key forbidden in COA compare: ' + k); } }\nconst coa_pass = Number(b.moisture_pct) <= Number(b.spec_moisture_max) && Boolean(b.mesh_pass) === Boolean(b.spec_mesh_required);\nreturn [{ json: { coa_pass, moisture_pct: b.moisture_pct, mesh_pass: b.mesh_pass, coa_sha256: b.sha256 } }];"
       }
@@ -42,9 +52,12 @@
   ],
   "connections": {
     "COA metadata webhook": {
-      "main": [[{ "node": "Compare GREEN metrics", "type": "main", "index": 0 }]]
+      "main": [[{ "node": "Map COA GREEN metadata", "type": "main", "index": 0 }]]
     },
     "Nextcloud COA webhook": {
+      "main": [[{ "node": "Map COA GREEN metadata", "type": "main", "index": 0 }]]
+    },
+    "Map COA GREEN metadata": {
       "main": [[{ "node": "Compare GREEN metrics", "type": "main", "index": 0 }]]
     }
   },

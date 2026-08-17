@@ -15,6 +15,11 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [220, 0],
+      "credentials": {
+        "httpHeaderAuth": {
+          "name": "odooN8nFabric"
+        }
+      },
       "parameters": {
         "method": "POST",
         "url": "={{$env.ODOO_JSON2_URL}}",
@@ -24,11 +29,26 @@
       }
     },
     {
+      "id": "unwrap-events",
+      "name": "Unwrap search_read events",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [440, 0],
+      "parameters": {
+        "jsCode": "const raw = $input.first().json;\nconst envelope = raw.result !== undefined ? raw.result : raw;\nconst rows = Array.isArray(envelope) ? envelope : (envelope?.result ?? []);\nif (!rows.length) return [];\nreturn rows.map((row) => {\n  let partnerId = row.partner_id;\n  if (Array.isArray(partnerId)) partnerId = partnerId[0];\n  return { json: { id: row.id, partner_id: partnerId, requested_path: row.requested_path } };\n});"
+      }
+    },
+    {
       "id": "mkcol-vault",
       "name": "MKCOL Nextcloud path",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [440, 0],
+      "position": [660, 0],
+      "credentials": {
+        "httpBasicAuth": {
+          "name": "nextcloudN8nVault"
+        }
+      },
       "parameters": {
         "method": "MKCOL",
         "url": "={{$env.NEXTCLOUD_WEBDAV_BASE}}{{$json.requested_path}}",
@@ -41,7 +61,12 @@
       "name": "Write nextcloud_folder_path",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [660, 0],
+      "position": [880, 0],
+      "credentials": {
+        "httpHeaderAuth": {
+          "name": "odooN8nFabric"
+        }
+      },
       "parameters": {
         "method": "POST",
         "url": "={{$env.ODOO_JSON2_URL}}",
@@ -55,7 +80,12 @@
       "name": "Mark event processed",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [880, 0],
+      "position": [1100, 0],
+      "credentials": {
+        "httpHeaderAuth": {
+          "name": "odooN8nFabric"
+        }
+      },
       "parameters": {
         "method": "POST",
         "url": "={{$env.ODOO_JSON2_URL}}",
@@ -70,6 +100,9 @@
       "main": [[{ "node": "Search queued events", "type": "main", "index": 0 }]]
     },
     "Search queued events": {
+      "main": [[{ "node": "Unwrap search_read events", "type": "main", "index": 0 }]]
+    },
+    "Unwrap search_read events": {
       "main": [[{ "node": "MKCOL Nextcloud path", "type": "main", "index": 0 }]]
     },
     "MKCOL Nextcloud path": {
