@@ -65,6 +65,23 @@ services:
     networks:
       - sattva_cloud_net
 
+  n8n-worker:
+    image: n8nio/n8n:latest
+    container_name: sattva-n8n-worker
+    command: ["worker"]
+    depends_on:
+      - redis
+      - n8n
+    environment:
+      - EXECUTIONS_MODE=queue
+      - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY:?set N8N_ENCRYPTION_KEY}
+      - QUEUE_BULL_REDIS_HOST=redis
+    volumes:
+      - n8n-data:/home/node/.n8n
+    restart: always
+    networks:
+      - sattva_cloud_net
+
   redis:
     image: redis:7-alpine
     container_name: sattva-redis
