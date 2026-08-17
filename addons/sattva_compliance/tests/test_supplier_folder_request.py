@@ -43,6 +43,7 @@ class TestSupplierFolderRequest(TransactionCase):
             {
                 "name": "Synthetic Buyer",
                 "supplier_rank": 0,
+                "customer_rank": 0,
             }
         )
 
