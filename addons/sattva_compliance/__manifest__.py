@@ -8,7 +8,10 @@
         Enforces a hard block on Purchase Orders if the supplier is not PCP Approved.
     """,
     'depends': ['base', 'purchase', 'contacts'],
-    'data': [],
+    'data': [
+        'security/sattva_security.xml',
+        'security/ir.model.access.csv',
+    ],
     'installable': True,
     'application': False,
     'auto_install': False,

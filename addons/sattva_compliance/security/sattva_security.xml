@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="group_n8n_fabric_service" model="res.groups">
+        <field name="name">n8n Fabric Service</field>
+    </record>
+</odoo>
