@@ -4,9 +4,12 @@ on:
     paths:
       - n8n/**
       - docker-compose.yml
+      - Caddyfile
+      - addons/**
       - addons/sattva_compliance/**
       - middleware/**
       - deploy/**
+      - .github/**
 jobs:
   validate:
     runs-on: ubuntu-latest
@@ -26,4 +29,5 @@ jobs:
             exit 1
           fi
           node n8n/workflows/validate-workflows.mjs "${files[@]}"
+      - run: node n8n/workflows/t2-absence-gate.test.mjs
       - run: node n8n/workflows/assert-no-mtls.mjs
