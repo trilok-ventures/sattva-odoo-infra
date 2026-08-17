@@ -180,6 +180,26 @@ try {
 
   const bogus = await httpJson("/api/dashboard", { headers: { "x-sattva-persona": "admin" } });
   assert("unknown persona 400", bogus.res.status === 400);
+
+  const act = await httpJson("/api/activities", { headers: { "x-sattva-persona": "sales" } });
+  assert("activities 200", act.res.status === 200, String(act.res.status));
+  const actHits = [];
+  walk(act.body, "$", actHits);
+  assert("activities GREEN", actHits.length === 0, actHits.join(","));
+  assert("activities are SATTVA prefixed", act.body.activities?.[0]?.summary?.startsWith("SATTVA:"));
+  const buyerAct = await httpJson("/api/activities", { headers: { "x-sattva-persona": "buyer" } });
+  assert("buyer activities empty", Array.isArray(buyerAct.body.activities) && buyerAct.body.activities.length === 0);
+
+  const cat = await httpJson("/api/catalogue", { headers: { "x-sattva-persona": "buyer" } });
+  assert("catalogue 200", cat.res.status === 200);
+  const catHits = [];
+  walk(cat.body, "$", catHits);
+  assert("catalogue GREEN", catHits.length === 0, catHits.join(","));
+  assert("catalogue has onion flake", cat.body.cards?.some((c) => c.crop === "onion" && c.format === "flake"));
+  assert("catalogue has no price key", cat.body.cards?.every((c) => c.price === undefined && c.list_price === undefined));
+
+  const logi = await httpJson("/api/dashboard", { headers: { "x-sattva-persona": "logistics" } });
+  assert("logistics persona 200", logi.res.status === 200, String(logi.res.status));
 } catch (err) {
   if (err && (err.code === "ECONNREFUSED" || String(err.cause || err).includes("ECONNREFUSED"))) {
     console.log("SKIP HTTP (BFF not listening on", base + ")");

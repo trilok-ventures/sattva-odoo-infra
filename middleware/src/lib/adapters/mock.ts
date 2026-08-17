@@ -1,4 +1,6 @@
 import type {
+  ActivityRow,
+  CatalogueCard,
   ConfirmResult,
   Dashboard,
   DocumentReceipt,
@@ -39,6 +41,29 @@ const QUEUE: QueueRow[] = [
     evidence_label: "No GFSI · audit required",
     age_days: 5,
   },
+];
+
+const ACTIVITIES: ActivityRow[] = [
+  {
+    id: "a1",
+    at: "14:02",
+    summary: "SATTVA: Lead qualified for pitch",
+    dest: "e1",
+    role: "sales.exec",
+  },
+  {
+    id: "a2",
+    at: "14:10",
+    summary: "SATTVA: Draft delivery pack ready",
+    dest: "e6",
+    role: "logistics.exec",
+  },
+];
+
+const CATALOGUE: CatalogueCard[] = [
+  { sku: "ONION-FLAKE-A", crop: "onion", format: "flake", mesh_label: "3-5 mm", supplier_display: "Approved mill (demo)" },
+  { sku: "GARLIC-POWDER-B", crop: "garlic", format: "powder", mesh_label: "80-100 mesh", supplier_display: "Approved mill (demo)" },
+  { sku: "CHILLI-FLAKE-C", crop: "chilli", format: "flake", mesh_label: "3-5 mm", supplier_display: "Approved mill (demo)" },
 ];
 
 const LOTS: LotGreen[] = [
@@ -112,5 +137,19 @@ export const mockAdapter: FabricAdapter = {
     sha256: string,
   ): Promise<DocumentReceipt> {
     return { sha256, filename };
+  },
+
+  async activities(persona: Persona): Promise<ActivityRow[]> {
+    if (persona === "buyer" || persona === "supplier") return [];
+    if (persona === "sales") return ACTIVITIES.filter((row) => row.role === "sales.exec");
+    if (persona === "logistics") return ACTIVITIES.filter((row) => row.role === "logistics.exec");
+    if (persona === "compliance") return ACTIVITIES.filter((row) => row.role === "compliance.officer");
+    if (persona === "finance") return ACTIVITIES.filter((row) => row.role === "finance.manager");
+    if (persona === "it") return ACTIVITIES.filter((row) => row.role === "it.admin");
+    return [];
+  },
+
+  async catalogue(_persona: Persona): Promise<CatalogueCard[]> {
+    return CATALOGUE;
   },
 };

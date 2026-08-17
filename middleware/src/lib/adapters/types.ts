@@ -47,6 +47,29 @@ export type ConfirmResult =
 
 export type DocumentReceipt = { sha256: string; filename: string };
 
+export type NotifyRole =
+  | "sales.exec"
+  | "compliance.officer"
+  | "finance.manager"
+  | "logistics.exec"
+  | "it.admin";
+
+export type ActivityRow = {
+  id: string;
+  at: string;
+  summary: string;
+  dest: string;
+  role: NotifyRole;
+};
+
+export type CatalogueCard = {
+  sku: string;
+  crop: string;
+  format: string;
+  mesh_label: string;
+  supplier_display: string;
+};
+
 export interface FabricAdapter {
   dashboard(persona: Persona): Promise<Dashboard>;
   complianceQueue(persona: Persona): Promise<QueueRow[]>;
@@ -54,4 +77,6 @@ export interface FabricAdapter {
   confirmOrder(persona: Persona, id: string): Promise<ConfirmResult>;
   lots(persona: Persona): Promise<LotGreen[]>;
   storeDocument(persona: Persona, filename: string, sha256: string): Promise<DocumentReceipt>;
+  activities(persona: Persona): Promise<ActivityRow[]>;
+  catalogue(persona: Persona): Promise<CatalogueCard[]>;
 }
