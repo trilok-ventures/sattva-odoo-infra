@@ -1,0 +1,56 @@
+{
+  "name": "wf.coa.verify",
+  "nodes": [
+    {
+      "id": "coa-nextcloud-hook",
+      "name": "Nextcloud COA webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, 180],
+      "webhookId": "wf-coa-nextcloud",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "nextcloud-coa",
+        "responseMode": "lastNode",
+        "options": {}
+      }
+    },
+    {
+      "id": "coa-webhook",
+      "name": "COA metadata webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, 0],
+      "webhookId": "wf-coa-verify",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "coa-verify",
+        "responseMode": "lastNode",
+        "options": {}
+      }
+    },
+    {
+      "id": "coa-compare",
+      "name": "Compare GREEN metrics",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [240, 0],
+      "parameters": {
+        "jsCode": "const b = $input.first().json;\nconst forbidden = ['bytes','pdf','path','nextcloud_folder_path','file_bytes'];\nfor (const k of Object.keys(b)) { if (forbidden.includes(k)) { throw new Error('RED key forbidden in COA compare: ' + k); } }\nconst coa_pass = Number(b.moisture_pct) <= Number(b.spec_moisture_max) && Boolean(b.mesh_pass) === Boolean(b.spec_mesh_required);\nreturn [{ json: { coa_pass, moisture_pct: b.moisture_pct, mesh_pass: b.mesh_pass, coa_sha256: b.sha256 } }];"
+      }
+    }
+  ],
+  "connections": {
+    "COA metadata webhook": {
+      "main": [[{ "node": "Compare GREEN metrics", "type": "main", "index": 0 }]]
+    },
+    "Nextcloud COA webhook": {
+      "main": [[{ "node": "Compare GREEN metrics", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "saveDataSuccessExecution": "none",
+    "saveDataErrorExecution": "none",
+    "executionTimeout": 30
+  }
+}

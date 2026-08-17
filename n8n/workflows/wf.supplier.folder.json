@@ -1,0 +1,87 @@
+{
+  "name": "wf.supplier.folder",
+  "nodes": [
+    {
+      "id": "poll-events",
+      "name": "Poll queued folder events",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [0, 0],
+      "parameters": { "rule": { "interval": [{ "field": "minutes", "minutesInterval": 5 }] } }
+    },
+    {
+      "id": "search-events",
+      "name": "Search queued events",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [220, 0],
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.ODOO_JSON2_URL}}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\"jsonrpc\":\"2.0\",\"method\":\"call\",\"params\":{\"service\":\"object\",\"method\":\"execute_kw\",\"args\":[\"sattva\",\"{{$env.ODOO_N8N_UID}}\",\"{{$credentials.odooN8nFabric.apiKey}}\",\"sattva.fabric.event\",\"search_read\",[[\"event_type\",\"=\",\"supplier_folder_requested\"],[\"state\",\"=\",\"queued\"]],{\"fields\":[\"id\",\"partner_id\",\"requested_path\"]}]}}"
+      }
+    },
+    {
+      "id": "mkcol-vault",
+      "name": "MKCOL Nextcloud path",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [440, 0],
+      "parameters": {
+        "method": "MKCOL",
+        "url": "={{$env.NEXTCLOUD_WEBDAV_BASE}}{{$json.requested_path}}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth"
+      }
+    },
+    {
+      "id": "write-partner-path",
+      "name": "Write nextcloud_folder_path",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [660, 0],
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.ODOO_JSON2_URL}}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\"jsonrpc\":\"2.0\",\"method\":\"call\",\"params\":{\"service\":\"object\",\"method\":\"execute_kw\",\"args\":[\"sattva\",\"{{$env.ODOO_N8N_UID}}\",\"{{$credentials.odooN8nFabric.apiKey}}\",\"sattva.fabric.vault\",\"set_partner_path\",[{{$json.partner_id}},\"{{$json.requested_path}}\",\"supplier\"]]}}"
+      }
+    },
+    {
+      "id": "mark-event-processed",
+      "name": "Mark event processed",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [880, 0],
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.ODOO_JSON2_URL}}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\"jsonrpc\":\"2.0\",\"method\":\"call\",\"params\":{\"service\":\"object\",\"method\":\"execute_kw\",\"args\":[\"sattva\",\"{{$env.ODOO_N8N_UID}}\",\"{{$credentials.odooN8nFabric.apiKey}}\",\"sattva.fabric.event\",\"write\",[[{{$json.id}}],{\"state\":\"processed\"}]]}}"
+      }
+    }
+  ],
+  "connections": {
+    "Poll queued folder events": {
+      "main": [[{ "node": "Search queued events", "type": "main", "index": 0 }]]
+    },
+    "Search queued events": {
+      "main": [[{ "node": "MKCOL Nextcloud path", "type": "main", "index": 0 }]]
+    },
+    "MKCOL Nextcloud path": {
+      "main": [[{ "node": "Write nextcloud_folder_path", "type": "main", "index": 0 }]]
+    },
+    "Write nextcloud_folder_path": {
+      "main": [[{ "node": "Mark event processed", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "saveDataSuccessExecution": "none",
+    "saveDataErrorExecution": "none",
+    "executionTimeout": 60
+  }
+}

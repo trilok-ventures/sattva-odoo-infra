@@ -1,0 +1,8 @@
+{
+  "filename": "SYNTHETIC-COA-fail.pdf",
+  "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "moisture_pct": 12.0,
+  "mesh_pass": false,
+  "spec_moisture_max": 6.0,
+  "spec_mesh_required": true
+}
