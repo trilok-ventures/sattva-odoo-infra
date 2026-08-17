@@ -46,7 +46,7 @@ class FabricNotify(models.AbstractModel):
             group = self.env.ref(group_xmlid, raise_if_not_found=False)
             if not group:
                 continue
-            candidates = group.users.filtered(
+            candidates = group.sudo().users.filtered(
                 lambda user: user.active
                 and not user.share
                 and not user.has_group(
