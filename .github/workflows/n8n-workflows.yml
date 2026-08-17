@@ -1,0 +1,29 @@
+name: n8n-workflows
+on:
+  pull_request:
+    paths:
+      - n8n/**
+      - docker-compose.yml
+      - addons/sattva_compliance/**
+      - middleware/**
+      - deploy/**
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: node n8n/workflows/validate-register.mjs
+      - run: node n8n/workflows/leadscore.test.mjs
+      - name: Validate workflow JSON
+        run: |
+          shopt -s nullglob
+          files=(n8n/workflows/wf.*.json)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "no wf.*.json files" >&2
+            exit 1
+          fi
+          node n8n/workflows/validate-workflows.mjs "${files[@]}"
+      - run: node n8n/workflows/assert-no-mtls.mjs
