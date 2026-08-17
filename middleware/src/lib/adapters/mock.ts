@@ -78,6 +78,26 @@ const LOTS: LotGreen[] = [
   },
 ];
 
+function allowedUploadOrigin(value: string | undefined): string | undefined {
+  if (!value) return undefined;
+  try {
+    const url = new URL(value);
+    if (url.username || url.password || url.pathname !== "/" || url.search || url.hash) {
+      return undefined;
+    }
+    const loopback =
+      (url.hostname === "127.0.0.1" || url.hostname === "localhost") &&
+      (url.protocol === "http:" || url.protocol === "https:");
+    const production =
+      url.protocol === "https:" &&
+      url.hostname === "upload.trilokventures.org" &&
+      url.port === "";
+    return loopback || production ? url.origin : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 export const mockAdapter: FabricAdapter = {
   async dashboard(persona: Persona): Promise<Dashboard> {
     const base: Dashboard = {
@@ -136,11 +156,11 @@ export const mockAdapter: FabricAdapter = {
     filename: string,
     sha256: string,
   ): Promise<DocumentReceipt> {
-    const origin = process.env.UPLOAD_ORIGIN_PUBLIC_URL;
+    const origin = allowedUploadOrigin(process.env.UPLOAD_ORIGIN_PUBLIC_URL);
     return {
       sha256,
       filename,
-      ...(origin ? { upload_url: `${origin.replace(/\/$/, "")}/u/mock-token` } : {}),
+      ...(origin ? { upload_url: `${origin}/u/mock-token` } : {}),
     };
   },
 

@@ -1,7 +1,8 @@
 # Sattva Middleware Portal
 
 Authenticated operations BFF between people and the Sattva fabric
-(Odoo CE SoR, n8n bus, Nextcloud vault). Holds **no business state**.
+(Odoo CE SoR and n8n bus). Holds **no business state** and has no WebDAV
+credentials or connection to the Nextcloud vault.
 
 **Behavior spec:** `docs/superpowers/specs/2026-08-14-middleware-ux-design.md`  
 **GCP / HoldCo rewire:** `docs/superpowers/specs/2026-08-13-holdco-gcp-vercel-bff-rewire.md`  
@@ -45,4 +46,5 @@ Mock persona: header `x-sattva-persona` (`sales` | `compliance` | `finance` |
 
 - Next.js App Router on Vercel (separate project)
 - Keycloak OIDC in Phase 3; mock header until then
-- BFF route handlers call Odoo / n8n / Nextcloud **server-side only**
+- BFF route handlers call Odoo / n8n **server-side only**; document bytes upload
+  directly to the separately allowlisted origin

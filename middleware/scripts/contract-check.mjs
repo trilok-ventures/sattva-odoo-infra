@@ -153,6 +153,30 @@ try {
   });
   assert("upload rejects client path", badDoc.res.status === 400);
 
+  for (const extraKey of [
+    "bytes",
+    "pdf",
+    "path",
+    "file_bytes",
+    "nextcloud_folder_path",
+    "unexpected",
+  ]) {
+    const extraMetadata = await httpJson("/api/documents", {
+      method: "POST",
+      headers: { "x-sattva-persona": "supplier", "content-type": "application/json" },
+      body: JSON.stringify({
+        filename: "coa.pdf",
+        sha256: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        [extraKey]: extraKey === "path" ? "" : "forbidden",
+      }),
+    });
+    assert(
+      `upload rejects extra key ${extraKey}`,
+      extraMetadata.res.status >= 400 && extraMetadata.res.status < 500,
+      String(extraMetadata.res.status),
+    );
+  }
+
   const traversal = await httpJson("/api/documents", {
     method: "POST",
     headers: { "x-sattva-persona": "supplier", "content-type": "application/json" },

@@ -1,6 +1,5 @@
 import http from "node:http";
-import { mkdir, writeFile } from "node:fs/promises";
-import { randomUUID } from "node:crypto";
+import { createHash } from "node:crypto";
 
 const PORT = Number(process.env.UPLOAD_ORIGIN_PORT || 8091);
 const HOST = process.env.UPLOAD_ORIGIN_HOST || "127.0.0.1";
@@ -18,7 +17,7 @@ const server = http.createServer(async (req, res) => {
     res.end();
     return;
   }
-  const chunks = [];
+  const hash = createHash("sha256");
   let total = 0;
   for await (const chunk of req) {
     total += chunk.length;
@@ -27,10 +26,9 @@ const server = http.createServer(async (req, res) => {
       res.end();
       return;
     }
-    chunks.push(chunk);
+    hash.update(chunk);
   }
-  await mkdir("/tmp/sattva-upload-origin", { recursive: true });
-  await writeFile(`/tmp/sattva-upload-origin/${randomUUID()}`, Buffer.concat(chunks));
+  console.log(`upload-origin discarded bytes=${total} sha256=${hash.digest("hex")}`);
   res.writeHead(204);
   res.end();
 });
