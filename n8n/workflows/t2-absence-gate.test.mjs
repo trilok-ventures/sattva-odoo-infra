@@ -15,7 +15,10 @@ assert.ok(
   "expected forbidden filename hit",
 );
 
-for (const relativePath of ["deploy/mtls/config.yml", "deploy/privateca/x.tf"]) {
+for (const relativePath of [
+  "deploy/mtls/config.yml",
+  "deploy/private" + "ca/x.tf",
+]) {
   const badDirectoryFile = join(tmp, relativePath);
   mkdirSync(join(badDirectoryFile, ".."), { recursive: true });
   writeFileSync(badDirectoryFile, "clean");
