@@ -1,0 +1,46 @@
+# Cloudflare Tunnel ingress config (CONFIG-FILE MODE).
+#
+# This file is only used when you run the tunnel by NAME/UUID with a local
+# credentials file, e.g.:
+#
+#     cloudflared tunnel --config deploy/cloudflare-tunnel/config.yml run sattva-tunnel
+#
+# It is NOT used in token mode (`cloudflared tunnel run --token ...`), where the
+# ingress rules live in the Cloudflare Zero Trust dashboard instead.
+#
+# Replace the two placeholders below with the values produced by
+# `cloudflared tunnel create sattva-tunnel`:
+#   - <TUNNEL_UUID>       the tunnel's UUID (also printed by `cloudflared tunnel list`)
+#   - the credentials-file path points at the JSON written to ~/.cloudflared/<UUID>.json
+
+# The tunnel to run. Use the UUID (preferred) or the tunnel name.
+tunnel: <TUNNEL_UUID>
+
+# Credentials file created by `cloudflared tunnel create`.
+# On Linux this defaults to /root/.cloudflared or $HOME/.cloudflared.
+credentials-file: /home/ubuntu/.cloudflared/<TUNNEL_UUID>.json
+
+# Optional: keep a local metrics/health endpoint for `cloudflared tunnel info`
+# and readiness checks.
+metrics: 127.0.0.1:2000
+no-autoupdate: true
+
+# Ingress rules are evaluated top-to-bottom; the first hostname match wins,
+# and the final catch-all rule MUST be present (cloudflared requires it).
+ingress:
+  # Public hostname -> local Odoo. Odoo 18 serves both HTTP and websockets
+  # (/websocket) on the same port 8069, so a single service rule is sufficient.
+  - hostname: sattva.trilokventures.org
+    service: http://localhost:8069
+    originRequest:
+      # Preserve the original Host header so Odoo sees the public hostname.
+      # This works together with Odoo's proxy_mode=True and the frozen
+      # web.base.url so redirects, cookies and absolute URLs stay correct.
+      httpHostHeader: sattva.trilokventures.org
+      # Give slow Odoo page/report renders and long-poll requests room to breathe.
+      connectTimeout: 30s
+      # cloudflared talks to plain HTTP on localhost; no TLS verification needed.
+      noTLSVerify: true
+
+  # Required catch-all: anything that does not match above returns HTTP 404.
+  - service: http_status:404

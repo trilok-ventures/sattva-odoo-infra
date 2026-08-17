@@ -1,0 +1,4 @@
+# Place the Cloudflare Origin Certificate here on the host:
+#   origin.pem  (certificate)
+#   origin.key  (private key, chmod 600)
+# These are git-ignored (see ../.gitignore). Do NOT commit real certs/keys.

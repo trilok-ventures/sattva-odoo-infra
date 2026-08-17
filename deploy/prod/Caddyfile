@@ -1,0 +1,100 @@
+# =============================================================================
+# Sattva / Trilok Ventures — Caddy origin for Compose-on-VM (Phase 3a T1)
+# =============================================================================
+#
+# Hostnames (Cloudflare Full strict → this origin):
+#   sattva.trilokventures.org  → Odoo (employees + Access)
+#   vault.trilokventures.org   → Nextcloud (employees + Access)
+#   n8n.trilokventures.org     → n8n editor/webhooks (IT Access; webhook HMAC)
+#
+# TLS: Cloudflare Origin Certificate covering those names (and optionally
+# *.trilokventures.org). Save as certs/origin.pem + certs/origin.key.
+# Never use Cloudflare Flexible — it loops with HTTPS redirects.
+#
+# T2 parked: do not require origin client certificates on these site blocks.
+# Keycloak (auth.) and upload. trilokventures.org are later slices.
+# =============================================================================
+{
+	email {$ACME_EMAIL}
+}
+
+(origin_tls) {
+	tls /etc/caddy/certs/origin.pem /etc/caddy/certs/origin.key
+}
+
+(security_headers) {
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		X-Frame-Options "SAMEORIGIN"
+		-Server
+	}
+}
+
+sattva.trilokventures.org {
+	import origin_tls
+	import security_headers
+	encode zstd gzip
+
+	@dbmgr path /web/database /web/database/*
+	handle @dbmgr {
+		respond "Not found" 404
+	}
+
+	@ws path /websocket /longpolling/*
+	handle @ws {
+		reverse_proxy web:8072
+	}
+
+	handle {
+		reverse_proxy web:8069
+	}
+
+	request_body {
+		max_size 100MB
+	}
+
+	log {
+		output stdout
+		format console
+	}
+}
+
+vault.trilokventures.org {
+	import origin_tls
+	import security_headers
+	encode zstd gzip
+
+	handle {
+		reverse_proxy nextcloud:80
+	}
+
+	request_body {
+		max_size 100MB
+	}
+
+	log {
+		output stdout
+		format console
+	}
+}
+
+n8n.trilokventures.org {
+	import origin_tls
+	import security_headers
+	encode zstd gzip
+
+	handle {
+		reverse_proxy n8n:5678
+	}
+
+	request_body {
+		max_size 100MB
+	}
+
+	log {
+		output stdout
+		format console
+	}
+}
