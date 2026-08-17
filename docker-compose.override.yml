@@ -19,6 +19,6 @@ services:
       - "--db_host=db"
       - "--db_port=5432"
       - "--db_user=odoo"
-      - "--db_password=sattva_db_secure_pass"
+      - "--db_password=${ODOO_DB_PASSWORD:?set ODOO_DB_PASSWORD}"
       - "-c"
       - "/dev/null"
