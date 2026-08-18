@@ -9,6 +9,10 @@
 - `docs/superpowers/specs/2026-08-13-sattva-versioned-kb.md` — knowledge-plane rules.
 - `.cursor/agents/fabric-architect.md` — project subagent that enforces the above; use it
   to review any change touching Odoo, n8n, Nextcloud, Keycloak, GCP, Cloudflare, or Vercel.
+- `docs/superpowers/specs/2026-08-18-dual-plane-ceo-desk-design.md` — Dual-plane CEO desk
+  (Grok Bot GREEN ops + Cursor Cloud spawn). Operating pack: `ops/dual-plane/`.
+  Binder plugin: `plugins/sattva-fabric-bind/`. Spawn briefs must pass
+  `python3 ops/dual-plane/validate_spawn_brief.py <brief.json>`.
 
 ## Cursor Cloud specific instructions
 
