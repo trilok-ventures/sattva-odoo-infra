@@ -1,0 +1,8 @@
+{
+  "goal": "Add a dry-run evidence heading to ops/dual-plane/dry-run-log.md",
+  "stop_list": "compliance",
+  "paths": ["ops/dual-plane/dry-run-log.md"],
+  "inputs": ["Published GREEN dual-plane spec only"],
+  "done": "Draft PR that only edits the dry-run log",
+  "forbidden": "Odoo write, Nextcloud, secrets, merge main"
+}

@@ -1,0 +1,8 @@
+{
+  "goal": "Log into Odoo and approve the supplier",
+  "stop_list": "deal",
+  "paths": ["addons/sattva_compliance/models/purchase_order.py"],
+  "inputs": ["Published GREEN spec only"],
+  "done": "Draft PR",
+  "forbidden": "Odoo write, Nextcloud, secrets, merge main"
+}
