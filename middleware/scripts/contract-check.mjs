@@ -153,6 +153,30 @@ try {
   });
   assert("upload rejects client path", badDoc.res.status === 400);
 
+  for (const extraKey of [
+    "bytes",
+    "pdf",
+    "path",
+    "file_bytes",
+    "nextcloud_folder_path",
+    "unexpected",
+  ]) {
+    const extraMetadata = await httpJson("/api/documents", {
+      method: "POST",
+      headers: { "x-sattva-persona": "supplier", "content-type": "application/json" },
+      body: JSON.stringify({
+        filename: "coa.pdf",
+        sha256: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        [extraKey]: extraKey === "path" ? "" : "forbidden",
+      }),
+    });
+    assert(
+      `upload rejects extra key ${extraKey}`,
+      extraMetadata.res.status >= 400 && extraMetadata.res.status < 500,
+      String(extraMetadata.res.status),
+    );
+  }
+
   const traversal = await httpJson("/api/documents", {
     method: "POST",
     headers: { "x-sattva-persona": "supplier", "content-type": "application/json" },
@@ -174,12 +198,56 @@ try {
   assert("upload receipt 200", goodDoc.res.status === 200, String(goodDoc.res.status));
   assert("upload returns sha256", goodDoc.body.sha256?.length === 64);
   assert("upload has no path", goodDoc.body.path === undefined);
+  const minted = goodDoc.body.upload_url;
+  assert(
+    "upload_url omitted or origin",
+    minted === undefined ||
+      (/8091|upload\.trilokventures\.org/.test(minted) &&
+        !minted.includes("vercel") &&
+        !minted.includes("app.trilokventures.org")),
+  );
+  assert("health has no nextcloud key", health.body.fabric?.nextcloud === undefined);
+
+  const buyerDoc = await httpJson("/api/documents", {
+    method: "POST",
+    headers: { "x-sattva-persona": "buyer", "content-type": "application/json" },
+    body: JSON.stringify({
+      filename: "kyc.pdf",
+      sha256: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    }),
+  });
+  assert("buyer may mint metadata receipt", buyerDoc.res.status === 200);
+
+  if (process.env.UPLOAD_ORIGIN_PUBLIC_URL) {
+    assert("local origin mint present", typeof goodDoc.body.upload_url === "string");
+    assert("local origin mint host", goodDoc.body.upload_url.startsWith(process.env.UPLOAD_ORIGIN_PUBLIC_URL));
+  }
 
   const live = await fetch(base + "/api/dashboard");
   assert("mock allows missing persona", live.status === 200);
 
   const bogus = await httpJson("/api/dashboard", { headers: { "x-sattva-persona": "admin" } });
   assert("unknown persona 400", bogus.res.status === 400);
+
+  const act = await httpJson("/api/activities", { headers: { "x-sattva-persona": "sales" } });
+  assert("activities 200", act.res.status === 200, String(act.res.status));
+  const actHits = [];
+  walk(act.body, "$", actHits);
+  assert("activities GREEN", actHits.length === 0, actHits.join(","));
+  assert("activities are SATTVA prefixed", act.body.activities?.[0]?.summary?.startsWith("SATTVA:"));
+  const buyerAct = await httpJson("/api/activities", { headers: { "x-sattva-persona": "buyer" } });
+  assert("buyer activities empty", Array.isArray(buyerAct.body.activities) && buyerAct.body.activities.length === 0);
+
+  const cat = await httpJson("/api/catalogue", { headers: { "x-sattva-persona": "buyer" } });
+  assert("catalogue 200", cat.res.status === 200);
+  const catHits = [];
+  walk(cat.body, "$", catHits);
+  assert("catalogue GREEN", catHits.length === 0, catHits.join(","));
+  assert("catalogue has onion flake", cat.body.cards?.some((c) => c.crop === "onion" && c.format === "flake"));
+  assert("catalogue has no price key", cat.body.cards?.every((c) => c.price === undefined && c.list_price === undefined));
+
+  const logi = await httpJson("/api/dashboard", { headers: { "x-sattva-persona": "logistics" } });
+  assert("logistics persona 200", logi.res.status === 200, String(logi.res.status));
 } catch (err) {
   if (err && (err.code === "ECONNREFUSED" || String(err.cause || err).includes("ECONNREFUSED"))) {
     console.log("SKIP HTTP (BFF not listening on", base + ")");

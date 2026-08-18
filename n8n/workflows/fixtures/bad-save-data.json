@@ -1,0 +1,9 @@
+{
+  "name": "bad",
+  "nodes": [{ "id": "a", "name": "x", "type": "n8n-nodes-base.manualTrigger" }],
+  "connections": {},
+  "settings": {
+    "saveDataSuccessExecution": "all",
+    "saveDataErrorExecution": "none"
+  }
+}

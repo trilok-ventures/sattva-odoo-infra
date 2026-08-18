@@ -3,6 +3,7 @@ export type Persona =
   | "compliance"
   | "finance"
   | "it"
+  | "logistics"
   | "buyer"
   | "supplier";
 
@@ -11,6 +12,7 @@ const ALL: Persona[] = [
   "compliance",
   "finance",
   "it",
+  "logistics",
   "buyer",
   "supplier",
 ];
@@ -21,5 +23,11 @@ export function parsePersona(raw: string | null): Persona | null {
 }
 
 export function isEmployee(p: Persona): boolean {
-  return p === "sales" || p === "compliance" || p === "finance" || p === "it";
+  return (
+    p === "sales" ||
+    p === "compliance" ||
+    p === "finance" ||
+    p === "it" ||
+    p === "logistics"
+  );
 }

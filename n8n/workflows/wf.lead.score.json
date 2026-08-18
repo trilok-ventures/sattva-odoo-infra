@@ -1,0 +1,64 @@
+{
+  "name": "wf.lead.score",
+  "id": "wf-lead-score",
+  "nodes": [
+    {
+      "id": "lead-score-webhook",
+      "name": "Lead score webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, 0],
+      "webhookId": "wf-lead-score",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "lead-score",
+        "responseMode": "lastNode",
+        "options": {}
+      }
+    },
+    {
+      "id": "score-green",
+      "name": "Score GREEN allowlist",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [240, 0],
+      "parameters": {
+        "jsCode": "// keep in sync with n8n/workflows/leadscore.mjs\nconst LEAD_SCORE_ALLOWLIST = ['hashed_partner_id','stage_rank','days_in_stage','product_family_code','order_count'];\nfunction assertGreenPayload(payload) {\n  if (payload == null || typeof payload !== 'object' || Array.isArray(payload)) throw new Error('payload required');\n  for (const key of Object.keys(payload)) {\n    if (!LEAD_SCORE_ALLOWLIST.includes(key) && key !== 'lead_id') {\n      throw new Error('RED/AMBER key forbidden in lead score: ' + key);\n    }\n  }\n  for (const key of LEAD_SCORE_ALLOWLIST) {\n    if (!(key in payload)) throw new Error('missing ' + key);\n  }\n}\nfunction scoreLead(features) {\n  assertGreenPayload(features);\n  const stage = Number(features.stage_rank) || 0;\n  const recency = Math.max(0, 10 - (Number(features.days_in_stage) || 0)) / 10;\n  const orders = Math.min(Number(features.order_count) || 0, 3) / 3;\n  const score = Math.min(1, (stage / 3) * 0.5 + recency * 0.3 + orders * 0.2);\n  return { score: Math.round(score * 100) / 100, qualified: score >= 0.7 };\n}\nconst input = $input.first().json;\nconst headers = input.headers ?? {};\nconst provided = headers['x-sattva-webhook-hmac'] ?? headers['X-Sattva-Webhook-Hmac'];\nconst expected = $env.N8N_WEBHOOK_HMAC;\nif (typeof expected !== 'string' || !expected || typeof provided !== 'string' || provided !== expected) {\n  throw new Error('invalid x-sattva-webhook-hmac');\n}\nconst b = input.body ?? input;\nconst scored = scoreLead(b);\nreturn [{ json: { score: scored.score, qualified: scored.qualified, lead_id: b.lead_id } }];"
+      }
+    },
+    {
+      "id": "write-lead-score",
+      "name": "Write crm.lead GREEN score",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [480, 0],
+      "credentials": {
+        "httpHeaderAuth": {
+          "name": "odooN8nFabric"
+        }
+      },
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.ODOO_JSON2_URL}}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\"jsonrpc\":\"2.0\",\"method\":\"call\",\"params\":{\"service\":\"object\",\"method\":\"execute_kw\",\"args\":[\"sattva\",\"{{$env.ODOO_N8N_UID}}\",\"{{$credentials.odooN8nFabric.value}}\",\"sattva.fabric.leadscore\",\"write_score\",[{{$json.lead_id}},{{$json.score}},{{$json.qualified}}]]}}"
+      }
+    }
+  ],
+  "connections": {
+    "Lead score webhook": {
+      "main": [[{ "node": "Score GREEN allowlist", "type": "main", "index": 0 }]]
+    },
+    "Score GREEN allowlist": {
+      "main": [[{ "node": "Write crm.lead GREEN score", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "saveDataSuccessExecution": "none",
+    "saveDataErrorExecution": "none",
+    "executionTimeout": 30
+  }
+}

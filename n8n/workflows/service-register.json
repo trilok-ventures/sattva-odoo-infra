@@ -1,0 +1,112 @@
+{
+  "services": [
+    {
+      "id": "svc.portal.odoo",
+      "caller": "Vercel BFF",
+      "callee": "Odoo JSON-2",
+      "hostname": "sattva.trilokventures.org",
+      "ingress": "Access service token or origin allowlist",
+      "tls_rung": "T1 HTTPS",
+      "access_policy": "BFF service account svc.portal.odoo only; browsers never see the URL",
+      "data_class": "AMBER in; GREEN/AMBER out per persona",
+      "sor": "Reads/writes Odoo only; persists nothing",
+      "phase": "2"
+    },
+    {
+      "id": "svc.portal.n8n",
+      "caller": "Vercel BFF",
+      "callee": "n8n webhook",
+      "hostname": "n8n.trilokventures.org",
+      "ingress": "webhook path, IT Access + webhook HMAC",
+      "tls_rung": "T1 HTTPS",
+      "access_policy": "Metadata/triggers only (record id, sha256, filename, stage). No file bytes",
+      "data_class": "AMBER metadata",
+      "sor": "n8n does not keep business state",
+      "phase": "2"
+    },
+    {
+      "id": "svc.n8n.fabric",
+      "caller": "n8n workers",
+      "callee": "Odoo",
+      "hostname": "odoo (Compose-internal)",
+      "ingress": "cluster-internal only",
+      "tls_rung": "T0 local; T1 prod",
+      "access_policy": "Least-privilege Odoo user n8n.fabric",
+      "data_class": "AMBER + GREEN extracts",
+      "sor": "Pass-through; RED save-data disabled",
+      "phase": "1"
+    },
+    {
+      "id": "svc.n8n.vault",
+      "caller": "n8n workers",
+      "callee": "Nextcloud WebDAV",
+      "hostname": "nextcloud (Compose-internal)",
+      "ingress": "cluster-internal only; not reachable from Vercel",
+      "tls_rung": "T0 local; T1 prod",
+      "access_policy": "Nextcloud app-password scoped to /PCP/, /Clients/, /Suppliers/",
+      "data_class": "RED in transit",
+      "sor": "Move files; Odoo stores path + sha256; log metadata only",
+      "phase": "1"
+    },
+    {
+      "id": "svc.upload.origin",
+      "caller": "Browser",
+      "callee": "origin Caddy then n8n vault hop",
+      "hostname": "upload.trilokventures.org",
+      "ingress": "POST only, no listing",
+      "tls_rung": "T1 HTTPS",
+      "access_policy": "Minted after BFF metadata call. Max body 100MB. Bytes never touch Vercel",
+      "data_class": "RED in transit",
+      "sor": "Writes via svc.n8n.vault; Odoo stores path + sha256",
+      "phase": "2"
+    },
+    {
+      "id": "svc.leadscore.green",
+      "caller": "n8n workers",
+      "callee": "local leadscore.mjs (HF wiring is a later plan)",
+      "hostname": "none (in-process)",
+      "ingress": "n8n Code node / local module",
+      "tls_rung": "T0 local until HF plan",
+      "access_policy": "n8n worker only. Allowlist hashed_partner_id, stage_rank, days_in_stage, product_family_code, order_count",
+      "data_class": "GREEN",
+      "sor": "writes crm.lead.sattva_green_score only",
+      "phase": "2"
+    },
+    {
+      "id": "svc.catalogue.green",
+      "caller": "Vercel BFF",
+      "callee": "Odoo product via svc.portal.odoo",
+      "hostname": "sattva.trilokventures.org",
+      "ingress": "same as svc.portal.odoo",
+      "tls_rung": "T1",
+      "access_policy": "Anonymous PUBLIC/GREEN cards. Authenticated buyer: GREEN + own AMBER quotes",
+      "data_class": "GREEN / PUBLIC",
+      "sor": "No separate catalogue DB",
+      "phase": "2"
+    },
+    {
+      "id": "svc.notify.cache",
+      "caller": "Vercel BFF",
+      "callee": "Odoo mail.activity via svc.portal.odoo",
+      "hostname": "sattva.trilokventures.org",
+      "ingress": "same as svc.portal.odoo",
+      "tls_rung": "T1",
+      "access_policy": "Role-filtered. 30-day UI cache of mail.activity. No unique inbox records",
+      "data_class": "AMBER pointers",
+      "sor": "Odoo is SoR; BFF cache is disposable",
+      "phase": "2"
+    },
+    {
+      "id": "svc.kc.oidc",
+      "caller": "BFF, Odoo, n8n, Nextcloud",
+      "callee": "Keycloak",
+      "hostname": "auth.trilokventures.org",
+      "ingress": "/admin Access-only",
+      "tls_rung": "T1",
+      "access_policy": "Public login endpoints; confidential clients for origin apps",
+      "data_class": "Identity",
+      "sor": "Keycloak is IdP, not CRM",
+      "phase": "3"
+    }
+  ]
+}

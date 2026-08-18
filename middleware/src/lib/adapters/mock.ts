@@ -1,4 +1,6 @@
 import type {
+  ActivityRow,
+  CatalogueCard,
   ConfirmResult,
   Dashboard,
   DocumentReceipt,
@@ -41,6 +43,29 @@ const QUEUE: QueueRow[] = [
   },
 ];
 
+const ACTIVITIES: ActivityRow[] = [
+  {
+    id: "a1",
+    at: "14:02",
+    summary: "SATTVA: Lead qualified for pitch",
+    dest: "e1",
+    role: "sales.exec",
+  },
+  {
+    id: "a2",
+    at: "14:10",
+    summary: "SATTVA: Draft delivery pack ready",
+    dest: "e6",
+    role: "logistics.exec",
+  },
+];
+
+const CATALOGUE: CatalogueCard[] = [
+  { sku: "ONION-FLAKE-A", crop: "onion", format: "flake", mesh_label: "3-5 mm", supplier_display: "Approved mill (demo)" },
+  { sku: "GARLIC-POWDER-B", crop: "garlic", format: "powder", mesh_label: "80-100 mesh", supplier_display: "Approved mill (demo)" },
+  { sku: "CHILLI-FLAKE-C", crop: "chilli", format: "flake", mesh_label: "3-5 mm", supplier_display: "Approved mill (demo)" },
+];
+
 const LOTS: LotGreen[] = [
   {
     id: "l-882",
@@ -52,6 +77,26 @@ const LOTS: LotGreen[] = [
     buyer_order: "SO-1042",
   },
 ];
+
+function allowedUploadOrigin(value: string | undefined): string | undefined {
+  if (!value) return undefined;
+  try {
+    const url = new URL(value);
+    if (url.username || url.password || url.pathname !== "/" || url.search || url.hash) {
+      return undefined;
+    }
+    const loopback =
+      (url.hostname === "127.0.0.1" || url.hostname === "localhost") &&
+      (url.protocol === "http:" || url.protocol === "https:");
+    const production =
+      url.protocol === "https:" &&
+      url.hostname === "upload.trilokventures.org" &&
+      url.port === "";
+    return loopback || production ? url.origin : undefined;
+  } catch {
+    return undefined;
+  }
+}
 
 export const mockAdapter: FabricAdapter = {
   async dashboard(persona: Persona): Promise<Dashboard> {
@@ -111,6 +156,25 @@ export const mockAdapter: FabricAdapter = {
     filename: string,
     sha256: string,
   ): Promise<DocumentReceipt> {
-    return { sha256, filename };
+    const origin = allowedUploadOrigin(process.env.UPLOAD_ORIGIN_PUBLIC_URL);
+    return {
+      sha256,
+      filename,
+      ...(origin ? { upload_url: `${origin}/u/mock-token` } : {}),
+    };
+  },
+
+  async activities(persona: Persona): Promise<ActivityRow[]> {
+    if (persona === "buyer" || persona === "supplier") return [];
+    if (persona === "sales") return ACTIVITIES.filter((row) => row.role === "sales.exec");
+    if (persona === "logistics") return ACTIVITIES.filter((row) => row.role === "logistics.exec");
+    if (persona === "compliance") return ACTIVITIES.filter((row) => row.role === "compliance.officer");
+    if (persona === "finance") return ACTIVITIES.filter((row) => row.role === "finance.manager");
+    if (persona === "it") return ACTIVITIES.filter((row) => row.role === "it.admin");
+    return [];
+  },
+
+  async catalogue(_persona: Persona): Promise<CatalogueCard[]> {
+    return CATALOGUE;
   },
 };

@@ -1,0 +1,64 @@
+{
+  "name": "wf.notify.role",
+  "id": "wf-notify-role",
+  "nodes": [
+    {
+      "id": "notify-webhook",
+      "name": "Notify role webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, 0],
+      "webhookId": "wf-notify-role",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "notify-role",
+        "responseMode": "lastNode",
+        "options": {}
+      }
+    },
+    {
+      "id": "verify-notify-hmac",
+      "name": "Verify notify webhook HMAC",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [240, 0],
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\nconst headers = input.headers ?? {};\nconst provided = headers['x-sattva-webhook-hmac'] ?? headers['X-Sattva-Webhook-Hmac'];\nconst expected = $env.N8N_WEBHOOK_HMAC;\nif (typeof expected !== 'string' || !expected || typeof provided !== 'string' || provided !== expected) {\n  throw new Error('invalid x-sattva-webhook-hmac');\n}\nconst payload = input.body ?? input;\nif (payload == null || typeof payload !== 'object' || Array.isArray(payload)) throw new Error('payload required');\nreturn [{ json: payload }];"
+      }
+    },
+    {
+      "id": "create-role-activity",
+      "name": "Create Odoo role activity",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [480, 0],
+      "credentials": {
+        "httpHeaderAuth": {
+          "name": "odooN8nFabric"
+        }
+      },
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.ODOO_JSON2_URL}}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\"jsonrpc\":\"2.0\",\"method\":\"call\",\"params\":{\"service\":\"object\",\"method\":\"execute_kw\",\"args\":[\"sattva\",\"{{$env.ODOO_N8N_UID}}\",\"{{$credentials.odooN8nFabric.value}}\",\"sattva.fabric.notify\",\"create_role_activity\",[{{$json.lead_id}},\"{{$json.summary}}\",\"{{$json.role}}\"]]}}"
+      }
+    }
+  ],
+  "connections": {
+    "Notify role webhook": {
+      "main": [[{ "node": "Verify notify webhook HMAC", "type": "main", "index": 0 }]]
+    },
+    "Verify notify webhook HMAC": {
+      "main": [[{ "node": "Create Odoo role activity", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "saveDataSuccessExecution": "none",
+    "saveDataErrorExecution": "none",
+    "executionTimeout": 30
+  }
+}

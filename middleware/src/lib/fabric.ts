@@ -14,12 +14,6 @@ export function n8nConfigured(): boolean {
   return Boolean(process.env.N8N_BASE_URL);
 }
 
-export function nextcloudConfigured(): boolean {
-  return Boolean(
-    process.env.NEXTCLOUD_WEBDAV_URL && process.env.NEXTCLOUD_APP_PASSWORD,
-  );
-}
-
 export function isHealthy(reach: Reach): boolean {
   return reach === "mock" || reach === "up";
 }

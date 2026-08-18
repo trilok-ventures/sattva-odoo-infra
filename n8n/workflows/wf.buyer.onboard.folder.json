@@ -1,0 +1,162 @@
+{
+  "name": "wf.buyer.onboard.folder",
+  "id": "wf-buyer-onboard-folder",
+  "nodes": [
+    {
+      "id": "poll-buyer-events",
+      "name": "Poll queued buyer folder events",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [0, 0],
+      "parameters": { "rule": { "interval": [{ "field": "minutes", "minutesInterval": 5 }] } }
+    },
+    {
+      "id": "search-buyer-events",
+      "name": "Search queued buyer events",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [220, 0],
+      "credentials": {
+        "httpHeaderAuth": {
+          "name": "odooN8nFabric"
+        }
+      },
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.ODOO_JSON2_URL}}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\"jsonrpc\":\"2.0\",\"method\":\"call\",\"params\":{\"service\":\"object\",\"method\":\"execute_kw\",\"args\":[\"sattva\",\"{{$env.ODOO_N8N_UID}}\",\"{{$credentials.odooN8nFabric.value}}\",\"sattva.fabric.event\",\"search_read\",[[[\"event_type\",\"=\",\"buyer_folder_requested\"],[\"state\",\"=\",\"queued\"]]],{\"fields\":[\"id\",\"partner_id\",\"requested_path\"]}]}}"
+      }
+    },
+    {
+      "id": "expand-buyer-mkcol-prefixes",
+      "name": "Expand buyer MKCOL prefixes",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [550, 0],
+      "parameters": {
+        "jsCode": "const output = [];\nfor (const [itemIndex, item] of $input.all().entries()) {\n  const event = item.json;\n  const parts = String(event.requested_path ?? '').split('/').filter(Boolean);\n  if (!parts.length) throw new Error('requested_path must contain a folder');\n  for (let index = 0; index < parts.length; index += 1) {\n    output.push({\n      json: {\n        id: event.id,\n        partner_id: event.partner_id,\n        requested_path: event.requested_path,\n        prefix_path: '/' + parts.slice(0, index + 1).join('/') + '/',\n      },\n      pairedItem: { item: itemIndex },\n    });\n  }\n}\nreturn output;"
+      }
+    },
+    {
+      "id": "unwrap-buyer-events",
+      "name": "Unwrap search_read buyer events",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [440, 0],
+      "parameters": {
+        "jsCode": "const raw = $input.first().json;\nconst envelope = raw.result !== undefined ? raw.result : raw;\nconst rows = Array.isArray(envelope) ? envelope : (envelope?.result ?? []);\nif (!rows.length) return [];\nreturn rows.map((row) => {\n  let partnerId = row.partner_id;\n  if (Array.isArray(partnerId)) partnerId = partnerId[0];\n  return { json: { id: row.id, partner_id: partnerId, requested_path: row.requested_path } };\n});"
+      }
+    },
+    {
+      "id": "mkcol-buyer-vault",
+      "name": "MKCOL Nextcloud buyer path",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [700, 0],
+      "credentials": {
+        "httpBasicAuth": {
+          "name": "nextcloudN8nVault"
+        }
+      },
+      "parameters": {
+        "method": "MKCOL",
+        "url": "={{$env.NEXTCLOUD_WEBDAV_BASE}}{{$json.prefix_path}}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true,
+              "responseFormat": "text"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "validate-buyer-mkcol-responses",
+      "name": "Validate buyer MKCOL responses",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [850, 0],
+      "parameters": {
+        "jsCode": "const responses = $input.all();\nconst expanded = $('Expand buyer MKCOL prefixes').all();\nif (responses.length !== expanded.length) throw new Error('MKCOL response count mismatch');\nconst completed = [];\nfor (let index = 0; index < responses.length; index += 1) {\n  const status = Number(responses[index].json.statusCode);\n  if (!((status >= 200 && status < 300) || status === 405 || status === 409)) {\n    throw new Error('MKCOL failed with status ' + status);\n  }\n  const event = expanded[index].json;\n  if (event.prefix_path === event.requested_path) {\n    completed.push({ json: { id: event.id, partner_id: event.partner_id, requested_path: event.requested_path }, pairedItem: { item: index } });\n  }\n}\nreturn completed;"
+      }
+    },
+    {
+      "id": "write-buyer-partner-path",
+      "name": "Write buyer nextcloud_client_folder_path",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1000, 0],
+      "credentials": {
+        "httpHeaderAuth": {
+          "name": "odooN8nFabric"
+        }
+      },
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.ODOO_JSON2_URL}}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\"jsonrpc\":\"2.0\",\"method\":\"call\",\"params\":{\"service\":\"object\",\"method\":\"execute_kw\",\"args\":[\"sattva\",\"{{$env.ODOO_N8N_UID}}\",\"{{$credentials.odooN8nFabric.value}}\",\"sattva.fabric.vault\",\"set_partner_path\",[{{$json.partner_id}},\"{{$json.requested_path}}\",\"client\"]]}}"
+      }
+    },
+    {
+      "id": "mark-buyer-event-processed",
+      "name": "Mark buyer event processed",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1200, 0],
+      "credentials": {
+        "httpHeaderAuth": {
+          "name": "odooN8nFabric"
+        }
+      },
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.ODOO_JSON2_URL}}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\"jsonrpc\":\"2.0\",\"method\":\"call\",\"params\":{\"service\":\"object\",\"method\":\"execute_kw\",\"args\":[\"sattva\",\"{{$env.ODOO_N8N_UID}}\",\"{{$credentials.odooN8nFabric.value}}\",\"sattva.fabric.event\",\"write\",[[{{$('Validate buyer MKCOL responses').item.json.id}}],{\"state\":\"processed\"}]]}}"
+      }
+    }
+  ],
+  "connections": {
+    "Poll queued buyer folder events": {
+      "main": [[{ "node": "Search queued buyer events", "type": "main", "index": 0 }]]
+    },
+    "Search queued buyer events": {
+      "main": [[{ "node": "Unwrap search_read buyer events", "type": "main", "index": 0 }]]
+    },
+    "Unwrap search_read buyer events": {
+      "main": [[{ "node": "Expand buyer MKCOL prefixes", "type": "main", "index": 0 }]]
+    },
+    "Expand buyer MKCOL prefixes": {
+      "main": [[{ "node": "MKCOL Nextcloud buyer path", "type": "main", "index": 0 }]]
+    },
+    "MKCOL Nextcloud buyer path": {
+      "main": [[{ "node": "Validate buyer MKCOL responses", "type": "main", "index": 0 }]]
+    },
+    "Validate buyer MKCOL responses": {
+      "main": [[{ "node": "Write buyer nextcloud_client_folder_path", "type": "main", "index": 0 }]]
+    },
+    "Write buyer nextcloud_client_folder_path": {
+      "main": [[{ "node": "Mark buyer event processed", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "saveDataSuccessExecution": "none",
+    "saveDataErrorExecution": "none",
+    "executionTimeout": 60
+  }
+}

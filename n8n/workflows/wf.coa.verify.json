@@ -1,0 +1,70 @@
+{
+  "name": "wf.coa.verify",
+  "id": "wf-coa-verify",
+  "nodes": [
+    {
+      "id": "coa-nextcloud-hook",
+      "name": "Nextcloud COA webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, 180],
+      "webhookId": "wf-coa-nextcloud",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "nextcloud-coa",
+        "responseMode": "lastNode",
+        "options": {}
+      }
+    },
+    {
+      "id": "coa-webhook",
+      "name": "COA metadata webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, 0],
+      "webhookId": "wf-coa-verify",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "coa-verify",
+        "responseMode": "lastNode",
+        "options": {}
+      }
+    },
+    {
+      "id": "coa-map-green",
+      "name": "Map COA GREEN metadata",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [240, 90],
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\nconst headers = input.headers ?? {};\nconst provided = headers['x-sattva-webhook-hmac'] ?? headers['X-Sattva-Webhook-Hmac'];\nconst expected = $env.N8N_WEBHOOK_HMAC;\nif (typeof expected !== 'string' || !expected || typeof provided !== 'string' || provided !== expected) {\n  throw new Error('invalid x-sattva-webhook-hmac');\n}\nconst payload = input.body ?? input;\nif (payload == null || typeof payload !== 'object' || Array.isArray(payload)) throw new Error('payload required');\nconst forbidden = new Set(['bytes','pdf','path','nextcloud_folder_path','file_bytes']);\nfunction assertNoForbidden(value) {\n  if (value == null || typeof value !== 'object') return;\n  for (const [key, child] of Object.entries(value)) {\n    if (forbidden.has(key)) throw new Error('RED key forbidden in COA mapper: ' + key);\n    assertNoForbidden(child);\n  }\n}\nassertNoForbidden(payload);\nif (typeof payload.filename !== 'string' || !payload.filename) throw new Error('filename must be a string');\nif (typeof payload.sha256 !== 'string' || !/^[a-f0-9]{64}$/i.test(payload.sha256)) throw new Error('sha256 must be 64 hex characters');\nif (typeof payload.moisture_pct !== 'number' || !Number.isFinite(payload.moisture_pct)) throw new Error('moisture_pct must be a number');\nif (typeof payload.spec_moisture_max !== 'number' || !Number.isFinite(payload.spec_moisture_max)) throw new Error('spec_moisture_max must be a number');\nif (typeof payload.mesh_pass !== 'boolean') throw new Error('mesh_pass must be boolean');\nif (typeof payload.spec_mesh_required !== 'boolean') throw new Error('spec_mesh_required must be boolean');\nreturn [{ json: {\n  filename: payload.filename,\n  sha256: payload.sha256.toLowerCase(),\n  moisture_pct: payload.moisture_pct,\n  mesh_pass: payload.mesh_pass,\n  spec_moisture_max: payload.spec_moisture_max,\n  spec_mesh_required: payload.spec_mesh_required\n} }];"
+      }
+    },
+    {
+      "id": "coa-compare",
+      "name": "Compare GREEN metrics",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [480, 90],
+      "parameters": {
+        "jsCode": "const b = $input.first().json;\nif (b == null || typeof b !== 'object' || Array.isArray(b)) throw new Error('payload required');\nconst forbidden = new Set(['bytes','pdf','path','nextcloud_folder_path','file_bytes']);\nfunction assertNoForbidden(value) {\n  if (value == null || typeof value !== 'object') return;\n  for (const [key, child] of Object.entries(value)) {\n    if (forbidden.has(key)) throw new Error('RED key forbidden in COA compare: ' + key);\n    assertNoForbidden(child);\n  }\n}\nassertNoForbidden(b);\nif (typeof b.filename !== 'string' || !b.filename) throw new Error('filename must be a string');\nif (typeof b.sha256 !== 'string' || !/^[a-f0-9]{64}$/i.test(b.sha256)) throw new Error('sha256 must be 64 hex characters');\nif (typeof b.moisture_pct !== 'number' || !Number.isFinite(b.moisture_pct)) throw new Error('moisture_pct must be a number');\nif (typeof b.spec_moisture_max !== 'number' || !Number.isFinite(b.spec_moisture_max)) throw new Error('spec_moisture_max must be a number');\nif (typeof b.mesh_pass !== 'boolean') throw new Error('mesh_pass must be boolean');\nif (typeof b.spec_mesh_required !== 'boolean') throw new Error('spec_mesh_required must be boolean');\nconst coa_pass = b.moisture_pct <= b.spec_moisture_max && b.mesh_pass === b.spec_mesh_required;\nreturn [{ json: { coa_pass, moisture_pct: b.moisture_pct, mesh_pass: b.mesh_pass, coa_sha256: b.sha256 } }];"
+      }
+    }
+  ],
+  "connections": {
+    "COA metadata webhook": {
+      "main": [[{ "node": "Map COA GREEN metadata", "type": "main", "index": 0 }]]
+    },
+    "Nextcloud COA webhook": {
+      "main": [[{ "node": "Map COA GREEN metadata", "type": "main", "index": 0 }]]
+    },
+    "Map COA GREEN metadata": {
+      "main": [[{ "node": "Compare GREEN metrics", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "saveDataSuccessExecution": "none",
+    "saveDataErrorExecution": "none",
+    "executionTimeout": 30
+  }
+}
