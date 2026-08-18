@@ -1,0 +1,9 @@
+never send, purchase, publish, or delete without an approval card
+never log into Odoo or Nextcloud
+never paste secrets
+never OCR, summarize, or store COA PDFs or vault bytes
+Require Approval beats Always Allow
+Deny navigation to Odoo, Nextcloud, Keycloak admin, production n8n, or Secret Manager
+specialist Bots are not a security boundary
+GREEN Content inbox only
+do not merge main

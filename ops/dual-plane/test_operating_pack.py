@@ -38,5 +38,19 @@ class SpawnBriefTests(unittest.TestCase):
         validate(data)
 
 
+class DenyPhraseTests(unittest.TestCase):
+    def test_each_bot_file_contains_every_deny_phrase(self):
+        phrases = [
+            line.strip()
+            for line in (ROOT / "deny-phrases.txt").read_text().splitlines()
+            if line.strip() and not line.startswith("#")
+        ]
+        self.assertGreaterEqual(len(phrases), 8)
+        for name in ("chief-of-staff.md", "pa.md"):
+            text = (ROOT / "bots" / name).read_text()
+            for phrase in phrases:
+                self.assertIn(phrase, text, f"{name} missing: {phrase}")
+
+
 if __name__ == "__main__":
     unittest.main()
