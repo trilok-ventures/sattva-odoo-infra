@@ -52,5 +52,19 @@ class DenyPhraseTests(unittest.TestCase):
                 self.assertIn(phrase, text, f"{name} missing: {phrase}")
 
 
+class PrTemplateTests(unittest.TestCase):
+    def test_template_contains_five_checks(self):
+        text = (ROOT.parents[1] / ".github" / "pull_request_template.md").read_text()
+        for needle in (
+            "Stop-list",
+            "Classification",
+            "One SoR",
+            "Human gate",
+            "Span",
+        ):
+            self.assertIn(needle, text)
+        self.assertIn("do not merge main", text.lower())
+
+
 if __name__ == "__main__":
     unittest.main()
