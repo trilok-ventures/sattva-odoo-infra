@@ -11,7 +11,8 @@ REQUIRED = ("goal", "stop_list", "paths", "inputs", "done", "forbidden")
 STOP_LIST = frozenset({"deal", "compliance", "cash-cycle"})
 SCANNED = ("goal",)
 DENIED = re.compile(
-    r"odoo|nextcloud|supplier_pcp_status|button_confirm|coa\.pdf|password|secret manager",
+    r"odoo|nextcloud|supplier_pcp_status|button_confirm|coa\.pdf|password|secret manager"
+    r"|purchase_order|purchase\.order|sattva_compliance",
     re.I,
 )
 

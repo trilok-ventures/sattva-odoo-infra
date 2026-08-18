@@ -32,6 +32,12 @@ class SpawnBriefTests(unittest.TestCase):
             validate(data)
         self.assertIn("odoo", str(ctx.exception).lower())
 
+    def test_compliance_addon_path_fails(self):
+        data = json.loads((FIXTURES / "compliance-addon-path.json").read_text())
+        with self.assertRaises(ValueError) as ctx:
+            validate(data)
+        self.assertIn("denied token", str(ctx.exception).lower())
+
     def test_forbidden_field_may_name_odoo(self):
         data = json.loads((FIXTURES / "valid.json").read_text())
         self.assertIn("Odoo", data["forbidden"])
