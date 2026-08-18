@@ -506,7 +506,7 @@ git commit -m "feat: add dual-plane PR eval checklist"
 - Consumes: Cursor Automation IDs `c8a92dde-9421-11f1-ba66-0e7d0216e441` (Pull Request Router) and `c88e8a91-9421-11f1-ba66-0e7d0216e441` (Security Reviewer).
 - Produces: exact prompt text Task 7 pastes into the Automations UI. Required comment markers (exact strings the dry-run must find on the triggering PR): `dual-plane-router` and `dual-plane-security`.
 
-There is no unit test for the Cursor UI. The contract is the markers. Task 8 fails if a new `cursor/pr-approval-agent-logic-*` or `cursor/security-review-orchestrator-*` branch is created with an empty diff.
+There is no unit test for the Cursor UI. The contract is the markers. Task 8 fails if a new `cursor/pr-approval-agent-logic-*` or `cursor/security-review-orchestrator-*` branch is created with an empty diff. When pasting into the Automations UI, strip the four-space indent from the prompt blocks.
 
 - [ ] **Step 1: Write the landing file**
 
