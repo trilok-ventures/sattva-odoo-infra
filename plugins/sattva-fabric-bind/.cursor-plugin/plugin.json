@@ -1,0 +1,12 @@
+{
+  "name": "sattva-fabric-bind",
+  "displayName": "Sattva Fabric Bind",
+  "version": "0.1.0",
+  "description": "Bind Cursor sessions to the locked Sattva fabric: one SoR per domain, GREEN/agent_ok reads, GREEN inbox writes, route CEO asks to Grok Bot / Cloud Agents / Notion. Not an agent runtime.",
+  "author": { "name": "Trilok Ventures IPCo" },
+  "license": "UNLICENSED",
+  "keywords": ["sattva", "fabric-bind", "internal"],
+  "rules": "./rules/",
+  "skills": "./skills/",
+  "commands": "./commands/"
+}
