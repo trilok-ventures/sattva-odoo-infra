@@ -117,7 +117,13 @@ assert(
 const e2 = readFileSync(join(root, "src/app/e2/page.tsx"), "utf8");
 assert(
   "e2 handles forbidden queue without throw",
-  !e2.includes("throw new Error") && e2.includes("!res.ok"),
+  !e2.includes("throw new Error") && e2.includes("rows === null"),
+);
+
+const e4Src = readFileSync(join(root, "src/app/e4/page.tsx"), "utf8");
+assert(
+  "e4 handles forbidden orders without throw",
+  !e4Src.includes("throw new Error") && e4Src.includes("orders === null"),
 );
 assert(
   "gate dialog has no anyway",
@@ -126,13 +132,23 @@ assert(
 
 const e3 = readFileSync(join(root, "src/app/e3/page.tsx"), "utf8");
 assert(
-  "e3 hides P00042 for it persona",
-  /persona\s*!==\s*["']it["']\s*\?[\s\S]*P00042/.test(e3),
+  "e3 redirects it away (never sees supplier dossier / P00042)",
+  /persona\s*===\s*["']it["']/.test(e3) && e3.includes("redirect("),
 );
+assert("e3 gates on isEmployee", e3.includes("isEmployee"));
+
+const e1 = readFileSync(join(root, "src/app/e1/page.tsx"), "utf8");
+assert("e1 gates on isEmployee", e1.includes("isEmployee"));
 
 const s3 = readFileSync(join(root, "src/app/s3/page.tsx"), "utf8");
-assert("s3 uses activities API", s3.includes("/api/activities"));
+assert("s3 uses activities adapter helper", s3.includes("activitiesFor"));
 assert("s3 not a second SoR table", !s3.includes("localStorage"));
+
+const poGateClient = readFileSync(join(root, "src/app/e4/PoGateClient.tsx"), "utf8");
+assert(
+  "PoGateClient has no confirm-anyway grep bypass",
+  !poGateClient.toLowerCase().includes("anyway"),
+);
 
 for (const f of ["b1/page.tsx", "b2/[id]/page.tsx", "b3/page.tsx"]) {
   const t = readFileSync(join(root, "src/app", f), "utf8");
@@ -189,6 +205,18 @@ try {
 
   const fin = await httpJson("/api/dashboard", { headers: { "x-sattva-persona": "finance" } });
   assert("finance sees invoices kpi", typeof fin.body.unpaid_invoices === "number");
+
+  const dashBuyer = await httpJson("/api/dashboard", { headers: { "x-sattva-persona": "buyer" } });
+  assert("dashboard 403 buyer", dashBuyer.res.status === 403, String(dashBuyer.res.status));
+
+  const dashSupplier = await httpJson("/api/dashboard", { headers: { "x-sattva-persona": "supplier" } });
+  assert("dashboard 403 supplier", dashSupplier.res.status === 403, String(dashSupplier.res.status));
+
+  const dashIt = await httpJson("/api/dashboard", { headers: { "x-sattva-persona": "it" } });
+  assert("dashboard 200 it", dashIt.res.status === 200, String(dashIt.res.status));
+  const dashItText = JSON.stringify(dashIt.body);
+  assert("dashboard it hides P00042", !dashItText.includes("P00042"), dashItText);
+  assert("dashboard it hides SO-1042", !dashItText.includes("SO-1042"), dashItText);
 
   const blocked = await httpJson("/api/purchase/orders/p00042/confirm", {
     method: "POST",
@@ -342,6 +370,42 @@ try {
   );
   const itLotsText = JSON.stringify(itLots.body);
   assert("it lots body has no SO-1042", !itLotsText.includes("SO-1042"), itLotsText);
+
+  const e4It = await fetch(base + "/e4", { headers: { cookie: "sattva_persona=it" } });
+  assert("e4 200 for it (no 500)", e4It.status === 200, String(e4It.status));
+  const e4Logistics = await fetch(base + "/e4", { headers: { cookie: "sattva_persona=logistics" } });
+  assert("e4 200 for logistics (no 500)", e4Logistics.status === 200, String(e4Logistics.status));
+
+  const e1Buyer = await fetch(base + "/e1", {
+    headers: { cookie: "sattva_persona=buyer" },
+    redirect: "manual",
+  });
+  assert(
+    "e1 redirects buyer away",
+    [301, 302, 303, 307, 308].includes(e1Buyer.status),
+    String(e1Buyer.status),
+  );
+  assert("e1 redirects buyer to /b1", e1Buyer.headers.get("location")?.includes("/b1"), e1Buyer.headers.get("location"));
+
+  const e3Buyer = await fetch(base + "/e3", {
+    headers: { cookie: "sattva_persona=buyer" },
+    redirect: "manual",
+  });
+  assert(
+    "e3 redirects buyer away",
+    [301, 302, 303, 307, 308].includes(e3Buyer.status),
+    String(e3Buyer.status),
+  );
+
+  const e3It = await fetch(base + "/e3", {
+    headers: { cookie: "sattva_persona=it" },
+    redirect: "manual",
+  });
+  assert(
+    "e3 redirects it away",
+    [301, 302, 303, 307, 308].includes(e3It.status),
+    String(e3It.status),
+  );
 } catch (err) {
   if (err && (err.code === "ECONNREFUSED" || String(err.cause || err).includes("ECONNREFUSED"))) {
     console.log("SKIP HTTP (BFF not listening on", base + ")");
