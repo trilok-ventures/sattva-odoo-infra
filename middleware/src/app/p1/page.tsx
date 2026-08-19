@@ -3,12 +3,13 @@ import { redirect } from "next/navigation";
 import { Chrome } from "../components/Chrome";
 import { StatusPill } from "../components/StatusPill";
 import { readPersonaFromCookie } from "../components/StubScreen";
+import { isEmployee } from "@/lib/persona";
 import { LANDING, SCREENS } from "@/lib/screen-graph";
 
 export default async function P1Page() {
   const persona = await readPersonaFromCookie();
 
-  if (persona !== "supplier") {
+  if (persona !== "supplier" && !isEmployee(persona)) {
     redirect(LANDING[persona]);
   }
 

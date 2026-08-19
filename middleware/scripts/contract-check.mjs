@@ -146,6 +146,8 @@ assert(
   "p1 does not self-approve",
   !p1.includes("approved") || p1.includes("cannot self-approve") || p1.includes("You cannot self-approve"),
 );
+assert("p1 allows employee peek", p1.includes("isEmployee"));
+assert("p1 keeps Example Foods Pvt Ltd", p1.includes("Example Foods Pvt Ltd"));
 const p2 = readFileSync(join(root, "src/app/p2/page.tsx"), "utf8");
 assert("p2 posts metadata", p2.includes("/api/documents"));
 assert("p2 no multipart", !p2.includes("FormData") && !p2.includes("multipart"));
