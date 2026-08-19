@@ -113,6 +113,12 @@ assert(
   "e4 page source has no Confirm anyway",
   !readFileSync(join(root, "src/app/e4/page.tsx"), "utf8").includes("Confirm anyway"),
 );
+
+const e2 = readFileSync(join(root, "src/app/e2/page.tsx"), "utf8");
+assert(
+  "e2 handles forbidden queue without throw",
+  !e2.includes("throw new Error") && e2.includes("!res.ok"),
+);
 assert(
   "gate dialog has no anyway",
   !readFileSync(join(root, "src/app/components/GateDialog.tsx"), "utf8").includes("anyway"),
