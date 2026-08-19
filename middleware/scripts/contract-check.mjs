@@ -134,6 +134,12 @@ const s3 = readFileSync(join(root, "src/app/s3/page.tsx"), "utf8");
 assert("s3 uses activities API", s3.includes("/api/activities"));
 assert("s3 not a second SoR table", !s3.includes("localStorage"));
 
+for (const f of ["b1/page.tsx", "b2/[id]/page.tsx", "b3/page.tsx"]) {
+  const t = readFileSync(join(root, "src/app", f), "utf8");
+  assert("buyer chrome no vault " + f, !t.includes("vault."));
+  assert("buyer chrome no n8n " + f, !t.includes("n8n."));
+}
+
 const base = process.env.SATTVA_BFF_URL || "http://127.0.0.1:3010";
 
 async function httpJson(path, opts = {}) {
