@@ -5,6 +5,7 @@ import type {
   Dashboard,
   DocumentReceipt,
   FabricAdapter,
+  InvoiceRow,
   LotGreen,
   PurchaseOrder,
   QueueRow,
@@ -78,6 +79,21 @@ const LOTS: LotGreen[] = [
   },
 ];
 
+const INVOICES: InvoiceRow[] = [
+  {
+    id: "INV-2218",
+    partner_display: "Northshore Foods Inc",
+    amount_label: "USD 12,400",
+    state: "posted",
+  },
+  {
+    id: "INV-2220",
+    partner_display: "Harbor Co-op",
+    amount_label: "USD 3,100",
+    state: "draft",
+  },
+];
+
 function allowedUploadOrigin(value: string | undefined): string | undefined {
   if (!value) return undefined;
   try {
@@ -100,15 +116,19 @@ function allowedUploadOrigin(value: string | undefined): string | undefined {
 
 export const mockAdapter: FabricAdapter = {
   async dashboard(persona: Persona): Promise<Dashboard> {
+    const activity =
+      persona === "it"
+        ? [{ at: "11:15", label: "Lot L-882 COA pass (GREEN)", dest: "e5" }]
+        : [
+            { at: "14:02", label: "P00042 blocked — supplier not approved", dest: "e4" },
+            { at: "13:40", label: "Example Foods → review", dest: "e3" },
+            { at: "11:15", label: "Lot L-882 COA pass (GREEN)", dest: "e5" },
+          ];
     const base: Dashboard = {
       pending_pcp_reviews: 4,
       po_confirms_blocked: 2,
       lots_in_quarantine: 3,
-      activity: [
-        { at: "14:02", label: "P00042 blocked — supplier not approved", dest: "e4" },
-        { at: "13:40", label: "Example Foods → review", dest: "e3" },
-        { at: "11:15", label: "Lot L-882 COA pass (GREEN)", dest: "e5" },
-      ],
+      activity,
     };
     if (persona === "finance") base.unpaid_invoices = 6;
     if (persona === "it") base.n8n_failures = 0;
@@ -148,7 +168,14 @@ export const mockAdapter: FabricAdapter = {
     if (persona === "buyer") {
       return LOTS.filter((lot) => lot.buyer_order === "SO-1042");
     }
+    if (persona === "it") {
+      return LOTS.filter((lot) => lot.buyer_order !== "SO-1042");
+    }
     return LOTS;
+  },
+
+  async invoices(): Promise<InvoiceRow[]> {
+    return INVOICES;
   },
 
   async storeDocument(

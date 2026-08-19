@@ -70,6 +70,33 @@ const hits = [];
 walk(clean, "$", hits);
 assert("clean object has no RED keys", hits.length === 0, hits.join(","));
 
+const graphSrc = readFileSync(join(root, "src/lib/screen-graph.ts"), "utf8");
+assert("graph has S1 path /", graphSrc.includes('S1: "/"') || graphSrc.includes("S1: '/'"));
+assert("employee flow starts S1", graphSrc.includes("employee:") && graphSrc.includes('"/e4"'));
+assert("buyer flow has /b3", graphSrc.includes('"/b3"'));
+assert("seller flow has /p2/receipt", graphSrc.includes('"/p2/receipt"'));
+assert("no /map production route", !graphSrc.includes('"/map"'));
+assert("nextInFlow uses indexOf", graphSrc.includes("steps.indexOf"));
+assert("nextInFlow does not use lastIndexOf", !graphSrc.includes("lastIndexOf"));
+
+const css = readFileSync(join(root, "src/app/globals.css"), "utf8");
+assert("nav token", css.includes("#143528"));
+assert("sand token", css.includes("#f7f4ef"));
+assert("forest token", css.includes("#1f4d3a"));
+
+const chromeSrc = readFileSync(join(root, "src/app/components/Chrome.tsx"), "utf8");
+const buyerNavMatch = chromeSrc.match(/BUYER_NAV\s*=\s*\[([\s\S]*?)\];/);
+assert(
+  "buyer nav excludes vault",
+  buyerNavMatch && !buyerNavMatch[1].includes("vault"),
+  "BUYER_NAV must not reference vault",
+);
+assert(
+  "buyer nav excludes n8n",
+  buyerNavMatch && !buyerNavMatch[1].includes("n8n"),
+  "BUYER_NAV must not reference n8n",
+);
+
 const httpSrc = readFileSync(join(root, "src/lib/http.ts"), "utf8");
 assert(
   "live mode refuses persona header",
@@ -80,6 +107,70 @@ const rootVercel = JSON.parse(readFileSync(join(root, "../vercel.json"), "utf8")
 assert(
   "root vercel.json still publishes mocks only",
   rootVercel.outputDirectory === "docs/superpowers/mocks",
+);
+
+assert(
+  "e4 page source has no Confirm anyway",
+  !readFileSync(join(root, "src/app/e4/page.tsx"), "utf8").includes("Confirm anyway"),
+);
+
+const e2 = readFileSync(join(root, "src/app/e2/page.tsx"), "utf8");
+assert(
+  "e2 handles forbidden queue without throw",
+  !e2.includes("throw new Error") && e2.includes("rows === null"),
+);
+
+const e4Src = readFileSync(join(root, "src/app/e4/page.tsx"), "utf8");
+assert(
+  "e4 handles forbidden orders without throw",
+  !e4Src.includes("throw new Error") && e4Src.includes("orders === null"),
+);
+assert(
+  "gate dialog has no anyway",
+  !readFileSync(join(root, "src/app/components/GateDialog.tsx"), "utf8").includes("anyway"),
+);
+
+const e3 = readFileSync(join(root, "src/app/e3/page.tsx"), "utf8");
+assert(
+  "e3 redirects it away (never sees supplier dossier / P00042)",
+  /persona\s*===\s*["']it["']/.test(e3) && e3.includes("redirect("),
+);
+assert("e3 gates on isEmployee", e3.includes("isEmployee"));
+
+const e1 = readFileSync(join(root, "src/app/e1/page.tsx"), "utf8");
+assert("e1 gates on isEmployee", e1.includes("isEmployee"));
+
+const s3 = readFileSync(join(root, "src/app/s3/page.tsx"), "utf8");
+assert("s3 uses activities adapter helper", s3.includes("activitiesFor"));
+assert("s3 not a second SoR table", !s3.includes("localStorage"));
+
+const poGateClient = readFileSync(join(root, "src/app/e4/PoGateClient.tsx"), "utf8");
+assert(
+  "PoGateClient has no confirm-anyway grep bypass",
+  !poGateClient.toLowerCase().includes("anyway"),
+);
+
+for (const f of ["b1/page.tsx", "b2/[id]/page.tsx", "b3/page.tsx"]) {
+  const t = readFileSync(join(root, "src/app", f), "utf8");
+  assert("buyer chrome no vault " + f, !t.includes("vault."));
+  assert("buyer chrome no n8n " + f, !t.includes("n8n."));
+}
+
+const p1 = readFileSync(join(root, "src/app/p1/page.tsx"), "utf8");
+assert("p1 default pending", p1.includes("pending"));
+assert(
+  "p1 does not self-approve",
+  !p1.includes("approved") || p1.includes("cannot self-approve") || p1.includes("You cannot self-approve"),
+);
+assert("p1 allows employee peek", p1.includes("isEmployee"));
+assert("p1 keeps Example Foods Pvt Ltd", p1.includes("Example Foods Pvt Ltd"));
+const p2 = readFileSync(join(root, "src/app/p2/page.tsx"), "utf8");
+assert("p2 posts metadata", p2.includes("/api/documents"));
+assert("p2 no multipart", !p2.includes("FormData") && !p2.includes("multipart"));
+const uploadForm = readFileSync(join(root, "src/app/components/DocumentUploadForm.tsx"), "utf8");
+assert(
+  "upload form no multipart",
+  !uploadForm.includes("FormData") && !uploadForm.includes("multipart"),
 );
 
 const base = process.env.SATTVA_BFF_URL || "http://127.0.0.1:3010";
@@ -114,6 +205,18 @@ try {
 
   const fin = await httpJson("/api/dashboard", { headers: { "x-sattva-persona": "finance" } });
   assert("finance sees invoices kpi", typeof fin.body.unpaid_invoices === "number");
+
+  const dashBuyer = await httpJson("/api/dashboard", { headers: { "x-sattva-persona": "buyer" } });
+  assert("dashboard 403 buyer", dashBuyer.res.status === 403, String(dashBuyer.res.status));
+
+  const dashSupplier = await httpJson("/api/dashboard", { headers: { "x-sattva-persona": "supplier" } });
+  assert("dashboard 403 supplier", dashSupplier.res.status === 403, String(dashSupplier.res.status));
+
+  const dashIt = await httpJson("/api/dashboard", { headers: { "x-sattva-persona": "it" } });
+  assert("dashboard 200 it", dashIt.res.status === 200, String(dashIt.res.status));
+  const dashItText = JSON.stringify(dashIt.body);
+  assert("dashboard it hides P00042", !dashItText.includes("P00042"), dashItText);
+  assert("dashboard it hides SO-1042", !dashItText.includes("SO-1042"), dashItText);
 
   const blocked = await httpJson("/api/purchase/orders/p00042/confirm", {
     method: "POST",
@@ -248,6 +351,61 @@ try {
 
   const logi = await httpJson("/api/dashboard", { headers: { "x-sattva-persona": "logistics" } });
   assert("logistics persona 200", logi.res.status === 200, String(logi.res.status));
+
+  assert(
+    "invoices 403 sales",
+    (await httpJson("/api/invoices", { headers: { "x-sattva-persona": "sales" } })).res.status === 403,
+  );
+  assert(
+    "invoices 200 finance",
+    (await httpJson("/api/invoices", { headers: { "x-sattva-persona": "finance" } })).res.status === 200,
+  );
+
+  const itLots = await httpJson("/api/lots", { headers: { "x-sattva-persona": "it" } });
+  assert("it lots 200", itLots.res.status === 200, String(itLots.res.status));
+  assert(
+    "it lots omit SO-1042 buyer_order",
+    Array.isArray(itLots.body.lots) && itLots.body.lots.every((lot) => lot.buyer_order !== "SO-1042"),
+    JSON.stringify(itLots.body.lots),
+  );
+  const itLotsText = JSON.stringify(itLots.body);
+  assert("it lots body has no SO-1042", !itLotsText.includes("SO-1042"), itLotsText);
+
+  const e4It = await fetch(base + "/e4", { headers: { cookie: "sattva_persona=it" } });
+  assert("e4 200 for it (no 500)", e4It.status === 200, String(e4It.status));
+  const e4Logistics = await fetch(base + "/e4", { headers: { cookie: "sattva_persona=logistics" } });
+  assert("e4 200 for logistics (no 500)", e4Logistics.status === 200, String(e4Logistics.status));
+
+  const e1Buyer = await fetch(base + "/e1", {
+    headers: { cookie: "sattva_persona=buyer" },
+    redirect: "manual",
+  });
+  assert(
+    "e1 redirects buyer away",
+    [301, 302, 303, 307, 308].includes(e1Buyer.status),
+    String(e1Buyer.status),
+  );
+  assert("e1 redirects buyer to /b1", e1Buyer.headers.get("location")?.includes("/b1"), e1Buyer.headers.get("location"));
+
+  const e3Buyer = await fetch(base + "/e3", {
+    headers: { cookie: "sattva_persona=buyer" },
+    redirect: "manual",
+  });
+  assert(
+    "e3 redirects buyer away",
+    [301, 302, 303, 307, 308].includes(e3Buyer.status),
+    String(e3Buyer.status),
+  );
+
+  const e3It = await fetch(base + "/e3", {
+    headers: { cookie: "sattva_persona=it" },
+    redirect: "manual",
+  });
+  assert(
+    "e3 redirects it away",
+    [301, 302, 303, 307, 308].includes(e3It.status),
+    String(e3It.status),
+  );
 } catch (err) {
   if (err && (err.code === "ECONNREFUSED" || String(err.cause || err).includes("ECONNREFUSED"))) {
     console.log("SKIP HTTP (BFF not listening on", base + ")");
