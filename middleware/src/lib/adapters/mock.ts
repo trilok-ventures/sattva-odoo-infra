@@ -116,15 +116,19 @@ function allowedUploadOrigin(value: string | undefined): string | undefined {
 
 export const mockAdapter: FabricAdapter = {
   async dashboard(persona: Persona): Promise<Dashboard> {
+    const activity =
+      persona === "it"
+        ? [{ at: "11:15", label: "Lot L-882 COA pass (GREEN)", dest: "e5" }]
+        : [
+            { at: "14:02", label: "P00042 blocked — supplier not approved", dest: "e4" },
+            { at: "13:40", label: "Example Foods → review", dest: "e3" },
+            { at: "11:15", label: "Lot L-882 COA pass (GREEN)", dest: "e5" },
+          ];
     const base: Dashboard = {
       pending_pcp_reviews: 4,
       po_confirms_blocked: 2,
       lots_in_quarantine: 3,
-      activity: [
-        { at: "14:02", label: "P00042 blocked — supplier not approved", dest: "e4" },
-        { at: "13:40", label: "Example Foods → review", dest: "e3" },
-        { at: "11:15", label: "Lot L-882 COA pass (GREEN)", dest: "e5" },
-      ],
+      activity,
     };
     if (persona === "finance") base.unpaid_invoices = 6;
     if (persona === "it") base.n8n_failures = 0;
