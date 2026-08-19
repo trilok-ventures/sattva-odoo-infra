@@ -37,6 +37,18 @@ Create the ids in `secret-names.md` **in the AssetCo project**. Values never
 enter git. `provision-runtime.sh` grants the VM service account accessor on
 those ids when they exist.
 
+Verify names, enabled versions, and Compute Engine SA access (prints byte
+lengths only):
+
+```bash
+./deploy/gcp/verify-secrets.sh
+```
+
+Healthy means every required id exists, has an enabled version, and is
+readable by `sattva-prod-vm@sattva-prod-ca.iam.gserviceaccount.com` (or, before
+the VM SA exists, the project's default Compute Engine SA). Then run
+`provision-runtime.sh`.
+
 ## 3. Runtime in `sattva-prod-ca`
 
 ```bash
