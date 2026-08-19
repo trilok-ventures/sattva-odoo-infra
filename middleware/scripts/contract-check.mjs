@@ -109,6 +109,15 @@ assert(
   rootVercel.outputDirectory === "docs/superpowers/mocks",
 );
 
+assert(
+  "e4 page source has no Confirm anyway",
+  !readFileSync(join(root, "src/app/e4/page.tsx"), "utf8").includes("Confirm anyway"),
+);
+assert(
+  "gate dialog has no anyway",
+  !readFileSync(join(root, "src/app/components/GateDialog.tsx"), "utf8").includes("anyway"),
+);
+
 const base = process.env.SATTVA_BFF_URL || "http://127.0.0.1:3010";
 
 async function httpJson(path, opts = {}) {
