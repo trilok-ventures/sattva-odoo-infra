@@ -1,8 +1,9 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { Chrome, PERSONA_LABELS } from "../components/Chrome";
 import { readPersonaFromCookie } from "../components/StubScreen";
 import { StatusPill } from "../components/StatusPill";
-import { SCREENS } from "@/lib/screen-graph";
+import { LANDING, SCREENS } from "@/lib/screen-graph";
 import { isEmployee } from "@/lib/persona";
 
 const CERTS = [
@@ -12,6 +13,12 @@ const CERTS = [
 
 export default async function E3Page() {
   const persona = await readPersonaFromCookie();
+
+  // Supplier dossier is employee-only, and it.admin never sees business rows
+  // or supplier dossiers (hi-fi: IT stays on infra/health screens).
+  if (!isEmployee(persona) || persona === "it") {
+    redirect(LANDING[persona]);
+  }
 
   return (
     <Chrome persona={persona} title="E3 · Supplier dossier — Example Foods Pvt Ltd">
@@ -43,12 +50,8 @@ export default async function E3Page() {
       </table>
       <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginTop: 16 }}>
         <Link href={SCREENS.E2}>← E2 queue</Link>
-        {isEmployee(persona) ? (
-          <Link href={SCREENS.P1}>Peek supplier</Link>
-        ) : null}
-        {persona !== "it" ? (
-          <Link href={SCREENS.E4}>Related PO P00042 →</Link>
-        ) : null}
+        <Link href={SCREENS.P1}>Peek supplier</Link>
+        <Link href={SCREENS.E4}>Related PO P00042 →</Link>
         {persona === "compliance" ? (
           <Link href={SCREENS.E2}>Approve in Odoo</Link>
         ) : null}
