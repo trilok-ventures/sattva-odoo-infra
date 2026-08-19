@@ -124,6 +124,12 @@ assert(
   !readFileSync(join(root, "src/app/components/GateDialog.tsx"), "utf8").includes("anyway"),
 );
 
+const e3 = readFileSync(join(root, "src/app/e3/page.tsx"), "utf8");
+assert(
+  "e3 hides P00042 for it persona",
+  /persona\s*!==\s*["']it["']\s*\?[\s\S]*P00042/.test(e3),
+);
+
 const s3 = readFileSync(join(root, "src/app/s3/page.tsx"), "utf8");
 assert("s3 uses activities API", s3.includes("/api/activities"));
 assert("s3 not a second SoR table", !s3.includes("localStorage"));

@@ -46,7 +46,9 @@ export default async function E3Page() {
         {isEmployee(persona) ? (
           <Link href={SCREENS.P1}>Peek supplier</Link>
         ) : null}
-        <Link href={SCREENS.E4}>Related PO P00042 →</Link>
+        {persona !== "it" ? (
+          <Link href={SCREENS.E4}>Related PO P00042 →</Link>
+        ) : null}
         {persona === "compliance" ? (
           <Link href={SCREENS.E2}>Approve in Odoo</Link>
         ) : null}
