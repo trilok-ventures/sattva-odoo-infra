@@ -140,6 +140,16 @@ for (const f of ["b1/page.tsx", "b2/[id]/page.tsx", "b3/page.tsx"]) {
   assert("buyer chrome no n8n " + f, !t.includes("n8n."));
 }
 
+const p1 = readFileSync(join(root, "src/app/p1/page.tsx"), "utf8");
+assert("p1 default pending", p1.includes("pending"));
+assert(
+  "p1 does not self-approve",
+  !p1.includes("approved") || p1.includes("cannot self-approve") || p1.includes("You cannot self-approve"),
+);
+const p2 = readFileSync(join(root, "src/app/p2/page.tsx"), "utf8");
+assert("p2 posts metadata", p2.includes("/api/documents"));
+assert("p2 no multipart", !p2.includes("FormData") && !p2.includes("multipart"));
+
 const base = process.env.SATTVA_BFF_URL || "http://127.0.0.1:3010";
 
 async function httpJson(path, opts = {}) {
