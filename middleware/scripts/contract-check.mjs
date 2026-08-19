@@ -309,6 +309,16 @@ try {
     "invoices 200 finance",
     (await httpJson("/api/invoices", { headers: { "x-sattva-persona": "finance" } })).res.status === 200,
   );
+
+  const itLots = await httpJson("/api/lots", { headers: { "x-sattva-persona": "it" } });
+  assert("it lots 200", itLots.res.status === 200, String(itLots.res.status));
+  assert(
+    "it lots omit SO-1042 buyer_order",
+    Array.isArray(itLots.body.lots) && itLots.body.lots.every((lot) => lot.buyer_order !== "SO-1042"),
+    JSON.stringify(itLots.body.lots),
+  );
+  const itLotsText = JSON.stringify(itLots.body);
+  assert("it lots body has no SO-1042", !itLotsText.includes("SO-1042"), itLotsText);
 } catch (err) {
   if (err && (err.code === "ECONNREFUSED" || String(err.cause || err).includes("ECONNREFUSED"))) {
     console.log("SKIP HTTP (BFF not listening on", base + ")");
