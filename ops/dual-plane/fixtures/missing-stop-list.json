@@ -1,0 +1,7 @@
+{
+  "goal": "Touch a docs file",
+  "paths": ["docs/superpowers/specs/2026-08-18-dual-plane-ceo-desk-design.md"],
+  "inputs": ["Published GREEN spec only"],
+  "done": "Draft PR",
+  "forbidden": "Odoo write, Nextcloud, secrets, merge main"
+}

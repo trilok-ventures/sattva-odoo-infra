@@ -1,0 +1,23 @@
+name: dual-plane-pack
+
+on:
+  pull_request:
+    paths:
+      - ops/dual-plane/**
+      - plugins/sattva-fabric-bind/**
+      - .github/workflows/dual-plane-pack.yml
+      - .github/pull_request_template.md
+
+jobs:
+  pack:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Operating pack tests
+        run: python3 ops/dual-plane/test_operating_pack.py -v
+      - name: Plugin layout tests
+        run: python3 plugins/sattva-fabric-bind/tests/test_plugin_layout.py -v
+        if: hashFiles('plugins/sattva-fabric-bind/tests/test_plugin_layout.py') != ''
