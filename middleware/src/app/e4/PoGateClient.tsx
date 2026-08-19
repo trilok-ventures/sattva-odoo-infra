@@ -7,12 +7,10 @@ import { GateDialog } from "../components/GateDialog";
 import { StatusPill } from "../components/StatusPill";
 import { SCREENS } from "@/lib/screen-graph";
 
-const CONFIRM_PROP = ("confirm_" + "any" + "way") as "confirm_anyway";
-
 type GatePayload = {
   title: string;
   message: string;
-} & Record<typeof CONFIRM_PROP, false>;
+};
 
 export function PoGateClient({ initialOrders }: { initialOrders: PurchaseOrder[] }) {
   const [orders, setOrders] = useState(initialOrders);
@@ -25,11 +23,7 @@ export function PoGateClient({ initialOrders }: { initialOrders: PurchaseOrder[]
       const res = await fetch(`/api/purchase/orders/${id}/confirm`, { method: "POST" });
       const body = await res.json();
       if (res.status === 409) {
-        setGate({
-          title: body.title,
-          message: body.message,
-          [CONFIRM_PROP]: false,
-        });
+        setGate({ title: body.title, message: body.message });
         return;
       }
       if (res.ok && body.state === "purchase") {
