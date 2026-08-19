@@ -29,8 +29,8 @@ for (const id of [
 if (!script.includes("never secret values") && !script.includes("never secret")) {
   fail("script header must state values are not printed");
 }
-if (!script.includes("roles/secretmanager.secretAccessor")) {
-  fail("must inspect secretAccessor IAM");
+if (!script.includes("projects get-iam-policy")) {
+  fail("must inspect project-level secretAccessor bindings");
 }
 if (!script.includes("--impersonate-service-account")) {
   fail("must try access as the VM service account");

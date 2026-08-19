@@ -81,13 +81,19 @@ gcloud storage buckets add-iam-policy-binding "gs://${BUCKET}" \
   --project="${PROJECT}" >/dev/null
 
 if gcloud projects describe "${ASSET}" >/dev/null 2>&1; then
+  log "Granting ${SA_EMAIL} secretAccessor on AssetCo project ${ASSET}"
+  gcloud projects add-iam-policy-binding "${ASSET}" \
+    --member="serviceAccount:${SA_EMAIL}" \
+    --role="roles/secretmanager.secretAccessor" \
+    --quiet >/dev/null
   while IFS= read -r secret_id; do
     [[ -z "${secret_id}" ]] && continue
     if gcloud secrets describe "${secret_id}" --project="${ASSET}" >/dev/null 2>&1; then
       gcloud secrets add-iam-policy-binding "${secret_id}" \
         --project="${ASSET}" \
         --member="serviceAccount:${SA_EMAIL}" \
-        --role="roles/secretmanager.secretAccessor"
+        --role="roles/secretmanager.secretAccessor" \
+        --quiet >/dev/null || log "per-secret IAM skip ${secret_id}"
     else
       log "Secret ${secret_id} not yet in ${ASSET} (create values later)"
     fi
@@ -134,7 +140,7 @@ log "Runtime provision finished."
 echo "project=${PROJECT} ip=${IP} vm=${NAME} sa=${SA_EMAIL} backups=gs://${BUCKET}"
 
 if [[ -n "${TRILOK_GCP_OPERATOR:-}" ]]; then
-  log "Granting IAP SSH + OS Login to ${TRILOK_GCP_OPERATOR}"
+  log "Granting IAP SSH + OS Login + VM SA tokenCreator to ${TRILOK_GCP_OPERATOR}"
   gcloud projects add-iam-policy-binding "${PROJECT}" \
     --member="${TRILOK_GCP_OPERATOR}" \
     --role="roles/iap.tunnelResourceAccessor" \
@@ -142,5 +148,10 @@ if [[ -n "${TRILOK_GCP_OPERATOR:-}" ]]; then
   gcloud projects add-iam-policy-binding "${PROJECT}" \
     --member="${TRILOK_GCP_OPERATOR}" \
     --role="roles/compute.osLogin" \
+    --quiet >/dev/null
+  gcloud iam service-accounts add-iam-policy-binding "${SA_EMAIL}" \
+    --project="${PROJECT}" \
+    --member="${TRILOK_GCP_OPERATOR}" \
+    --role="roles/iam.serviceAccountTokenCreator" \
     --quiet >/dev/null
 fi

@@ -60,6 +60,19 @@ if gcloud iam service-accounts describe "${VM_SA}" --project="${PROJECT}" >/dev/
   vm_sa_exists=1
 fi
 
+ASSET_NUMBER="$(gcloud projects describe "${ASSET}" --format='value(projectNumber)')"
+ASSET_COMPUTE=""
+if [[ -n "${ASSET_NUMBER}" ]]; then
+  ASSET_COMPUTE="${ASSET_NUMBER}-compute@developer.gserviceaccount.com"
+fi
+
+PROJECT_ACCESSORS="$(gcloud projects get-iam-policy "${ASSET}" \
+  --flatten='bindings[].members' \
+  --filter='bindings.role=roles/secretmanager.secretAccessor' \
+  --format='value(bindings.members)' 2>/dev/null || true)"
+log "AssetCo project secretAccessor members:"
+log "${PROJECT_ACCESSORS:-"(none)"}"
+
 fail=0
 report=()
 
@@ -103,29 +116,37 @@ for secret_id in "${REQUIRED[@]}"; do
     --flatten='bindings[].members' \
     --filter='bindings.role=roles/secretmanager.secretAccessor' \
     --format='value(bindings.members)' 2>/dev/null || true)"
+  policy="${policy}"$'\n'"${PROJECT_ACCESSORS}"
 
   vm_ok=0
   default_ok=0
+  asset_compute_ok=0
   if has_member "${policy}" "${VM_SA}"; then
     vm_ok=1
   fi
   if has_member "${policy}" "${DEFAULT_COMPUTE}"; then
     default_ok=1
   fi
+  if has_member "${policy}" "${ASSET_COMPUTE}"; then
+    asset_compute_ok=1
+  fi
 
   if [[ "${vm_sa_exists}" -eq 1 && "${vm_ok}" -eq 0 ]]; then
     report+=("NO_CUSTOM_VM_SA_ACCESSOR ${secret_id} (need ${VM_SA})")
     fail=1
   elif [[ "${vm_ok}" -eq 0 && "${default_ok}" -eq 0 ]]; then
-    report+=("NO_COMPUTE_SA_ACCESSOR ${secret_id} (wanted ${VM_SA}${DEFAULT_COMPUTE:+ or ${DEFAULT_COMPUTE}})")
+    report+=("NO_OPCO_SA_ACCESSOR ${secret_id} (wanted ${VM_SA}${DEFAULT_COMPUTE:+ or OpCo ${DEFAULT_COMPUTE}})")
     fail=1
+    if [[ "${asset_compute_ok}" -eq 1 ]]; then
+      report+=("NOTE ${secret_id} is bound to AssetCo default compute SA ${ASSET_COMPUTE} — that SA does not run the OpCo VM")
+    fi
   else
     who="custom-vm-sa"
-    [[ "${vm_ok}" -eq 1 ]] || who="default-compute-sa"
-    [[ "${vm_ok}" -eq 1 && "${default_ok}" -eq 1 ]] && who="custom-vm-sa+default-compute-sa"
+    [[ "${vm_ok}" -eq 1 ]] || who="opco-default-compute-sa"
+    [[ "${vm_ok}" -eq 1 && "${default_ok}" -eq 1 ]] && who="custom-vm-sa+opco-default-compute-sa"
     report+=("IAM_OK ${secret_id} accessor=${who}")
     if [[ "${vm_sa_exists}" -eq 0 && "${default_ok}" -eq 1 && "${vm_ok}" -eq 0 ]]; then
-      report+=("NOTE ${secret_id} bound to default Compute Engine SA; grant ${VM_SA} after provision-runtime.sh")
+      report+=("NOTE ${secret_id} bound to OpCo default Compute Engine SA; grant ${VM_SA} after provision-runtime.sh")
     fi
   fi
 
@@ -136,17 +157,23 @@ for secret_id in "${REQUIRED[@]}"; do
     impersonate="${DEFAULT_COMPUTE}"
   fi
 
-  bytes="$(access_len "${secret_id}" "${impersonate}" || true)"
-  bytes="${bytes// /}"
-  if [[ -z "${bytes}" || "${bytes}" == "0" ]]; then
-    # Impersonation may be denied to this deployer; try as the deployer itself.
+  used_impersonate=0
+  bytes="0"
+  if [[ -n "${impersonate}" ]]; then
+    bytes="$(access_len "${secret_id}" "${impersonate}" || true)"
+    bytes="${bytes// /}"
+    if [[ -n "${bytes}" && "${bytes}" != "0" ]]; then
+      used_impersonate=1
+    fi
+  fi
+  if [[ "${used_impersonate}" -eq 0 ]]; then
     bytes="$(access_len "${secret_id}" "" || true)"
     bytes="${bytes// /}"
     if [[ -z "${bytes}" || "${bytes}" == "0" ]]; then
       report+=("ACCESS_FAIL ${secret_id} (IAM listed but versions/access failed)")
       fail=1
     else
-      report+=("ACCESS_OK_DEPLOYER ${secret_id} bytes=${bytes} (impersonation not available from this identity)")
+      report+=("ACCESS_OK_OPERATOR ${secret_id} bytes=${bytes} (VM SA impersonation not proven)")
     fi
   else
     extra=""
