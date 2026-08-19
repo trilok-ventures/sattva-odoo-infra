@@ -76,6 +76,8 @@ assert("employee flow starts S1", graphSrc.includes("employee:") && graphSrc.inc
 assert("buyer flow has /b3", graphSrc.includes('"/b3"'));
 assert("seller flow has /p2/receipt", graphSrc.includes('"/p2/receipt"'));
 assert("no /map production route", !graphSrc.includes('"/map"'));
+assert("nextInFlow uses indexOf", graphSrc.includes("steps.indexOf"));
+assert("nextInFlow does not use lastIndexOf", !graphSrc.includes("lastIndexOf"));
 
 const httpSrc = readFileSync(join(root, "src/lib/http.ts"), "utf8");
 assert(

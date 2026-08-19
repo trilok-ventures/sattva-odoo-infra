@@ -51,9 +51,10 @@ export const FLOWS: Record<"employee" | "buyer" | "seller", string[]> = {
   seller: [SCREENS.S1, SCREENS.S2, SCREENS.P1, SCREENS.P2, SCREENS.P2R, SCREENS.P1],
 };
 
+/** Next step in an ordered flow; first occurrence when a path repeats. */
 export function nextInFlow(flow: keyof typeof FLOWS, currentPath: string): string | null {
   const steps = FLOWS[flow];
-  const i = steps.lastIndexOf(currentPath);
+  const i = steps.indexOf(currentPath);
   if (i < 0 || i === steps.length - 1) return null;
   return steps[i + 1];
 }
