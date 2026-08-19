@@ -1,24 +1,9 @@
 import Link from "next/link";
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { Chrome } from "../components/Chrome";
 import { readPersonaFromCookie } from "../components/StubScreen";
 import { LANDING } from "@/lib/screen-graph";
-import type { ActivityRow } from "@/lib/adapters/types";
-import type { Persona } from "@/lib/persona";
-
-async function fetchActivities(persona: Persona): Promise<ActivityRow[]> {
-  const hdrs = await headers();
-  const host = hdrs.get("host") ?? "localhost:3010";
-  const proto = hdrs.get("x-forwarded-proto") ?? "http";
-  const res = await fetch(`${proto}://${host}/api/activities`, {
-    headers: { "x-sattva-persona": persona },
-    cache: "no-store",
-  });
-  if (!res.ok) throw new Error(`activities ${res.status}`);
-  const body = await res.json();
-  return body.activities;
-}
+import { activitiesFor } from "@/lib/internal-fetch";
 
 function activityHref(dest: string): string {
   return dest.startsWith("/") ? dest : `/${dest}`;
@@ -31,7 +16,7 @@ export default async function S3Page() {
     redirect(LANDING[persona]);
   }
 
-  const activities = await fetchActivities(persona);
+  const activities = await activitiesFor(persona);
 
   return (
     <Chrome persona={persona} title="S3 · Notifications">

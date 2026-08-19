@@ -1,24 +1,9 @@
 import Link from "next/link";
-import { headers } from "next/headers";
 import { Chrome } from "../components/Chrome";
 import { readPersonaFromCookie } from "../components/StubScreen";
 import { StatusPill } from "../components/StatusPill";
 import { LANDING, SCREENS } from "@/lib/screen-graph";
-import type { QueueRow } from "@/lib/adapters/types";
-import type { Persona } from "@/lib/persona";
-
-async function fetchQueue(persona: Persona): Promise<QueueRow[] | null> {
-  const hdrs = await headers();
-  const host = hdrs.get("host") ?? "localhost:3010";
-  const proto = hdrs.get("x-forwarded-proto") ?? "http";
-  const res = await fetch(`${proto}://${host}/api/compliance/queue`, {
-    headers: { "x-sattva-persona": persona },
-    cache: "no-store",
-  });
-  if (!res.ok) return null;
-  const body = await res.json();
-  return body.rows;
-}
+import { complianceQueueFor } from "@/lib/internal-fetch";
 
 function dossierHref(partner: string): string {
   return partner.includes("Example Foods") ? SCREENS.E3 : SCREENS.E3;
@@ -26,7 +11,7 @@ function dossierHref(partner: string): string {
 
 export default async function E2Page() {
   const persona = await readPersonaFromCookie();
-  const rows = await fetchQueue(persona);
+  const rows = await complianceQueueFor(persona);
 
   if (rows === null) {
     return (

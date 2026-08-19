@@ -1,27 +1,12 @@
 import Link from "next/link";
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { Chrome } from "../components/Chrome";
 import { readPersonaFromCookie } from "../components/StubScreen";
 import { LANDING, SCREENS } from "@/lib/screen-graph";
-import type { LotGreen } from "@/lib/adapters/types";
-import type { Persona } from "@/lib/persona";
+import { lotsFor } from "@/lib/internal-fetch";
 
 const ORDER_ID = "SO-1042";
 const BUYER_NAME = "Northshore Foods Inc";
-
-async function fetchLots(persona: Persona): Promise<LotGreen[]> {
-  const hdrs = await headers();
-  const host = hdrs.get("host") ?? "localhost:3010";
-  const proto = hdrs.get("x-forwarded-proto") ?? "http";
-  const res = await fetch(`${proto}://${host}/api/lots`, {
-    headers: { "x-sattva-persona": persona },
-    cache: "no-store",
-  });
-  if (!res.ok) throw new Error(`lots ${res.status}`);
-  const body = await res.json();
-  return body.lots;
-}
 
 export default async function B1Page() {
   const persona = await readPersonaFromCookie();
@@ -30,7 +15,7 @@ export default async function B1Page() {
     redirect(LANDING[persona]);
   }
 
-  const lots = await fetchLots(persona);
+  const lots = (await lotsFor(persona)) ?? [];
   const lot = lots.find((row) => row.buyer_order === ORDER_ID);
 
   return (

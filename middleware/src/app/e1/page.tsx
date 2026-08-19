@@ -1,22 +1,10 @@
 import Link from "next/link";
-import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 import { Chrome } from "../components/Chrome";
 import { readPersonaFromCookie } from "../components/StubScreen";
-import { SCREENS } from "@/lib/screen-graph";
-import type { Dashboard } from "@/lib/adapters/types";
-import type { Persona } from "@/lib/persona";
-
-async function fetchDashboard(persona: Persona): Promise<Dashboard> {
-  const hdrs = await headers();
-  const host = hdrs.get("host") ?? "localhost:3010";
-  const proto = hdrs.get("x-forwarded-proto") ?? "http";
-  const res = await fetch(`${proto}://${host}/api/dashboard`, {
-    headers: { "x-sattva-persona": persona },
-    cache: "no-store",
-  });
-  if (!res.ok) throw new Error(`dashboard ${res.status}`);
-  return res.json();
-}
+import { LANDING, SCREENS } from "@/lib/screen-graph";
+import { dashboardFor } from "@/lib/internal-fetch";
+import { isEmployee } from "@/lib/persona";
 
 function destHref(dest: string): string {
   return dest.startsWith("/") ? dest : `/${dest}`;
@@ -24,7 +12,13 @@ function destHref(dest: string): string {
 
 export default async function E1Page() {
   const persona = await readPersonaFromCookie();
-  const data = await fetchDashboard(persona);
+  if (!isEmployee(persona)) {
+    redirect(LANDING[persona]);
+  }
+  const data = await dashboardFor(persona);
+  if (!data) {
+    redirect(LANDING[persona]);
+  }
 
   return (
     <Chrome persona={persona} title="E1 · Ops dashboard">
