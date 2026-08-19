@@ -15,7 +15,7 @@ export default async function P1Page() {
   return (
     <Chrome persona={persona} title="P1 · Supplier home">
       <h1>P1 · Supplier home</h1>
-      <p className="caption">Example Foods Ltd — PCP compliance status.</p>
+      <p className="caption">Example Foods Pvt Ltd — PCP compliance status.</p>
       <p style={{ marginTop: 12 }}>
         PCP status: <StatusPill status="pending" />
       </p>

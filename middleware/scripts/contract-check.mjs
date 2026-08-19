@@ -149,6 +149,11 @@ assert(
 const p2 = readFileSync(join(root, "src/app/p2/page.tsx"), "utf8");
 assert("p2 posts metadata", p2.includes("/api/documents"));
 assert("p2 no multipart", !p2.includes("FormData") && !p2.includes("multipart"));
+const uploadForm = readFileSync(join(root, "src/app/components/DocumentUploadForm.tsx"), "utf8");
+assert(
+  "upload form no multipart",
+  !uploadForm.includes("FormData") && !uploadForm.includes("multipart"),
+);
 
 const base = process.env.SATTVA_BFF_URL || "http://127.0.0.1:3010";
 
