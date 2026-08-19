@@ -28,7 +28,7 @@ export function SignInButtons() {
   }
 
   return (
-    <main>
+    <>
       <h1>S1 · Sign in</h1>
       <p>Phase 1 mock header · design only until Keycloak</p>
       <p>
@@ -45,6 +45,6 @@ export function SignInButtons() {
           </li>
         ))}
       </ul>
-    </main>
+    </>
   );
 }

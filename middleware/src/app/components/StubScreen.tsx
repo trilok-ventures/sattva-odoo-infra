@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { COOKIE, LANDING, nextInFlow } from "@/lib/screen-graph";
 import { isEmployee, parsePersona, type Persona } from "@/lib/persona";
+import { Chrome } from "./Chrome";
 
 type Flow = keyof typeof import("@/lib/screen-graph").FLOWS;
 
@@ -19,7 +20,7 @@ export async function StubScreen({
   const landing = LANDING[persona];
 
   return (
-    <main>
+    <Chrome persona={persona} title={title}>
       <h1>{title}</h1>
       {next ? (
         <p>
@@ -29,7 +30,7 @@ export async function StubScreen({
       <p>
         <a href={landing}>Home</a>
       </p>
-    </main>
+    </Chrome>
   );
 }
 

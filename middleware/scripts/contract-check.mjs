@@ -79,6 +79,24 @@ assert("no /map production route", !graphSrc.includes('"/map"'));
 assert("nextInFlow uses indexOf", graphSrc.includes("steps.indexOf"));
 assert("nextInFlow does not use lastIndexOf", !graphSrc.includes("lastIndexOf"));
 
+const css = readFileSync(join(root, "src/app/globals.css"), "utf8");
+assert("nav token", css.includes("#143528"));
+assert("sand token", css.includes("#f7f4ef"));
+assert("forest token", css.includes("#1f4d3a"));
+
+const chromeSrc = readFileSync(join(root, "src/app/components/Chrome.tsx"), "utf8");
+const buyerNavMatch = chromeSrc.match(/BUYER_NAV\s*=\s*\[([\s\S]*?)\];/);
+assert(
+  "buyer nav excludes vault",
+  buyerNavMatch && !buyerNavMatch[1].includes("vault"),
+  "BUYER_NAV must not reference vault",
+);
+assert(
+  "buyer nav excludes n8n",
+  buyerNavMatch && !buyerNavMatch[1].includes("n8n"),
+  "BUYER_NAV must not reference n8n",
+);
+
 const httpSrc = readFileSync(join(root, "src/lib/http.ts"), "utf8");
 assert(
   "live mode refuses persona header",
