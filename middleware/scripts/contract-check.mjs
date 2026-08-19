@@ -118,6 +118,10 @@ assert(
   !readFileSync(join(root, "src/app/components/GateDialog.tsx"), "utf8").includes("anyway"),
 );
 
+const s3 = readFileSync(join(root, "src/app/s3/page.tsx"), "utf8");
+assert("s3 uses activities API", s3.includes("/api/activities"));
+assert("s3 not a second SoR table", !s3.includes("localStorage"));
+
 const base = process.env.SATTVA_BFF_URL || "http://127.0.0.1:3010";
 
 async function httpJson(path, opts = {}) {

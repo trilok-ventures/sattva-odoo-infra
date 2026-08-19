@@ -4,7 +4,7 @@ import { SCREENS } from "@/lib/screen-graph";
 import { isEmployee, type Persona } from "@/lib/persona";
 import { MockCaption } from "./MockCaption";
 
-const PERSONA_LABELS: Record<Persona, string> = {
+export const PERSONA_LABELS: Record<Persona, string> = {
   sales: "sales.exec",
   compliance: "compliance.reviewer",
   finance: "finance.ap",
