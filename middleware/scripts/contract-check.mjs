@@ -70,6 +70,13 @@ const hits = [];
 walk(clean, "$", hits);
 assert("clean object has no RED keys", hits.length === 0, hits.join(","));
 
+const graphSrc = readFileSync(join(root, "src/lib/screen-graph.ts"), "utf8");
+assert("graph has S1 path /", graphSrc.includes('S1: "/"') || graphSrc.includes("S1: '/'"));
+assert("employee flow starts S1", graphSrc.includes("employee:") && graphSrc.includes('"/e4"'));
+assert("buyer flow has /b3", graphSrc.includes('"/b3"'));
+assert("seller flow has /p2/receipt", graphSrc.includes('"/p2/receipt"'));
+assert("no /map production route", !graphSrc.includes('"/map"'));
+
 const httpSrc = readFileSync(join(root, "src/lib/http.ts"), "utf8");
 assert(
   "live mode refuses persona header",
