@@ -300,6 +300,15 @@ try {
 
   const logi = await httpJson("/api/dashboard", { headers: { "x-sattva-persona": "logistics" } });
   assert("logistics persona 200", logi.res.status === 200, String(logi.res.status));
+
+  assert(
+    "invoices 403 sales",
+    (await httpJson("/api/invoices", { headers: { "x-sattva-persona": "sales" } })).res.status === 403,
+  );
+  assert(
+    "invoices 200 finance",
+    (await httpJson("/api/invoices", { headers: { "x-sattva-persona": "finance" } })).res.status === 200,
+  );
 } catch (err) {
   if (err && (err.code === "ECONNREFUSED" || String(err.cause || err).includes("ECONNREFUSED"))) {
     console.log("SKIP HTTP (BFF not listening on", base + ")");

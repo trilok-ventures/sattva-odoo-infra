@@ -5,6 +5,7 @@ import type {
   Dashboard,
   DocumentReceipt,
   FabricAdapter,
+  InvoiceRow,
   LotGreen,
   PurchaseOrder,
   QueueRow,
@@ -78,6 +79,21 @@ const LOTS: LotGreen[] = [
   },
 ];
 
+const INVOICES: InvoiceRow[] = [
+  {
+    id: "INV-2218",
+    partner_display: "Northshore Foods Inc",
+    amount_label: "USD 12,400",
+    state: "posted",
+  },
+  {
+    id: "INV-2220",
+    partner_display: "Harbor Co-op",
+    amount_label: "USD 3,100",
+    state: "draft",
+  },
+];
+
 function allowedUploadOrigin(value: string | undefined): string | undefined {
   if (!value) return undefined;
   try {
@@ -148,7 +164,14 @@ export const mockAdapter: FabricAdapter = {
     if (persona === "buyer") {
       return LOTS.filter((lot) => lot.buyer_order === "SO-1042");
     }
+    if (persona === "it") {
+      return LOTS.filter((lot) => lot.buyer_order !== "SO-1042");
+    }
     return LOTS;
+  },
+
+  async invoices(): Promise<InvoiceRow[]> {
+    return INVOICES;
   },
 
   async storeDocument(
