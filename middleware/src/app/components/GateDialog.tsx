@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect } from "react";
+
 type GateDialogProps = {
   title: string;
   message: string;
@@ -8,6 +10,14 @@ type GateDialogProps = {
 };
 
 export function GateDialog({ title, message, onClose, dossierHref }: GateDialogProps) {
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") onClose();
+    }
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [onClose]);
+
   return (
     <div
       role="dialog"
@@ -35,7 +45,7 @@ export function GateDialog({ title, message, onClose, dossierHref }: GateDialogP
         <p>
           <a href={dossierHref}>View supplier compliance</a>
         </p>
-        <button type="button" onClick={onClose}>Close</button>
+        <button type="button" autoFocus onClick={onClose}>Close</button>
       </div>
     </div>
   );
