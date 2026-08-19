@@ -1,0 +1,193 @@
+# =============================================================================
+# Sattva / Trilok Ventures — PRODUCTION Compose-on-VM (Phase 3a, T1 HTTPS)
+# =============================================================================
+# Only Caddy publishes 80/443. n8n-worker publishes no ports. db/redis stay
+# off the frontend network. Secrets from deploy/prod/.env (AssetCo fetch).
+# =============================================================================
+
+x-n8n-environment: &n8n-environment
+  EXECUTIONS_MODE: queue
+  DB_TYPE: postgresdb
+  DB_POSTGRESDB_HOST: db
+  DB_POSTGRESDB_PORT: "5432"
+  DB_POSTGRESDB_DATABASE: n8n
+  DB_POSTGRESDB_USER: n8n
+  DB_POSTGRESDB_PASSWORD: ${N8N_DB_PASSWORD:?set N8N_DB_PASSWORD}
+  N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY:?set N8N_ENCRYPTION_KEY}
+  N8N_WEBHOOK_HMAC: ${N8N_WEBHOOK_HMAC:?set N8N_WEBHOOK_HMAC}
+  NEXTCLOUD_WEBDAV_BASE: http://nextcloud/remote.php/dav/files/${NEXTCLOUD_N8N_USER:?set NEXTCLOUD_N8N_USER}
+  ODOO_JSON2_URL: http://odoo:8069/jsonrpc
+  ODOO_N8N_UID: ${ODOO_N8N_UID:-}
+  QUEUE_BULL_REDIS_HOST: redis
+  N8N_HOST: n8n.trilokventures.org
+  N8N_PROTOCOL: https
+  N8N_EDITOR_BASE_URL: https://n8n.trilokventures.org
+  N8N_SECURE_COOKIE: "true"
+  WEBHOOK_URL: https://n8n.trilokventures.org/
+
+services:
+  db:
+    image: postgres:15
+    container_name: sattva-prod-db
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: odoo
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+      N8N_DB_PASSWORD: ${N8N_DB_PASSWORD:?set N8N_DB_PASSWORD}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - db-data:/var/lib/postgresql/data/pgdata
+      - ./postgres-init:/docker-entrypoint-initdb.d:ro
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U odoo -d postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+
+  web:
+    image: odoo:18.0
+    container_name: sattva-prod-web
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      HOST: db
+      PORT: "5432"
+      USER: odoo
+      PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+      ODOO_ADMIN_PASSWD: ${ODOO_ADMIN_PASSWD:?set ODOO_ADMIN_PASSWD}
+    volumes:
+      - ../../addons:/mnt/extra-addons:ro
+      - ./odoo.conf:/etc/odoo/odoo.conf.template:ro
+      - ./odoo-entrypoint.sh:/odoo-entrypoint.sh:ro
+      - odoo-data:/var/lib/odoo
+    entrypoint: ["/bin/bash", "/odoo-entrypoint.sh"]
+    expose:
+      - "8069"
+      - "8072"
+    networks:
+      backend:
+      frontend:
+        aliases:
+          - odoo
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: sattva-prod-redis
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis-data:/data
+    networks:
+      - queue
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
+  n8n:
+    image: n8nio/n8n:2.34.6
+    container_name: sattva-prod-n8n
+    depends_on:
+      redis:
+        condition: service_healthy
+      db:
+        condition: service_healthy
+    environment:
+      <<: *n8n-environment
+    volumes:
+      - n8n-data:/home/node/.n8n
+      - ../../n8n/workflows:/workflows:ro
+    expose:
+      - "5678"
+    networks:
+      queue:
+      frontend:
+      backend:
+    restart: unless-stopped
+
+  n8n-worker:
+    image: n8nio/n8n:2.34.6
+    container_name: sattva-prod-n8n-worker
+    command: ["worker"]
+    depends_on:
+      redis:
+        condition: service_healthy
+      db:
+        condition: service_healthy
+      n8n:
+        condition: service_started
+    environment:
+      <<: *n8n-environment
+    volumes:
+      - n8n-data:/home/node/.n8n
+    networks:
+      queue:
+      backend:
+      frontend:
+    restart: unless-stopped
+
+  nextcloud:
+    image: nextcloud:31.0-apache
+    container_name: sattva-prod-nextcloud
+    environment:
+      NEXTCLOUD_ADMIN_USER: ${NEXTCLOUD_ADMIN_USER:?set NEXTCLOUD_ADMIN_USER}
+      NEXTCLOUD_ADMIN_PASSWORD: ${NEXTCLOUD_ADMIN_PASSWORD:?set NEXTCLOUD_ADMIN_PASSWORD}
+      NEXTCLOUD_TRUSTED_DOMAINS: vault.trilokventures.org
+      OVERWRITEPROTOCOL: https
+      OVERWRITEHOST: vault.trilokventures.org
+    volumes:
+      - nextcloud-data:/var/www/html
+    expose:
+      - "80"
+    networks:
+      frontend:
+        aliases:
+          - nextcloud
+    restart: unless-stopped
+
+  caddy:
+    image: caddy:2.10.0
+    container_name: sattva-prod-caddy
+    depends_on:
+      - web
+      - n8n
+      - nextcloud
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      ACME_EMAIL: ${ACME_EMAIL:-admin@trilokventures.org}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./certs:/etc/caddy/certs:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    networks:
+      - frontend
+    restart: unless-stopped
+
+networks:
+  backend:
+    driver: bridge
+  queue:
+    driver: bridge
+  frontend:
+    driver: bridge
+
+volumes:
+  db-data:
+  odoo-data:
+  redis-data:
+  n8n-data:
+  nextcloud-data:
+  caddy-data:
+  caddy-config:

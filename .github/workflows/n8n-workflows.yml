@@ -31,3 +31,6 @@ jobs:
           node n8n/workflows/validate-workflows.mjs "${files[@]}"
       - run: node n8n/workflows/t2-absence-gate.test.mjs
       - run: node n8n/workflows/assert-no-mtls.mjs
+      - run: node deploy/prod/validate-prod-stack.mjs
+      - run: node deploy/gcp/cloudflare-ingress.test.mjs
+      - run: node deploy/gcp/verify-secrets.test.mjs

@@ -1,0 +1,4 @@
+# Never commit real secrets or origin certificates.
+.env
+certs/*
+!certs/.gitkeep
