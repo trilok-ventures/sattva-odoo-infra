@@ -77,8 +77,20 @@ Access succeeds. That is origin policy, not an Access deny.
 
 ## SSL
 
-Zone encryption mode **Full (strict)** once the Origin CA is on Caddy.
-Never Flexible. Confirm other origins in the zone before flipping zone-wide.
+Zone encryption mode **Full (strict)** once the Origin CA is on Caddy
+(`deploy/prod/certs/origin.pem`). Never Flexible. Confirm other proxied
+origins in the zone before flipping zone-wide.
+
+Path B employee hosts after Access (2026-08-23 cutover):
+
+- `sattva.trilokventures.org/web/login` — Access, then Odoo
+- `sattva.trilokventures.org/web/database/manager` — Caddy 404
+- `vault.trilokventures.org` — Access, then Nextcloud
+- `n8n.trilokventures.org` — Access (IT), then n8n editor
+- `n8n.trilokventures.org/webhook/*` — Access Bypass (HMAC)
+
+n8n owner account is still created in the editor UI (no owner secret in
+AssetCo). Do not use the Cloudflare application installer.
 
 ## Stop list
 
