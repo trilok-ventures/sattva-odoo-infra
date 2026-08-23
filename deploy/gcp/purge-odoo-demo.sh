@@ -365,10 +365,24 @@ with registry.cursor() as cr:
     if leads:
         leads.unlink()
 
+    archived_users = []
     archived = []
+    demo_users = User.search([("partner_id", "in", demo.ids)])
+    for user in demo_users:
+        if user.id in (1, 2) or user.has_group("base.group_system"):
+            sys.exit(
+                "refusing partner %s linked to Settings/system user %s"
+                % (user.partner_id.name, user.login)
+            )
+        if user.login == "n8n.fabric":
+            sys.exit("refusing to archive n8n.fabric")
+        user.active = False
+        archived_users.append("%s:%s" % (user.id, user.login))
+    env.flush_all()
     for partner in demo.exists():
         partner.active = False
         archived.append("%s:%s" % (partner.id, partner.name))
+    print("archived_users=%s" % (",".join(archived_users) if archived_users else "none"))
     print("archived_partners=%s" % (",".join(archived) if archived else "none"))
 
     if "crm.stage" in env.registry:
