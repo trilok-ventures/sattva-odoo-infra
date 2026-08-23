@@ -15,6 +15,7 @@ const odoo = readFileSync(join(ROOT, "init-odoo-sor.sh"), "utf8");
 const nc = readFileSync(join(ROOT, "seed-nextcloud-vault-trees.sh"), "utf8");
 const n8n = readFileSync(join(ROOT, "init-n8n-fabric.sh"), "utf8");
 const orch = readFileSync(join(ROOT, "init-sor.sh"), "utf8");
+const purge = readFileSync(join(ROOT, "purge-odoo-demo.sh"), "utf8");
 const fetchSecrets = readFileSync(join(ROOT, "fetch-secrets.sh"), "utf8");
 const spec = readFileSync(
   join(ROOT, "../../docs/superpowers/specs/2026-08-23-phase3a-t1-sor-init.md"),
@@ -46,8 +47,11 @@ if (/-i[^\n]*website/.test(odoo) || /-i[^\n]*auth_oauth/.test(odoo)) {
 if (odoo.includes("purchase.order") && odoo.includes(".create(")) {
   fail("Odoo init must not create purchase orders");
 }
-if (odoo.includes("account.move")) {
-  fail("Odoo init must not touch account.move");
+if (/\["account\.move"\]\.create/.test(odoo) || /account\.move["']\]\.create/.test(odoo)) {
+  fail("Odoo init must not create account.move");
+}
+if (odoo.includes("button_draft") || odoo.includes("button_cancel")) {
+  fail("Odoo init must not mutate account.move (count-only CAD skip is allowed)");
 }
 if (!odoo.includes("Sattva Brokers") || !odoo.includes("base.ca") || !odoo.includes("base.CAD")) {
   fail("Odoo init must set company Sattva Brokers / CA / CAD");
@@ -108,6 +112,56 @@ if (!orch.includes("init-odoo-sor.sh") || !orch.includes("seed-nextcloud-vault-t
 }
 if (!orch.includes("FABRIC_MODE=live")) {
   fail("orchestrator must remind that BFF live stays off");
+}
+if (!orch.includes("--purge-odoo-demo") || !orch.includes("purge-odoo-demo.sh")) {
+  fail("orchestrator must optionally run the furniture demo purge");
+}
+if (!orch.includes('--apply is only valid with --purge-odoo-demo')) {
+  fail("orchestrator must not apply purge without --purge-odoo-demo");
+}
+
+if (!purge.includes("--apply") || !purge.includes("dry-run")) {
+  fail("purge script must default to dry-run and require --apply");
+}
+if (!purge.includes("pg_dump") || !purge.includes("PURGE_ODOO_DEMO_BACKUP_ACK")) {
+  fail("purge --apply must require a sattva pg_dump (or an explicit backup ack)");
+}
+for (const name of [
+  "Riverbank Organic Farm",
+  "Example Foods",
+  "P00042",
+  "SO-1042",
+]) {
+  if (!purge.includes(name)) fail(`purge script must refuse ${name}`);
+}
+for (const name of [
+  "Azure Interior",
+  "Acme Corporation",
+  "Gemini Furniture",
+  "Wood Corner",
+  "Ready Mat",
+  "Lumber Inc",
+  "OpenWood",
+  "The Jackson Group",
+]) {
+  if (!purge.includes(name)) fail(`purge script must match known Odoo demo name ${name}`);
+}
+if (!purge.includes("res_partner_") || !purge.includes("partner_demo") || !purge.includes("crm_case_")) {
+  fail("purge script must select demo xmlids, not a wipe of all partners");
+}
+if (!purge.includes("n8n.fabric") || !purge.includes("partner_root") || !purge.includes("(1, 2)")) {
+  fail("purge script must protect uid 2, n8n.fabric, and OdooBot");
+}
+if (purge.includes('child_of", company.partner_id') || purge.includes("child_of', company.partner_id")) {
+  fail("purge must not select every child of the company partner");
+}
+if (!purge.includes("button_confirm") && purge.includes("button_cancel")) {
+  // cancel is required; confirm must stay absent
+} else if (purge.includes("button_confirm")) {
+  fail("purge script must not confirm a PO");
+}
+if (!purge.includes("button_cancel")) {
+  fail("purge script must cancel demo POs");
 }
 
 if (!spec.includes("Do not create synthetic") && !spec.includes("synthetic suppliers")) {

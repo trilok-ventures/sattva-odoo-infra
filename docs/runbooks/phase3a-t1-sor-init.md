@@ -15,6 +15,15 @@ cd /opt/sattva
 sudo ./deploy/gcp/init-sor.sh
 ```
 
+Furniture demo leftover in `sattva` (Azure Interior / chairs / USD invoices)
+must be purged before company currency can become CAD. Dry-run first; `--apply`
+takes a `pg_dump` of `sattva` only (not Nextcloud):
+
+```bash
+sudo ./deploy/gcp/init-sor.sh --purge-odoo-demo          # counts only
+sudo ./deploy/gcp/init-sor.sh --purge-odoo-demo --apply  # dump + purge + A–E (CAD)
+```
+
 Optional later flags (not default):
 
 ```bash

@@ -3,6 +3,8 @@
 # Refuses Keycloak. Does not seed counterparties, invoices, or lots.
 #
 #   sudo ./deploy/gcp/init-sor.sh
+#   sudo ./deploy/gcp/init-sor.sh --purge-odoo-demo
+#   sudo ./deploy/gcp/init-sor.sh --purge-odoo-demo --apply
 #   sudo ./deploy/gcp/init-sor.sh --with-sales
 #   sudo ./deploy/gcp/init-sor.sh --with-ca-coa
 set -euo pipefail
@@ -12,16 +14,20 @@ log() { echo "$*" >&2; }
 HERE="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 PROD="$(cd -- "${HERE}/../prod" && pwd)"
 ODOO_FLAGS=()
+PURGE_DEMO=0
+PURGE_APPLY=0
 
 for arg in "$@"; do
   case "${arg}" in
     --with-sales|--with-ca-coa) ODOO_FLAGS+=("${arg}") ;;
+    --purge-odoo-demo) PURGE_DEMO=1 ;;
+    --apply) PURGE_APPLY=1 ;;
     --keycloak|--with-keycloak|--auth)
       log "refusing Keycloak. See docs/runbooks/app-local-admin-and-roles.md"
       exit 1
       ;;
     -h|--help)
-      sed -n '2,12p' "$0"
+      sed -n '2,14p' "$0"
       exit 0
       ;;
     *)
@@ -30,6 +36,20 @@ for arg in "$@"; do
       ;;
   esac
 done
+
+if [[ "${PURGE_APPLY}" == "1" && "${PURGE_DEMO}" != "1" ]]; then
+  log "--apply is only valid with --purge-odoo-demo"
+  exit 1
+fi
+
+if [[ "${PURGE_DEMO}" == "1" ]]; then
+  log "Optional: furniture demo purge (dry-run unless --apply)"
+  if [[ "${PURGE_APPLY}" == "1" ]]; then
+    "${HERE}/purge-odoo-demo.sh" --apply
+  else
+    "${HERE}/purge-odoo-demo.sh"
+  fi
+fi
 
 log "Slice A: Odoo config"
 "${HERE}/init-odoo-sor.sh" "${ODOO_FLAGS[@]+"${ODOO_FLAGS[@]}"}"

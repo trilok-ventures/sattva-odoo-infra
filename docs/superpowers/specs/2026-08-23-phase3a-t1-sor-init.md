@@ -126,7 +126,7 @@ Smallest first. Scripts live under `deploy/gcp/`. Run on the VM after compose is
 | M | WORM bucket / 7-year archive job | **later** | Phase 3b; architecture §4.4 |
 | N | First live supplier / buyer / lot | **later (human)** | Sales/compliance create in Odoo; default `pending`; n8n MKCOL; officer approves after vault evidence — fabric §6.1–§6.2 |
 
-Orchestrator: `deploy/gcp/init-sor.sh` runs A–E (and optional F/G). It refuses Keycloak flags.
+Orchestrator: `deploy/gcp/init-sor.sh` runs A–E (and optional F/G). It refuses Keycloak flags. `--purge-odoo-demo` is optional and dry-run by default; `--apply` dumps `sattva` then cancels xmlid/name-selected furniture demo rows so slice A can write CAD.
 
 ---
 
@@ -166,3 +166,9 @@ A fake approved supplier on production would either (a) let a real PO confirm ag
 | Phase 3a T1 only | architecture §1, §4; prod README | §3 L–M |
 | No demo buyers on `sattva.` | architecture §2; holdco-rewire §1 | §2 |
 | Distinct Odoo vs Nextcloud passwords | secret-names.md; admin runbook | §2 |
+
+---
+
+## 7. Decision (2026-08-23) — furniture demo purge
+
+Odoo 18 was installed with demo data on this VM. That furniture dataset is not a Sattva SoR. `deploy/gcp/purge-odoo-demo.sh` may cancel/unlink xmlid-selected demo POs, leads, and `account.move` rows and **archive** (not unlink) demo partners, including `base.res_partner_main1` / `main2` (Chester Reed / Dwayne Newman). It must not select every child of the company partner. `--apply` requires a fresh `pg_dump` of `sattva` (or `PURGE_ODOO_DEMO_BACKUP_ACK=1`). After posted demo moves are gone, slice A writes `base.CAD`. `l10n_ca` stays `--with-ca-coa`.
