@@ -380,7 +380,9 @@ with registry.cursor() as cr:
         archived_users.append("%s:%s" % (user.id, user.login))
     env.flush_all()
     for partner in demo.exists():
-        partner.active = False
+        # Partner.write() searches users in self.env; active_test=False
+        # would treat already-archived demo/portal users as blockers.
+        partner.with_context(active_test=True).write({"active": False})
         archived.append("%s:%s" % (partner.id, partner.name))
     print("archived_users=%s" % (",".join(archived_users) if archived_users else "none"))
     print("archived_partners=%s" % (",".join(archived) if archived else "none"))
