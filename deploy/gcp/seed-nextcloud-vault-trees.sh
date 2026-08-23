@@ -51,6 +51,12 @@ defaults=(
   "Reasons to use Nextcloud.pdf"
   "Templates credits.md"
 )
+# First-run Nextcloud folders (not Sattva trees). Do not put PCP/Suppliers/Clients here.
+welcome_dirs=(
+  Documents
+  Photos
+  Templates
+)
 for user in "${users[@]}"; do
   root="${DATA}/${user}/files"
   mkdir -p "${root}"
@@ -60,6 +66,9 @@ for user in "${users[@]}"; do
   for name in "${defaults[@]}"; do
     rm -f "${root}/${name}"
   done
+  for dir in "${welcome_dirs[@]}"; do
+    rm -rf "${root:?}/${dir}"
+  done
   if id www-data >/dev/null 2>&1; then
     chown -R www-data:www-data "${DATA}/${user}"
   fi
@@ -67,9 +76,7 @@ done
 BASH
 
 for user in admin "${VAULT_USER}"; do
-  docker exec -u www-data "${NC}" php occ files:scan --path="/${user}/files/PCP"
-  docker exec -u www-data "${NC}" php occ files:scan --path="/${user}/files/Suppliers"
-  docker exec -u www-data "${NC}" php occ files:scan --path="/${user}/files/Clients"
+  docker exec -u www-data "${NC}" php occ files:scan --path="/${user}/files"
 done
 docker exec "${NC}" php occ config:app:set core shareapi_allow_links --value=no
 docker exec "${NC}" php occ config:app:set core shareapi_allow_public_upload --value=no

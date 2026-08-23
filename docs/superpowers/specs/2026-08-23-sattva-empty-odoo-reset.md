@@ -22,7 +22,7 @@ fabric CRM stages. First counterparties stay human-created.
 | Postgres `sattva` | dump, drop, recreate empty |
 | Odoo filestore `sattva` | delete leftover furniture attachments |
 | Postgres `n8n` | **kept** (owner + imported `wf.*`) |
-| Nextcloud volume | **kept**; delete only known Nextcloud *welcome* files (Manual.pdf, intro.mp4, …). Keep `/PCP/*`, `/Suppliers`, `/Clients` |
+| Nextcloud volume | **kept**; delete known Nextcloud welcome files **and** first-run `Documents` / `Photos` / `Templates`. Keep `/PCP/*`, `/Suppliers`, `/Clients` |
 | AssetCo secrets | **kept** (`odoo-web-admin-password`, `odoo-n8n-api-key`) |
 
 ## Installed on the new DB

@@ -97,6 +97,12 @@ if (nc.includes("curl") || nc.includes("files:upload") || nc.includes("COA.pdf")
 if (!nc.includes("Nextcloud Manual.pdf") || !nc.includes("rm -f")) {
   fail("Nextcloud seed must remove known welcome files, not upload them");
 }
+if (!nc.includes("welcome_dirs") || !nc.includes("Documents") || !nc.includes("Photos") || !nc.includes("Templates")) {
+  fail("Nextcloud seed must remove first-run Documents/Photos/Templates folders");
+}
+if (/rm -rf "\$\{root\}\/PCP"/.test(nc) || nc.includes('rm -rf "${root}/Suppliers"')) {
+  fail("Nextcloud seed must not delete Sattva PCP/Suppliers/Clients trees");
+}
 
 if (!n8n.includes("import:workflow") || !n8n.includes("wf.coa.verify.json")) {
   fail("n8n init must import committed wf.*.json");
