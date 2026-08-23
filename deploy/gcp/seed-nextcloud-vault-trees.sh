@@ -43,11 +43,22 @@ trees=(
   Suppliers
   Clients
 )
+defaults=(
+  "Nextcloud Manual.pdf"
+  "Nextcloud intro.mp4"
+  "Nextcloud.png"
+  "Readme.md"
+  "Reasons to use Nextcloud.pdf"
+  "Templates credits.md"
+)
 for user in "${users[@]}"; do
   root="${DATA}/${user}/files"
   mkdir -p "${root}"
   for rel in "${trees[@]}"; do
     mkdir -p "${root}/${rel}"
+  done
+  for name in "${defaults[@]}"; do
+    rm -f "${root}/${name}"
   done
   if id www-data >/dev/null 2>&1; then
     chown -R www-data:www-data "${DATA}/${user}"

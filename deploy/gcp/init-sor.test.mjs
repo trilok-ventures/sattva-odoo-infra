@@ -16,6 +16,7 @@ const nc = readFileSync(join(ROOT, "seed-nextcloud-vault-trees.sh"), "utf8");
 const n8n = readFileSync(join(ROOT, "init-n8n-fabric.sh"), "utf8");
 const orch = readFileSync(join(ROOT, "init-sor.sh"), "utf8");
 const purge = readFileSync(join(ROOT, "purge-odoo-demo.sh"), "utf8");
+const reset = readFileSync(join(ROOT, "reset-odoo-empty.sh"), "utf8");
 const fetchSecrets = readFileSync(join(ROOT, "fetch-secrets.sh"), "utf8");
 const spec = readFileSync(
   join(ROOT, "../../docs/superpowers/specs/2026-08-23-phase3a-t1-sor-init.md"),
@@ -87,8 +88,11 @@ if (!nc.includes("n8n.vault") || !nc.includes("admin")) {
 if (!nc.includes("shareapi_allow_links") || !nc.includes("shareapi_allow_public_upload")) {
   fail("Nextcloud seed must disable public shares");
 }
-if (nc.includes(".pdf") || nc.includes("COA.pdf")) {
-  fail("Nextcloud seed must not upload files");
+if (nc.includes("curl") || nc.includes("files:upload") || nc.includes("COA.pdf")) {
+  fail("Nextcloud seed must not upload COA or other files");
+}
+if (!nc.includes("Nextcloud Manual.pdf") || !nc.includes("rm -f")) {
+  fail("Nextcloud seed must remove known welcome files, not upload them");
 }
 
 if (!n8n.includes("import:workflow") || !n8n.includes("wf.coa.verify.json")) {
@@ -116,8 +120,36 @@ if (!orch.includes("FABRIC_MODE=live")) {
 if (!orch.includes("--purge-odoo-demo") || !orch.includes("purge-odoo-demo.sh")) {
   fail("orchestrator must optionally run the furniture demo purge");
 }
-if (!orch.includes('--apply is only valid with --purge-odoo-demo')) {
-  fail("orchestrator must not apply purge without --purge-odoo-demo");
+if (!orch.includes("--reset-odoo-empty") || !orch.includes("reset-odoo-empty.sh")) {
+  fail("orchestrator must optionally recreate an empty sattva database");
+}
+if (!orch.includes("refusing both --reset-odoo-empty and --purge-odoo-demo")) {
+  fail("orchestrator must not reset and purge in the same run");
+}
+if (!orch.includes("--apply is only valid with --reset-odoo-empty or --purge-odoo-demo")) {
+  fail("orchestrator must not apply without reset or purge");
+}
+
+if (!reset.includes("--without-demo=all") || !reset.includes("sattva_compliance")) {
+  fail("empty reset must reinstall the addon without demo");
+}
+if (!reset.includes("dropdb") || !reset.includes("createdb")) {
+  fail("empty reset must drop and recreate only the sattva database");
+}
+if (!reset.includes("n8n") || !reset.includes("not n8n")) {
+  fail("empty reset must keep the n8n database");
+}
+if (reset.includes("dropdb") && /dropdb[^\n]*n8n/.test(reset)) {
+  fail("empty reset must not dropdb n8n");
+}
+if (!reset.includes("website") || !reset.includes("stock") || !reset.includes("l10n_us")) {
+  fail("empty reset must list modules it refuses to reinstall");
+}
+if (!reset.includes("pg_dump") || !reset.includes("set-operator-admin-email") || !reset.includes("recreate-odoo-web")) {
+  fail("empty reset must dump, rebind the operator, and recreate web");
+}
+if (reset.includes("Riverbank Organic Farm") || reset.includes("Example Foods")) {
+  fail("empty reset must not seed synthetic counterparties");
 }
 
 if (!purge.includes("--apply") || !purge.includes("dry-run")) {

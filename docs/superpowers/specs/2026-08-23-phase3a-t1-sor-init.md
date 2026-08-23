@@ -126,7 +126,7 @@ Smallest first. Scripts live under `deploy/gcp/`. Run on the VM after compose is
 | M | WORM bucket / 7-year archive job | **later** | Phase 3b; architecture §4.4 |
 | N | First live supplier / buyer / lot | **later (human)** | Sales/compliance create in Odoo; default `pending`; n8n MKCOL; officer approves after vault evidence — fabric §6.1–§6.2 |
 
-Orchestrator: `deploy/gcp/init-sor.sh` runs A–E (and optional F/G). It refuses Keycloak flags. `--purge-odoo-demo` is optional and dry-run by default; `--apply` dumps `sattva` then cancels xmlid/name-selected furniture demo rows so slice A can write CAD.
+Orchestrator: `deploy/gcp/init-sor.sh` runs A–E (and optional F/G). It refuses Keycloak flags. `--purge-odoo-demo` is optional and dry-run by default; `--apply` dumps `sattva` then cancels xmlid/name-selected furniture demo rows so slice A can write CAD. `--reset-odoo-empty` drops and recreates `sattva` with `--without-demo=all` when leftover Apps/quotations/products are wider than that purge (see `2026-08-23-sattva-empty-odoo-reset.md`).
 
 ---
 

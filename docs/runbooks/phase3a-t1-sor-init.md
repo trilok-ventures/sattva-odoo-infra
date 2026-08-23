@@ -15,13 +15,22 @@ cd /opt/sattva
 sudo ./deploy/gcp/init-sor.sh
 ```
 
-Furniture demo leftover in `sattva` (Azure Interior / chairs / USD invoices)
-must be purged before company currency can become CAD. Dry-run first; `--apply`
-takes a `pg_dump` of `sattva` only (not Nextcloud):
+If the `sattva` DB still has Odoo demo or extra Apps (Sales demo quotations,
+furniture products, HR, Mass Mailing, `l10n_us`), **reset empty** rather than
+chasing xmlids. Dry-run first; `--apply` dumps `sattva` only (not n8n, not
+Nextcloud), drops that database, and reinstalls `sattva_compliance` +
+`sale_management` with `--without-demo=all`:
+
+```bash
+sudo ./deploy/gcp/init-sor.sh --reset-odoo-empty          # counts only
+sudo ./deploy/gcp/init-sor.sh --reset-odoo-empty --apply  # dump + drop + A–E
+```
+
+Narrower furniture-row purge (when the module set is already clean):
 
 ```bash
 sudo ./deploy/gcp/init-sor.sh --purge-odoo-demo          # counts only
-sudo ./deploy/gcp/init-sor.sh --purge-odoo-demo --apply  # dump + purge + A–E (CAD)
+sudo ./deploy/gcp/init-sor.sh --purge-odoo-demo --apply  # dump + purge + A–E
 ```
 
 Optional later flags (not default):
