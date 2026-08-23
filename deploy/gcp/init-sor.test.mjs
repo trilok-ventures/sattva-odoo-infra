@@ -52,6 +52,9 @@ if (odoo.includes("account.move")) {
 if (!odoo.includes("Sattva Brokers") || !odoo.includes("base.ca") || !odoo.includes("base.CAD")) {
   fail("Odoo init must set company Sattva Brokers / CA / CAD");
 }
+if (!odoo.includes("warning_skip_cad_posted_moves")) {
+  fail("Odoo init must skip CAD when posted account.move rows exist");
+}
 if (!odoo.includes("Discovery") || !odoo.includes("Compliance Review") || !odoo.includes("Retention")) {
   fail("Odoo init must create fabric CRM stages");
 }

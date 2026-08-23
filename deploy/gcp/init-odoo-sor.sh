@@ -90,13 +90,15 @@ with registry.cursor() as cr:
         sys.exit("res.company id 1 missing")
     canada = env.ref("base.ca")
     cad = env.ref("base.CAD")
-    company.write(
-        {
-            "name": "Sattva Brokers",
-            "country_id": canada.id,
-            "currency_id": cad.id,
-        }
-    )
+    vals = {"name": "Sattva Brokers", "country_id": canada.id}
+    posted = 0
+    if "account.move" in env:
+        posted = env["account.move"].search_count([("state", "=", "posted")])
+    if posted:
+        print("warning_skip_cad_posted_moves=%s" % posted)
+    else:
+        vals["currency_id"] = cad.id
+    company.write(vals)
 
     Stage = env["crm.stage"]
     wanted = [
