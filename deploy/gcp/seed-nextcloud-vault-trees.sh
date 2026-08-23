@@ -50,7 +50,7 @@ for user in "${users[@]}"; do
     mkdir -p "${root}/${rel}"
   done
   if id www-data >/dev/null 2>&1; then
-    chown -R www-data:www-data "${root}/PCP" "${root}/Suppliers" "${root}/Clients"
+    chown -R www-data:www-data "${DATA}/${user}"
   fi
 done
 BASH
