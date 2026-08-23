@@ -63,6 +63,9 @@ if (!compose.includes('command: ["worker"]')) {
 if (!compose.includes("../../n8n/workflows:/workflows:ro")) {
   fail("n8n editor must mount committed workflows for git import");
 }
+if (!compose.includes("N8N_BLOCK_ENV_ACCESS_IN_NODE: \"false\"")) {
+  fail("n8n workers must allow $env.ODOO_JSON2_URL and $env.NEXTCLOUD_WEBDAV_BASE");
+}
 
 const backup = readFileSync(join(ROOT, "../gcp/backup-to-gcs.sh"), "utf8");
 if (/nextcloud-data|occ files:scan|tar .*nextcloud/i.test(backup)) {
