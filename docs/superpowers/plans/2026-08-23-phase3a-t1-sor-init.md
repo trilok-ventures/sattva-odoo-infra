@@ -121,10 +121,10 @@ Known demo partner names on this VM: `Azure Interior`, `Acme Corporation`, `Gemi
 
 Do **not** unlink uid 2, company partner, or `n8n.fabric`. Do **not** invent Sattva suppliers to replace them.
 
-- [ ] **Step 1: Script cancels demo POs, archives demo partners, unlinks demo leads, then leftover empty CRM stages**
-- [ ] **Step 2: Dry-run prints counts; apply requires `--apply`**
-- [ ] **Step 3: Re-run `init-odoo-sor.sh` so currency becomes CAD**
-- [ ] **Step 4: Confirm PCP gate still blocks a *temporary* pending supplier created in a rolled-back cursor (no commit)**
+- [x] **Step 1: Script cancels demo POs, archives demo partners, unlinks demo leads, then leftover empty CRM stages**
+- [x] **Step 2: Dry-run prints counts; apply requires `--apply`**
+- [x] **Step 3: Re-run `init-odoo-sor.sh` so currency becomes CAD**
+- [x] **Step 4: Confirm PCP gate still blocks a *temporary* pending supplier created in a rolled-back cursor (no commit)**
 
 ---
 
