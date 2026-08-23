@@ -160,11 +160,25 @@ See `deploy/prod/README.md` for DB init and the PCP-gate smoke test.
 Create Access applications **before** pointing proxied A records at the VM.
 Following DNS-only first publishes login pages on the public internet.
 
+Use **Add → Self-hosted**. Do **not** use **Applications → Install**. That
+wizard sets `allow_authenticate_via_warp` and fails until a Cloudflare One
+Client Authentication session duration exists. These hosts are browser apps —
+leave **Authenticate with Cloudflare One Client** off. Do not set that
+account session duration for this slice. Runbook:
+`docs/runbooks/cloudflare-access-path-b.md`.
+
 - `sattva.trilokventures.org` — employees (sales/compliance/finance/logistics/IT)
 - `vault.trilokventures.org` — employees
 - `n8n.trilokventures.org` — IT group only
 - `n8n.trilokventures.org/webhook/*` — bypass Access; n8n webhook HMAC is the
   authenticator (or a Cloudflare Access service token for CI health checks)
+
+Dry-run payloads (WARP flag always false):
+
+```bash
+CF_ACCESS_IT_EMAILS='archneo@trilokventures.org' \
+  node deploy/gcp/create-access-apps.mjs
+```
 
 Do not put buyer/supplier personas on these hostnames. Public product stays on
 `app.` (Vercel BFF).
