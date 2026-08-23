@@ -24,8 +24,10 @@ Default mailbox: `archneo@trilokventures.org`. Override with
 The script:
 
 - Mutates Odoo uid **2** only (`login` + `email` + partner email).
-- Refuses if uid 2 is not `admin` / that mailbox, or if another user already
-  owns the login.
+- Refuses if uid 2 is not `admin` / that mailbox, or if another **internal**
+  user already owns the login. A leftover **portal/share** user on the same
+  mailbox (common after a first failed email login) is archived and renamed
+  with `--release-share-login`. It never promotes that portal user.
 - Keeps Settings / Administration (`base.group_system`).
 - Sets Nextcloud **email** on userid `admin`. It does **not** rename that
   userid (`NEXTCLOUD_ADMIN_USER=admin` in `deploy/prod/.env`).
