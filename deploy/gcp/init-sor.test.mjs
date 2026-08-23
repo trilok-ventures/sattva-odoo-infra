@@ -132,6 +132,9 @@ if (!orch.includes("--purge-odoo-demo") || !orch.includes("purge-odoo-demo.sh"))
 if (!orch.includes("--reset-odoo-empty") || !orch.includes("reset-odoo-empty.sh")) {
   fail("orchestrator must optionally recreate an empty sattva database");
 }
+if (orch.includes("seed-training-counterparties")) {
+  fail("orchestrator must not auto-seed TRAINING counterparties");
+}
 if (!orch.includes("refusing both --reset-odoo-empty and --purge-odoo-demo")) {
   fail("orchestrator must not reset and purge in the same run");
 }
