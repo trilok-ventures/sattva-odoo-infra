@@ -120,3 +120,6 @@ Unlocks (one later PR, after a dated spec):
    Access stays the employee network gate.
 
 Until then, multiple roles are Access policies + Odoo-local groups.
+
+After this login works, initialize the empty production SoR
+(`docs/runbooks/phase3a-t1-sor-init.md`). Do not seed demo buyers on `sattva.`.

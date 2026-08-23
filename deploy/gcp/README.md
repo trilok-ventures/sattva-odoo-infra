@@ -165,6 +165,16 @@ sudo systemctl enable --now sattva-odoo-backup.timer
 
 See `deploy/prod/README.md` for DB init and the PCP-gate smoke test.
 
+After the operator can log in, initialize required SoR state (config + empty
+trees + service users only — no synthetic counterparties):
+
+```bash
+sudo ./deploy/gcp/init-sor.sh
+```
+
+Spec: `docs/superpowers/specs/2026-08-23-phase3a-t1-sor-init.md`.
+Runbook: `docs/runbooks/phase3a-t1-sor-init.md`. Do not deploy Keycloak.
+
 ## 4. Cloudflare Access (before DNS goes live)
 
 Create Access applications **before** pointing proxied A records at the VM.
