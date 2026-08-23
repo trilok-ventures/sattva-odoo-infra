@@ -12,6 +12,7 @@ const errors = [];
 const fail = (msg) => errors.push(msg);
 
 const seed = readFileSync(join(ROOT, "seed-training-counterparties.sh"), "utf8");
+const processFolders = readFileSync(join(ROOT, "process-queued-folder-events.sh"), "utf8");
 const orch = readFileSync(join(ROOT, "init-sor.sh"), "utf8");
 const spec = readFileSync(
   join(ROOT, "../../docs/superpowers/specs/2026-08-23-sattva-training-counterparties.md"),
