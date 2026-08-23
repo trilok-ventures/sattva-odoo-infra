@@ -46,11 +46,21 @@ These three secrets are **different on purpose**. Do not copy the Nextcloud
 password onto Odoo. `odoo-admin-passwd` is only the database-manager master
 (Caddy 404s `/web/database`).
 
-Set the Odoo web password on the VM (value never logged):
+Set the Odoo web password on the VM (value never logged). **Stop the
+workers first** — a live `sattva-prod-web` can cache `res.users` and ignore
+a sidecar write. Recreate after the write:
 
 ```bash
-sudo ./deploy/gcp/set-odoo-web-admin-password.sh
+sudo ./deploy/gcp/recreate-odoo-web.sh
 ```
+
+That script stops `web`, writes `odoo-web-admin-password` onto uid 2, force-
+recreates `web`, and checks `/jsonrpc` authenticate. Do not use
+`set-odoo-web-admin-password.sh` against a running worker set.
+
+Hard-refresh the browser (or a private window) on
+`https://sattva.trilokventures.org/web/login`. Do not use `localhost:8069`
+(that is the Cloud local stack; login there is still `admin`).
 
 Retrieve a secret on your laptop (do not paste it into chat or git):
 

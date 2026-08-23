@@ -16,7 +16,8 @@ the existing uid-2 admin (and Nextcloud `admin` email) with
 `docs/runbooks/app-local-admin-and-roles.md`. Do not add a second Settings
 user. `/web/login` uses AssetCo `odoo-web-admin-password` (never
 `nextcloud-admin-password`). `odoo-admin-passwd` is the database-manager
-master only. Set the login hash with `deploy/gcp/set-odoo-web-admin-password.sh`.
+master only. Recreate workers when changing the login hash:
+`deploy/gcp/recreate-odoo-web.sh` (stop web → write → `up --force-recreate`).
 
 ## Prerequisites
 
