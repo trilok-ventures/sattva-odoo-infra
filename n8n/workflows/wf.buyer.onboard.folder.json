@@ -23,7 +23,7 @@
       },
       "parameters": {
         "method": "POST",
-        "url": "={{$env.ODOO_JSON2_URL}}",
+        "url": "=http://odoo:8069/jsonrpc",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
         "sendBody": true,
@@ -64,7 +64,7 @@
       },
       "parameters": {
         "method": "MKCOL",
-        "url": "={{$env.NEXTCLOUD_WEBDAV_BASE}}{{$json.prefix_path}}",
+        "url": "=http://nextcloud/remote.php/dav/files/n8n.vault{{$json.prefix_path}}",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpBasicAuth",
         "options": {
@@ -101,7 +101,7 @@
       },
       "parameters": {
         "method": "POST",
-        "url": "={{$env.ODOO_JSON2_URL}}",
+        "url": "=http://odoo:8069/jsonrpc",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
         "sendBody": true,
@@ -122,7 +122,7 @@
       },
       "parameters": {
         "method": "POST",
-        "url": "={{$env.ODOO_JSON2_URL}}",
+        "url": "=http://odoo:8069/jsonrpc",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
         "sendBody": true,
