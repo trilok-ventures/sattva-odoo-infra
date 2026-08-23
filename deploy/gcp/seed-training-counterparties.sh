@@ -220,16 +220,47 @@ if [[ "${APPLY}" != "1" ]]; then
   exit 0
 fi
 
-if docker inspect "${N8N}" >/dev/null 2>&1; then
-  log "Triggering n8n folder workflows (MKCOL + set_partner_path). No COA upload."
-  docker exec "${N8N}" n8n execute --id=wf-supplier-folder >/tmp/n8n-training-supplier.log 2>&1 \
-    && log "n8n_execute=wf-supplier-folder" \
-    || log "warning_n8n_supplier_execute_failed (cron will retry)"
-  docker exec "${N8N}" n8n execute --id=wf-buyer-onboard-folder >/tmp/n8n-training-buyer.log 2>&1 \
-    && log "n8n_execute=wf-buyer-onboard-folder" \
-    || log "warning_n8n_buyer_execute_failed (cron will retry)"
-else
-  log "n8n container missing; folder events stay queued until n8n polls"
+# n8n execute starts a second process and collides with the running editor
+# (Task Broker :5679). Folder workflows poll every 5 minutes instead.
+log "Waiting for n8n folder cron (wf.supplier.folder / wf.buyer.onboard.folder)"
+ready=0
+for _ in $(seq 1 24); do
+  status="$(docker exec -i -e ODOO_CONF="${CONF}" "${WEB}" python3 - <<'PY'
+import os
+import odoo
+from odoo import SUPERUSER_ID, api
+from odoo.modules.registry import Registry
+
+odoo.tools.config.parse_config(["-c", os.environ.get("ODOO_CONF", "/tmp/odoo.conf"), "--no-http"])
+registry = Registry("sattva")
+with registry.cursor() as cr:
+    env = api.Environment(cr, SUPERUSER_ID, {})
+    events = env["sattva.fabric.event"].search(
+        [
+            (
+                "event_type",
+                "in",
+                ["supplier_folder_requested", "buyer_folder_requested"],
+            )
+        ]
+    )
+    processed = all(event.state == "processed" for event in events) and len(events) >= 2
+    supplier = env["res.partner"].search([("name", "=", "TRAINING Onion Packhouse")], limit=1)
+    client = env["res.partner"].search([("name", "=", "TRAINING Canadian Buyer")], limit=1)
+    paths = bool(supplier.nextcloud_folder_path) and bool(client.nextcloud_client_folder_path)
+    print("events=%s processed=%s paths=%s" % (len(events), int(processed), int(paths)))
+    print("ready=1" if processed and paths else "ready=0")
+PY
+)"
+  log "${status}"
+  if printf '%s\n' "${status}" | grep -q '^ready=1$'; then
+    ready=1
+    break
+  fi
+  sleep 15
+done
+if [[ "${ready}" -ne 1 ]]; then
+  log "n8n folder cron has not processed events yet; retry after the 5-minute poll"
 fi
 
 log "Training counterparties ready. PCP stays pending. See docs/runbooks/training-counterparties.md"

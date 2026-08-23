@@ -48,8 +48,11 @@ if (seed.includes("set_partner_path") && seed.includes("env[\"sattva.fabric.vaul
 if (seed.includes("button_confirm") && !seed.includes("cr.rollback()")) {
   fail("PCP probe must roll back so no PO is kept");
 }
-if (!seed.includes("n8n execute") || !seed.includes("wf-supplier-folder")) {
-  fail("seed must trigger n8n folder workflows after apply");
+if (!seed.includes("wf.supplier.folder") || !seed.includes("nextcloud_folder_path")) {
+  fail("seed must wait for n8n folder cron, not impersonate set_partner_path");
+}
+if (seed.includes("n8n execute")) {
+  fail("n8n execute collides with the running editor; wait for the 5-minute poll");
 }
 if (seed.includes("coa-verify") || seed.includes("create_po_intent")) {
   fail("seed must not call COA verify or create_po_intent");
