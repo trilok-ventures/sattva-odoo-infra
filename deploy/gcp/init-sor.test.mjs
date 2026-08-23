@@ -55,6 +55,9 @@ if (!odoo.includes("Sattva Brokers") || !odoo.includes("base.ca") || !odoo.inclu
 if (!odoo.includes("Discovery") || !odoo.includes("Compliance Review") || !odoo.includes("Retention")) {
   fail("Odoo init must create fabric CRM stages");
 }
+if (odoo.includes('"active": True') || odoo.includes('"active": False')) {
+  fail("crm.stage has no active field on Odoo 18; unlink unused leftovers");
+}
 if (!odoo.includes("n8n.fabric") || !odoo.includes("group_n8n_fabric_service")) {
   fail("Odoo init must create n8n.fabric with the fabric service group");
 }

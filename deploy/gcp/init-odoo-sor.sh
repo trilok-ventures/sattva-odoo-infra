@@ -109,10 +109,10 @@ with registry.cursor() as cr:
     ]
     keep_ids = []
     for name, sequence, is_won in wanted:
-        stage = Stage.with_context(active_test=False).search(
+        stage = Stage.search(
             [("name", "=", name), ("team_id", "=", False)], limit=1
         )
-        vals = {"name": name, "sequence": sequence, "is_won": is_won, "active": True}
+        vals = {"name": name, "sequence": sequence, "is_won": is_won}
         if stage:
             stage.write(vals)
         else:
@@ -124,7 +124,7 @@ with registry.cursor() as cr:
     unused = leftovers.filtered(
         lambda stage: not env["crm.lead"].search_count([("stage_id", "=", stage.id)])
     )
-    unused.write({"active": False})
+    unused.unlink()
 
     ICP = env["ir.config_parameter"].sudo()
     ICP.set_param("auth_signup.invitation_only", "True")
