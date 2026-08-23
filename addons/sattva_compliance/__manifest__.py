@@ -11,6 +11,7 @@
     'data': [
         'security/sattva_security.xml',
         'security/ir.model.access.csv',
+        'views/res_partner_views.xml',
     ],
     'installable': True,
     'application': False,

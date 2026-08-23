@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_partner_form_sattva_compliance" model="ir.ui.view">
+        <field name="name">res.partner.form.sattva.compliance</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//notebook" position="inside">
+                <page string="Sattva Compliance" name="sattva_compliance">
+                    <group>
+                        <group string="Supplier PCP">
+                            <field name="supplier_pcp_status"/>
+                            <field name="risk_band"/>
+                            <field name="haccp_certified"/>
+                            <field name="brc_certified"/>
+                            <field name="nextcloud_folder_path"/>
+                        </group>
+                        <group string="Buyer KYC">
+                            <field name="buyer_kyc_status"/>
+                            <field name="nextcloud_client_folder_path"/>
+                        </group>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>

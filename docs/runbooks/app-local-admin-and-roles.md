@@ -38,13 +38,26 @@ The script:
 
 | App | URL | Username | Password |
 | --- | --- | --- | --- |
-| Odoo | `https://sattva.trilokventures.org` | `archneo@trilokventures.org` | Existing **admin user** password (set at first install). **Not** automatically `odoo-admin-passwd`. |
+| Odoo | `https://sattva.trilokventures.org` | `archneo@trilokventures.org` | Secret Manager `odoo-web-admin-password` |
 | Nextcloud | `https://vault.trilokventures.org` | `admin` or the mailbox once the email setting is unique | Secret Manager `nextcloud-admin-password` |
-| n8n | `https://n8n.trilokventures.org` | Owner account created in the editor UI | No owner secret in AssetCo yet |
+| n8n | `https://n8n.trilokventures.org` | `archneo@trilokventures.org` | Secret Manager `n8n-owner-password` |
 
-`odoo-admin-passwd` is Odoo `admin_passwd` (database-manager master). Caddy
-already 404s `/web/database`. Do not treat that secret as the `/web/login`
-password unless you set the admin user password to the same value yourself.
+These three secrets are **different on purpose**. Do not copy the Nextcloud
+password onto Odoo. `odoo-admin-passwd` is only the database-manager master
+(Caddy 404s `/web/database`).
+
+Set the Odoo web password on the VM (value never logged):
+
+```bash
+sudo ./deploy/gcp/set-odoo-web-admin-password.sh
+```
+
+Retrieve a secret on your laptop (do not paste it into chat or git):
+
+```bash
+gcloud secrets versions access latest \
+  --secret=odoo-web-admin-password --project=tv-assetco-secrets
+```
 
 Cloudflare Access still runs first (`@trilokventures.org` on `sattva` /
 `vault`; IT mailbox on `n8n`). See `deploy/gcp/README.md` §4.

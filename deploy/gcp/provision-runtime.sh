@@ -100,8 +100,10 @@ if gcloud projects describe "${ASSET}" >/dev/null 2>&1; then
   done <<'SECRETS'
 odoo-db-password
 odoo-admin-passwd
+odoo-web-admin-password
 n8n-encryption-key
 n8n-webhook-hmac
+n8n-owner-password
 n8n-db-password
 nextcloud-admin-password
 nextcloud-n8n-app-password

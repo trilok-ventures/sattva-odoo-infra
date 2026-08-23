@@ -14,7 +14,9 @@ install that login is `admin`, so `you@trilokventures.org` fails until you bind
 the existing uid-2 admin (and Nextcloud `admin` email) with
 `deploy/gcp/set-operator-admin-email.sh`. See
 `docs/runbooks/app-local-admin-and-roles.md`. Do not add a second Settings
-user. `odoo-admin-passwd` is the database-manager master, not that login.
+user. `/web/login` uses AssetCo `odoo-web-admin-password` (never
+`nextcloud-admin-password`). `odoo-admin-passwd` is the database-manager
+master only. Set the login hash with `deploy/gcp/set-odoo-web-admin-password.sh`.
 
 ## Prerequisites
 
