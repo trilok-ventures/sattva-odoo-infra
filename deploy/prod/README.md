@@ -45,6 +45,11 @@ docker compose -f docker-compose.prod.yml up -d web
 From the VM: `curl -kI https://127.0.0.1/web/login` with `Host: sattva.trilokventures.org`.
 Through Cloudflare: `https://sattva.trilokventures.org/web/login`.
 
+Odoo’s form label is Email (`res.users.login`). Bind the operator mailbox to
+the existing admin with `deploy/gcp/set-operator-admin-email.sh` — runbook
+`docs/runbooks/app-local-admin-and-roles.md`. Keycloak / `auth.` stay out of
+this slice (`validate-prod-stack.mjs`).
+
 PCP gate: create a pending supplier, confirm a PO → blocked; approve supplier →
 confirm succeeds. n8n must never call `button_confirm`.
 

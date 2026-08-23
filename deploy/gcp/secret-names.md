@@ -7,7 +7,9 @@ service account accessor. Map a subset into the Vercel BFF project as env vars
 | Secret id | Used by | Notes |
 | --- | --- | --- |
 | `odoo-db-password` | OpCo VM / Odoo | Not for Vercel |
-| `odoo-admin-passwd` | OpCo VM / Caddy block list_db | Not for Vercel |
+| `odoo-admin-passwd` | OpCo VM / Caddy block list_db | DB-manager master. Not `/web/login`. |
+| `odoo-web-admin-password` | OpCo VM / Odoo uid 2 login | `/web/login` only. Never copy Nextcloud. |
+| `n8n-owner-password` | OpCo VM / n8n editor owner | IT mailbox. Not for Vercel |
 | `odoo-n8n-api-key` | n8n → Odoo | Fabric user `n8n.fabric` |
 | `odoo-middleware-api-key` | Vercel BFF → Odoo | Fabric user `middleware.bff` |
 | `n8n-encryption-key` | n8n | Not for Vercel |
@@ -29,7 +31,8 @@ Create ids in AssetCo (values added as versions; never commit them):
 
 ```bash
 ASSET=tv-assetco-secrets
-for id in odoo-db-password odoo-admin-passwd n8n-encryption-key n8n-webhook-hmac \
+for id in odoo-db-password odoo-admin-passwd odoo-web-admin-password \
+  n8n-encryption-key n8n-webhook-hmac n8n-owner-password \
   n8n-db-password nextcloud-admin-password nextcloud-n8n-app-password \
   odoo-n8n-api-key origin-tls-cert origin-tls-key; do
   gcloud secrets describe "${id}" --project="${ASSET}" >/dev/null 2>&1 \

@@ -9,6 +9,15 @@ Do not paste secret values into this file, tickets, or Notion GREEN pages.
 This slice does **not** create GKE, Cloud Armor, Certificate Authority Service, Caddy origin client certificates,
 Keycloak, GCS WORM, or `upload.trilokventures.org`.
 
+Odoo `/web/login` is labelled Email and matches `res.users.login`. After first
+install that login is `admin`, so `you@trilokventures.org` fails until you bind
+the existing uid-2 admin (and Nextcloud `admin` email) with
+`deploy/gcp/set-operator-admin-email.sh`. See
+`docs/runbooks/app-local-admin-and-roles.md`. Do not add a second Settings
+user. `/web/login` uses AssetCo `odoo-web-admin-password` (never
+`nextcloud-admin-password`). `odoo-admin-passwd` is the database-manager
+master only. Set the login hash with `deploy/gcp/set-odoo-web-admin-password.sh`.
+
 ## Prerequisites
 
 - `gcloud` CLI (`gcloud auth login` and `gcloud auth application-default login`)
