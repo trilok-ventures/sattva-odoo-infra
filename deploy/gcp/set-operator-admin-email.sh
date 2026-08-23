@@ -79,11 +79,17 @@ with registry.cursor() as cr:
         if check_only:
             pass
         elif release_share and other.share:
-            other.active = False
-            other.login = "archived.share.%s" % other.id
-            other.email = False
+            other.write(
+                {
+                    "active": False,
+                    "login": "archived.share.%s" % other.id,
+                    "email": False,
+                }
+            )
             if other.partner_id:
-                other.partner_id.email = False
+                other.partner_id.write({"email": False})
+            other.flush_recordset(["login", "email", "active"])
+            cr.commit()
             print("released_share_uid=%s" % other.id)
             other = False
         else:
@@ -93,11 +99,11 @@ with registry.cursor() as cr:
                 % (other.id, other.share)
             )
     if not check_only:
-        admin.login = email
-        admin.email = email
-        admin.partner_id.email = email
+        admin.write({"login": email, "email": email})
+        admin.partner_id.write({"email": email})
         if not admin.has_group("base.group_system"):
             admin.groups_id = [(4, env.ref("base.group_system").id)]
+        admin.flush_recordset(["login", "email"])
         cr.commit()
     print("odoo_uid=%s" % admin.id)
     print("odoo_login=%s" % admin.login)
