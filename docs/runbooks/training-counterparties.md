@@ -51,7 +51,7 @@ Sales can create the row. Only a compliance officer may set spec thresholds.
 ## Endpoints — how to demo each
 
 1. **Folder bus (live after `--apply`)**  
-   Odoo queues two `sattva.fabric.event` rows (`queued`). n8n `wf.supplier.folder` and `wf.buyer.onboard.folder` MKCOL then `set_partner_path`. Event `state` becomes `processed`.
+   Odoo queues two `sattva.fabric.event` rows (`queued`). n8n `wf.supplier.folder` and `wf.buyer.onboard.folder` MKCOL then `set_partner_path`. If the 5-minute poll no-ops, run `sudo ./deploy/gcp/process-queued-folder-events.sh` (same RPC + MKCOL, no PCP write). Event `state` becomes `processed`. Folders land on the **`n8n.vault`** home until Group Folders.
 
 2. **PCP gate (do not keep the PO)**  
    Purchase → New RFQ → vendor `TRAINING Onion Packhouse` → Confirm Order. Expect **Compliance Gate Blocked**. Cancel/discard the RFQ. Do not set the vendor `approved` to “make the demo work”.
