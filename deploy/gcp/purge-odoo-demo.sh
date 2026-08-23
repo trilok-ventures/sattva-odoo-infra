@@ -285,6 +285,13 @@ with registry.cursor() as cr:
             [("origin", "in", pos.mapped("name"))]
         )
 
+    demo = demo.exists()
+    leads = leads.exists()
+    pos = pos.exists()
+    moves = moves.exists()
+    statements = statements.exists()
+    pickings = pickings.exists()
+
     print("mode=%s" % ("apply" if APPLY else "dry-run"))
     print(
         "demo_partners=%s"
