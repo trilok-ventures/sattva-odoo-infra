@@ -187,8 +187,8 @@ with registry.cursor() as cr:
                     % (partner.name, user.login)
                 )
 
-    leads = env["crm.lead"].browse()
-    if "crm.lead" in env:
+    leads = env["crm.lead"].browse() if "crm.lead" in env.registry else Partner.browse()
+    if "crm.lead" in env.registry:
         leads = env["crm.lead"].browse(xmlids("crm.lead", module="crm", name_prefix="crm_case_"))
         if demo:
             leads |= env["crm.lead"].search([("partner_id", "in", demo.ids)])
@@ -202,8 +202,8 @@ with registry.cursor() as cr:
                     % (lead.name, partner.name)
                 )
 
-    pos = env["purchase.order"].browse()
-    if "purchase.order" in env:
+    pos = env["purchase.order"].browse() if "purchase.order" in env.registry else Partner.browse()
+    if "purchase.order" in env.registry:
         pos = env["purchase.order"].browse(
             xmlids("purchase.order", module="purchase", name_prefix="purchase_order_")
         )
@@ -219,9 +219,13 @@ with registry.cursor() as cr:
                     % (po.name, partner.name)
                 )
 
-    moves = env["account.move"].browse()
-    statements = env["account.bank.statement"].browse()
-    if "account.bank.statement" in env:
+    moves = env["account.move"].browse() if "account.move" in env.registry else Partner.browse()
+    statements = (
+        env["account.bank.statement"].browse()
+        if "account.bank.statement" in env.registry
+        else Partner.browse()
+    )
+    if "account.bank.statement" in env.registry:
         statements = env["account.bank.statement"].browse(
             xmlids(
                 "account.bank.statement",
@@ -229,7 +233,7 @@ with registry.cursor() as cr:
                 name_contains="demo",
             )
         )
-    if "account.move" in env:
+    if "account.move" in env.registry:
         moves = env["account.move"].browse(
             xmlids("account.move", module="account", name_contains="demo")
         )
@@ -271,8 +275,12 @@ with registry.cursor() as cr:
                     % (move.name or move.id)
                 )
 
-    pickings = env["stock.picking"].browse()
-    if "stock.picking" in env and pos:
+    pickings = (
+        env["stock.picking"].browse()
+        if "stock.picking" in env.registry
+        else Partner.browse()
+    )
+    if "stock.picking" in env.registry and pos:
         pickings = env["stock.picking"].search(
             [("origin", "in", pos.mapped("name"))]
         )
@@ -356,7 +364,7 @@ with registry.cursor() as cr:
         archived.append("%s:%s" % (partner.id, partner.name))
     print("archived_partners=%s" % (",".join(archived) if archived else "none"))
 
-    if "crm.stage" in env:
+    if "crm.stage" in env.registry:
         Stage = env["crm.stage"]
         leftovers = Stage.search(
             [("name", "not in", list(FABRIC_STAGES)), ("team_id", "=", False)]
@@ -372,13 +380,19 @@ with registry.cursor() as cr:
         )
         unused.unlink()
 
-    if "account.move" in env:
+    if "account.move" in env.registry:
         still_posted = env["account.move"].search_count([("state", "=", "posted")])
         if still_posted:
             sys.exit("posted account.move remain after purge: %s" % still_posted)
         print("posted_moves_after=0")
-    print("purchase_orders_after=%s" % (env["purchase.order"].search_count([]) if "purchase.order" in env else 0))
-    print("crm_leads_after=%s" % (env["crm.lead"].search_count([]) if "crm.lead" in env else 0))
+    print(
+        "purchase_orders_after=%s"
+        % (env["purchase.order"].search_count([]) if "purchase.order" in env.registry else 0)
+    )
+    print(
+        "crm_leads_after=%s"
+        % (env["crm.lead"].search_count([]) if "crm.lead" in env.registry else 0)
+    )
     cr.commit()
     print("purge_applied=1")
 PY
