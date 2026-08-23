@@ -26,6 +26,15 @@ class TestProductSpec(TransactionCase):
         self.assertEqual(template.product_family_code, "ONION")
         self.assertFalse(template.spec_moisture_max)
 
+    def test_sales_can_create_catalog_row_without_spec(self):
+        template = (
+            self.env["product.template"]
+            .with_user(self.sales)
+            .create({"name": "Synthetic Sales Catalog Row", "sattva_crop": "chilli"})
+        )
+        self.assertEqual(template.product_family_code, "CHILLI")
+        self.assertFalse(template.spec_mesh_required)
+
     def test_sales_cannot_write_spec_thresholds(self):
         template = self.env["product.template"].create(
             {"name": "Synthetic Garlic Catalog Row", "sattva_crop": "garlic"}

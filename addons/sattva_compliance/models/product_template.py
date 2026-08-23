@@ -49,19 +49,31 @@ class ProductTemplate(models.Model):
                 template.sattva_crop.upper() if template.sattva_crop else False
             )
 
-    def _check_spec_write(self, vals):
-        spec_keys = {"spec_moisture_max", "spec_mesh_required"}
-        if not spec_keys.intersection(vals):
+    def _is_explicit_spec_change(self, vals, creating=False):
+        present = {"spec_moisture_max", "spec_mesh_required"}.intersection(vals)
+        if not present:
+            return False
+        if creating:
+            moisture = vals.get("spec_moisture_max", 0) or 0
+            mesh = bool(vals.get("spec_mesh_required", False))
+            return bool(moisture) or mesh
+        return True
+
+    def _check_spec_write(self, vals, creating=False):
+        if not self._is_explicit_spec_change(vals, creating=creating):
             return
-        if not self.env.user.has_group("sattva_compliance.group_compliance_officer"):
-            raise UserError(
-                "Only a compliance officer may change GREEN spec thresholds."
-            )
+        if self.env.su or self.env.user.has_group(
+            "sattva_compliance.group_compliance_officer"
+        ):
+            return
+        raise UserError(
+            "Only a compliance officer may change GREEN spec thresholds."
+        )
 
     @api.model_create_multi
     def create(self, vals_list):
         for vals in vals_list:
-            self._check_spec_write(vals)
+            self._check_spec_write(vals, creating=True)
         return super().create(vals_list)
 
     def write(self, vals):
