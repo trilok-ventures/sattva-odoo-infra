@@ -51,9 +51,9 @@ fi
 extra_modules="${extra_modules#,}"
 
 if [[ -n "${extra_modules}" ]]; then
-  log "Installing modules (no demo): ${extra_modules}"
+  log "Installing modules (no demo, no HTTP bind): ${extra_modules}"
   docker exec "${WEB}" odoo -d sattva -i "${extra_modules}" \
-    -c "${CONF}" --without-demo=all --stop-after-init
+    -c "${CONF}" --without-demo=all --stop-after-init --no-http
 fi
 
 export ODOO_N8N_PASSWORD

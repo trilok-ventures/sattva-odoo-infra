@@ -78,6 +78,9 @@ if (!odoo.includes("website") || !odoo.includes("auth_oauth")) {
 if (!odoo.includes("--with-ca-coa") || !odoo.includes("l10n_ca")) {
   fail("CA CoA must be an explicit flag, not default");
 }
+if (!/odoo -d sattva -i[\s\S]*--stop-after-init --no-http/.test(odoo)) {
+  fail("extra module install inside the running web container must pass --no-http");
+}
 
 if (!nc.includes("PCP/Supplier_Audits") || !nc.includes("PCP/Retention_Logs")) {
   fail("Nextcloud seed must include the fabric §5.3 PCP trees");
@@ -150,6 +153,9 @@ if (!reset.includes("pg_dump") || !reset.includes("set-operator-admin-email") ||
 }
 if (reset.includes("Riverbank Organic Farm") || reset.includes("Example Foods")) {
   fail("empty reset must not seed synthetic counterparties");
+}
+if (reset.includes("init-odoo-sor.sh --with-sales")) {
+  fail("empty reset already installs sale_management; do not re-install it on the bound web port");
 }
 
 if (!purge.includes("--apply") || !purge.includes("dry-run")) {

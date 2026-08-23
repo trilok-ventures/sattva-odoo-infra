@@ -190,7 +190,8 @@ if [[ "${ready}" -ne 1 ]]; then
 fi
 
 log "Applying Sattva SoR config (company/CAD/stages/n8n.fabric)"
-"${HERE}/init-odoo-sor.sh" --with-sales
+# sale_management is already installed above; do not re-run odoo -i on :8069
+"${HERE}/init-odoo-sor.sh"
 
 log "Binding uid 2 to the operator mailbox"
 "${HERE}/set-operator-admin-email.sh"

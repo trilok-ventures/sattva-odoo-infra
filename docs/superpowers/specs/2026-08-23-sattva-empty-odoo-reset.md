@@ -52,3 +52,8 @@ sudo ./deploy/gcp/init-sor.sh --reset-odoo-empty --apply  # dump + drop + reinst
 `--reset-odoo-empty` and `--purge-odoo-demo` are mutually exclusive. Reset
 replaces purge when the leftover surface is wider than xmlid-selected furniture
 rows (extra Apps, quotations, product catalog, `l10n_us`).
+
+`reset-odoo-empty.sh` installs `sale_management` during `compose run` (web
+stopped). It then starts web and runs `init-odoo-sor.sh` **without**
+`--with-sales`, so a second `odoo -i` does not bind `:8069` inside the running
+container. Standalone `--with-sales` / `--with-ca-coa` pass `--no-http`.
