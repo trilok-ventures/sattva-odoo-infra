@@ -11,7 +11,7 @@ if ! docker inspect "${NC}" >/dev/null 2>&1; then
   exit 1
 fi
 
-docker exec "${NC}" bash -s <<'BASH'
+docker exec -i "${NC}" bash -s <<'BASH'
 set -euo pipefail
 DATA="/var/www/html/data/admin/files"
 trees=(

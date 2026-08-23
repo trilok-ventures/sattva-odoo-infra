@@ -40,7 +40,7 @@ The script:
 | --- | --- | --- | --- |
 | Odoo | `https://sattva.trilokventures.org` | `archneo@trilokventures.org` | Secret Manager `odoo-web-admin-password` |
 | Nextcloud | `https://vault.trilokventures.org` | `admin` or the mailbox once the email setting is unique | Secret Manager `nextcloud-admin-password` |
-| n8n | `https://n8n.trilokventures.org` | `archneo@trilokventures.org` | Secret Manager `n8n-owner-password` |
+| n8n | `https://n8n.trilokventures.org` | `archneo@trilokventures.org` | Password already set in the editor. Do not overwrite it. `n8n-owner-password` is only for a future reset you run on purpose. |
 
 These three secrets are **different on purpose**. Do not copy the Nextcloud
 password onto Odoo. `odoo-admin-passwd` is only the database-manager master

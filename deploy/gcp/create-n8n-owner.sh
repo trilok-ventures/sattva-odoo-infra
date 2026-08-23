@@ -17,6 +17,15 @@ if ! docker inspect "${N8N}" >/dev/null 2>&1; then
   exit 1
 fi
 
+# n8n 2.x has no user:create. If an owner already exists, do not reset it.
+if docker exec sattva-prod-db psql -U n8n -d n8n -tAc \
+  "SELECT email FROM \"user\" WHERE \"roleSlug\" = 'global:owner' AND NOT disabled" \
+  | grep -q .; then
+  log "n8n owner already exists; not resetting. Use the password set in the editor."
+  log "AssetCo ${SECRET_ID} is only for a future reset you run on purpose."
+  exit 0
+fi
+
 if [[ -z "${N8N_OWNER_PASSWORD:-}" ]]; then
   if ! command -v gcloud >/dev/null 2>&1; then
     log "set N8N_OWNER_PASSWORD or run where gcloud can read ${SECRET_ID}"
