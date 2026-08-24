@@ -1,0 +1,40 @@
+{
+  "name": "wf.portal.metadata",
+  "id": "wf-portal-metadata",
+  "nodes": [
+    {
+      "id": "portal-metadata-webhook",
+      "name": "Portal metadata webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, 0],
+      "webhookId": "wf-portal-metadata",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "document-metadata",
+        "responseMode": "lastNode",
+        "options": {}
+      }
+    },
+    {
+      "id": "verify-portal-metadata-hmac",
+      "name": "Verify portal metadata HMAC",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [240, 0],
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\nconst headers = input.headers ?? {};\nconst provided = headers['x-sattva-webhook-hmac'] ?? headers['X-Sattva-Webhook-Hmac'];\nconst expected = $env.N8N_WEBHOOK_HMAC;\nif (typeof expected !== 'string' || !expected || typeof provided !== 'string' || provided !== expected) {\n  throw new Error('invalid x-sattva-webhook-hmac');\n}\nconst payload = input.body ?? input;\nif (payload == null || typeof payload !== 'object' || Array.isArray(payload)) throw new Error('payload required');\nconst forbidden = new Set(['bytes','pdf','path','nextcloud_folder_path','file_bytes','webdav']);\nfor (const key of Object.keys(payload)) {\n  if (forbidden.has(key)) throw new Error('RED key forbidden in portal metadata: ' + key);\n}\nif (typeof payload.filename !== 'string' || !payload.filename) throw new Error('filename required');\nif (typeof payload.sha256 !== 'string' || !/^[a-f0-9]{64}$/i.test(payload.sha256)) throw new Error('sha256 must be 64 hex characters');\nreturn [{ json: { filename: payload.filename, sha256: payload.sha256.toLowerCase(), ok: true } }];"
+      }
+    }
+  ],
+  "connections": {
+    "Portal metadata webhook": {
+      "main": [[{ "node": "Verify portal metadata HMAC", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "saveDataSuccessExecution": "none",
+    "saveDataErrorExecution": "none",
+    "executionTimeout": 30
+  }
+}

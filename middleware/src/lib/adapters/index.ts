@@ -5,12 +5,16 @@ import {
   pingJson,
 } from "../fabric";
 import type { Reach } from "../fabric";
+import { liveAdapter } from "./live";
 import { mockAdapter } from "./mock";
 import type { FabricAdapter } from "./types";
 
 export function getAdapter(): FabricAdapter {
   // JSON-2 live adapter attaches after Phase 1 Compose + GCP secrets. No WebDAV from this BFF.
   // Mock records match the HTML twin (Example Foods / P00042 / SO-1042).
+  if (fabricMode() === "live") {
+    return liveAdapter;
+  }
   return mockAdapter;
 }
 

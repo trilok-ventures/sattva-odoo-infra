@@ -75,6 +75,10 @@ for (const file of files) {
       throw new Error(`${file}: idempotent parent MKCOL walk required`);
     }
   }
+  const rpcBodies = wf.nodes.map((node) => String(node.parameters?.jsonBody || "")).join("\n");
+  if (rpcBodies.includes("button_confirm") || rpcBodies.includes("action_confirm")) {
+    throw new Error(`${file}: n8n must never call button_confirm or action_confirm`);
+  }
   if (wf.name === "wf.coa.verify") {
     const code = wf.nodes
       .map((node) => node.parameters?.jsCode || "")
@@ -87,6 +91,17 @@ for (const file of files) {
       !code.includes("^[a-f0-9]{64}$")
     ) {
       throw new Error(`${file}: COA comparison must validate recursively and fail closed`);
+    }
+    if (!text.includes("sattva.lot") || !text.includes("write_green")) {
+      throw new Error(`${file}: COA verify must write GREEN fields via sattva.lot.write_green`);
+    }
+  }
+  if (wf.name === "wf.sale.hold") {
+    if (!text.includes("sattva.fabric.salehold") || !text.includes("set_hold")) {
+      throw new Error(`${file}: sale hold must call sattva.fabric.salehold.set_hold`);
+    }
+    if (text.includes("action_confirm")) {
+      throw new Error(`${file}: sale hold must never confirm a sale.order`);
     }
   }
   if (

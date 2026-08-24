@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_sattva_lot_tree" model="ir.ui.view">
+        <field name="name">sattva.lot.tree</field>
+        <field name="model">sattva.lot</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="sku"/>
+                <field name="state"/>
+                <field name="coa_pass"/>
+                <field name="moisture_pct"/>
+                <field name="mesh_pass"/>
+                <field name="coa_sha256"/>
+            </list>
+        </field>
+    </record>
+    <record id="view_sattva_lot_form" model="ir.ui.view">
+        <field name="name">sattva.lot.form</field>
+        <field name="model">sattva.lot</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="name"/>
+                            <field name="sku"/>
+                            <field name="product_id"/>
+                            <field name="sale_order_id"/>
+                            <field name="supplier_id"/>
+                            <field name="state"/>
+                        </group>
+                        <group string="GREEN metrics">
+                            <field name="moisture_pct"/>
+                            <field name="mesh_pass"/>
+                            <field name="salmonella_absent"/>
+                            <field name="tpc_cfu_g"/>
+                            <field name="pyruvic_acid_umol"/>
+                            <field name="coa_pass"/>
+                            <field name="coa_sha256"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    <record id="action_sattva_lot" model="ir.actions.act_window">
+        <field name="name">Lots</field>
+        <field name="res_model">sattva.lot</field>
+        <field name="view_mode">list,form</field>
+    </record>
+    <menuitem id="menu_sattva_lot"
+        name="Sattva Lots"
+        parent="sale.sale_menu_root"
+        action="action_sattva_lot"
+        sequence="90"/>
+</odoo>

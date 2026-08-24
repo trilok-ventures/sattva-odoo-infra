@@ -5,12 +5,19 @@ from .service_security import require_n8n_fabric_service
 
 
 ROLE_GROUPS = {
-    "sales.exec": ("sales_team.group_sale_salesman",),
+    "sales.exec": (
+        "sattva_compliance.group_sales_exec",
+        "sales_team.group_sale_salesman",
+    ),
     "finance.manager": (
+        "sattva_compliance.group_finance_manager",
         "account.group_account_manager",
         "account.group_account_user",
     ),
-    "logistics.exec": ("stock.group_stock_user",),
+    "logistics.exec": (
+        "sattva_compliance.group_logistics_exec",
+        "stock.group_stock_user",
+    ),
     "it.admin": ("base.group_system",),
     "compliance.officer": ("sattva_compliance.group_compliance_officer",),
 }

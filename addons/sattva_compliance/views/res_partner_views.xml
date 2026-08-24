@@ -9,15 +9,30 @@
                 <page string="Sattva Compliance" name="sattva_compliance">
                     <group>
                         <group string="Supplier PCP">
-                            <field name="supplier_pcp_status"/>
-                            <field name="risk_band"/>
-                            <field name="haccp_certified"/>
-                            <field name="brc_certified"/>
+                            <field name="supplier_pcp_status" readonly="1" groups="!sattva_compliance.group_compliance_officer"/>
+                            <field name="supplier_pcp_status" groups="sattva_compliance.group_compliance_officer"/>
+                            <field name="risk_band" readonly="1" groups="!sattva_compliance.group_compliance_officer"/>
+                            <field name="risk_band" groups="sattva_compliance.group_compliance_officer"/>
+                            <field name="haccp_certified" readonly="1" groups="!sattva_compliance.group_compliance_officer"/>
+                            <field name="haccp_certified" groups="sattva_compliance.group_compliance_officer"/>
+                            <field name="brc_certified" readonly="1" groups="!sattva_compliance.group_compliance_officer"/>
+                            <field name="brc_certified" groups="sattva_compliance.group_compliance_officer"/>
                             <field name="nextcloud_folder_path"/>
                         </group>
-                        <group string="Buyer KYC">
+                        <group string="Buyer KYC / SFC">
                             <field name="buyer_kyc_status"/>
+                            <field name="sfc_licence_status" readonly="1" groups="!sattva_compliance.group_compliance_officer"/>
+                            <field name="sfc_licence_status" groups="sattva_compliance.group_compliance_officer"/>
+                            <field name="sfc_licence_masked"/>
+                            <field name="sfc_licence_input" widget="password" groups="sattva_compliance.group_compliance_officer"/>
                             <field name="nextcloud_client_folder_path"/>
+                        </group>
+                        <group string="3PL / Forwarder">
+                            <field name="is_freight_forwarder"/>
+                            <field name="forwarder_status" invisible="not is_freight_forwarder"/>
+                            <field name="cfia_swi_capable" invisible="not is_freight_forwarder"/>
+                            <field name="insurance_meets_min" invisible="not is_freight_forwarder"/>
+                            <field name="supported_incoterms" invisible="not is_freight_forwarder" placeholder="FOB,CIF"/>
                         </group>
                     </group>
                 </page>

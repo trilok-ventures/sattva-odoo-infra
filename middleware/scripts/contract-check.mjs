@@ -76,6 +76,18 @@ assert(
   httpSrc.includes('mode === "live"') && httpSrc.includes("Keycloak session required"),
 );
 
+const idxSrc = readFileSync(join(root, "src/lib/adapters/index.ts"), "utf8");
+assert(
+  "getAdapter switches on live mode",
+  idxSrc.includes('fabricMode() === "live"') && idxSrc.includes("liveAdapter"),
+);
+const liveSrc = readFileSync(join(root, "src/lib/adapters/live.ts"), "utf8");
+assert("live adapter has no webdav", !/webdav/i.test(liveSrc));
+assert("live adapter has no nextcloud", !/nextcloud/i.test(liveSrc));
+assert("live adapter uses executeKw / n8n HMAC", liveSrc.includes("executeKw") && liveSrc.includes("postN8nMetadata"));
+const hmacSrc = readFileSync(join(root, "src/lib/n8n-hmac.ts"), "utf8");
+assert("n8n hmac header name", hmacSrc.includes("x-sattva-webhook-hmac"));
+
 const rootVercel = JSON.parse(readFileSync(join(root, "../vercel.json"), "utf8"));
 assert(
   "root vercel.json still publishes mocks only",
