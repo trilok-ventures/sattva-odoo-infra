@@ -23,5 +23,14 @@
   "ssn",
   "vault_path",
   "webdav",
-  "webdav_path"
+  "webdav_path",
+  "sfc_licence_number",
+  "sfc_licence_id",
+  "sfc_licence_input",
+  "sfc_licence_fingerprint",
+  "cbsa_bond",
+  "cbsa_bond_number",
+  "insurance_policy_no",
+  "insurance_policy",
+  "bond_number"
 ]
