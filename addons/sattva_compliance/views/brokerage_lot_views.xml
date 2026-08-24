@@ -42,6 +42,13 @@
                             <field name="mesh_pass"/>
                             <field name="spec_moisture_max"/>
                             <field name="spec_mesh_required"/>
+                            <field name="salmonella_absent"/>
+                            <field name="spec_salmonella_required"/>
+                            <field name="tpc_cfu"/>
+                            <field name="spec_tpc_max"/>
+                            <field name="pyruvic_umol"/>
+                            <field name="spec_pyruvic_required"/>
+                            <field name="spec_pyruvic_min"/>
                             <field name="coa_pass"/>
                         </group>
                     </group>

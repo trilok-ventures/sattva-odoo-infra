@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_product_template_form_sattva_green" model="ir.ui.view">
+        <field name="name">product.template.form.sattva.green</field>
+        <field name="model">product.template</field>
+        <field name="inherit_id" ref="product.product_template_form_view"/>
+        <field name="arch" type="xml">
+            <xpath expr="//notebook" position="inside">
+                <page string="Sattva GREEN specs" name="sattva_green_specs">
+                    <group>
+                        <group string="Crop">
+                            <field name="sattva_crop"/>
+                            <field name="spec_pyruvic_required"/>
+                            <field name="spec_pyruvic_min"/>
+                        </group>
+                        <group string="CoA thresholds">
+                            <field name="spec_moisture_max"/>
+                            <field name="spec_mesh_required"/>
+                            <field name="spec_salmonella_required"/>
+                            <field name="spec_tpc_max"/>
+                        </group>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>

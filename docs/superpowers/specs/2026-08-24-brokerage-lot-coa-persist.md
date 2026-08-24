@@ -21,4 +21,4 @@ Give Odoo a brokerage lot SoR row (not `stock.lot`) that defaults to quarantine.
 
 ## Out of scope
 
-Salmonella/TPC/pyruvic (P1 #8), buyer UI, OCR, `stock.quant`, n8n confirm.
+Salmonella/TPC/pyruvic landed in `2026-08-24-p1-coa-green-metrics.md`. Remaining: buyer UI, OCR, `stock.quant`, n8n confirm.

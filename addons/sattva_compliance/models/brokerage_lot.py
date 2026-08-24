@@ -15,6 +15,13 @@ _GREEN = {
     "mesh_pass",
     "spec_moisture_max",
     "spec_mesh_required",
+    "salmonella_absent",
+    "spec_salmonella_required",
+    "tpc_cfu",
+    "spec_tpc_max",
+    "pyruvic_umol",
+    "spec_pyruvic_required",
+    "spec_pyruvic_min",
     "coa_pass",
 }
 
@@ -31,8 +38,40 @@ def _is_coa_basename(filename):
     return True
 
 
-def _coa_compare_pass(moisture_pct, mesh_pass, spec_moisture_max, spec_mesh_required):
-    return moisture_pct <= spec_moisture_max and (not spec_mesh_required or mesh_pass)
+def _require_finite(value, name):
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise UserError(f"{name} must be a number")
+    if not math.isfinite(value):
+        raise UserError(f"{name} must be finite")
+    return value
+
+
+def _require_bool(value, name):
+    if not isinstance(value, bool):
+        raise UserError(f"{name} must be boolean")
+    return value
+
+
+def _coa_compare_pass(
+    moisture_pct,
+    mesh_pass,
+    spec_moisture_max,
+    spec_mesh_required,
+    salmonella_absent,
+    spec_salmonella_required,
+    tpc_cfu,
+    spec_tpc_max,
+    pyruvic_umol,
+    spec_pyruvic_required,
+    spec_pyruvic_min,
+):
+    return (
+        moisture_pct <= spec_moisture_max
+        and (not spec_mesh_required or mesh_pass)
+        and (not spec_salmonella_required or salmonella_absent)
+        and tpc_cfu <= spec_tpc_max
+        and (not spec_pyruvic_required or pyruvic_umol >= spec_pyruvic_min)
+    )
 
 
 class BrokerageLot(models.Model):
@@ -74,6 +113,21 @@ class BrokerageLot(models.Model):
     spec_moisture_max = fields.Float(string="Spec moisture max %", readonly=True, copy=False)
     spec_mesh_required = fields.Boolean(
         string="Spec mesh required", readonly=True, copy=False
+    )
+    salmonella_absent = fields.Boolean(
+        string="Salmonella absent", readonly=True, copy=False
+    )
+    spec_salmonella_required = fields.Boolean(
+        string="Salmonella must be absent", readonly=True, copy=False
+    )
+    tpc_cfu = fields.Float(string="TPC CFU/g", readonly=True, copy=False)
+    spec_tpc_max = fields.Float(string="Spec TPC max CFU/g", readonly=True, copy=False)
+    pyruvic_umol = fields.Float(string="Pyruvic µmol/g", readonly=True, copy=False)
+    spec_pyruvic_required = fields.Boolean(
+        string="Pyruvic required", readonly=True, copy=False
+    )
+    spec_pyruvic_min = fields.Float(
+        string="Spec pyruvic min µmol/g", readonly=True, copy=False
     )
     coa_pass = fields.Boolean(
         string="COA compare pass",
@@ -165,27 +219,49 @@ class FabricLot(models.AbstractModel):
         mesh_pass,
         spec_moisture_max,
         spec_mesh_required,
+        salmonella_absent,
+        spec_salmonella_required,
+        tpc_cfu,
+        spec_tpc_max,
+        pyruvic_umol,
+        spec_pyruvic_required,
+        spec_pyruvic_min,
     ):
         require_n8n_fabric_service(self.env)
         if not _is_coa_basename(filename):
             raise UserError("filename must be a basename with no path")
         if not isinstance(sha256, str) or not _SHA256.match(sha256):
             raise UserError("sha256 must be 64 hex characters")
-        if isinstance(moisture_pct, bool) or not isinstance(moisture_pct, (int, float)):
-            raise UserError("moisture_pct must be a number")
-        if isinstance(spec_moisture_max, bool) or not isinstance(
-            spec_moisture_max, (int, float)
-        ):
-            raise UserError("spec_moisture_max must be a number")
-        if not math.isfinite(moisture_pct) or not math.isfinite(spec_moisture_max):
-            raise UserError("moisture values must be finite")
-        if not isinstance(mesh_pass, bool) or not isinstance(spec_mesh_required, bool):
-            raise UserError("mesh_pass and spec_mesh_required must be boolean")
+        moisture_pct = _require_finite(moisture_pct, "moisture_pct")
+        spec_moisture_max = _require_finite(spec_moisture_max, "spec_moisture_max")
+        mesh_pass = _require_bool(mesh_pass, "mesh_pass")
+        spec_mesh_required = _require_bool(spec_mesh_required, "spec_mesh_required")
+        salmonella_absent = _require_bool(salmonella_absent, "salmonella_absent")
+        spec_salmonella_required = _require_bool(
+            spec_salmonella_required, "spec_salmonella_required"
+        )
+        tpc_cfu = _require_finite(tpc_cfu, "tpc_cfu")
+        spec_tpc_max = _require_finite(spec_tpc_max, "spec_tpc_max")
+        pyruvic_umol = _require_finite(pyruvic_umol, "pyruvic_umol")
+        spec_pyruvic_required = _require_bool(
+            spec_pyruvic_required, "spec_pyruvic_required"
+        )
+        spec_pyruvic_min = _require_finite(spec_pyruvic_min, "spec_pyruvic_min")
         lot = self.env["sattva.brokerage.lot"].browse(int(lot_id))
         if not lot.exists():
             raise UserError("lot not found")
         coa_pass = _coa_compare_pass(
-            moisture_pct, mesh_pass, spec_moisture_max, spec_mesh_required
+            moisture_pct,
+            mesh_pass,
+            spec_moisture_max,
+            spec_mesh_required,
+            salmonella_absent,
+            spec_salmonella_required,
+            tpc_cfu,
+            spec_tpc_max,
+            pyruvic_umol,
+            spec_pyruvic_required,
+            spec_pyruvic_min,
         )
         lot.sudo()._write_coa_green(
             {
@@ -195,6 +271,13 @@ class FabricLot(models.AbstractModel):
                 "mesh_pass": mesh_pass,
                 "spec_moisture_max": spec_moisture_max,
                 "spec_mesh_required": spec_mesh_required,
+                "salmonella_absent": salmonella_absent,
+                "spec_salmonella_required": spec_salmonella_required,
+                "tpc_cfu": tpc_cfu,
+                "spec_tpc_max": spec_tpc_max,
+                "pyruvic_umol": pyruvic_umol,
+                "spec_pyruvic_required": spec_pyruvic_required,
+                "spec_pyruvic_min": spec_pyruvic_min,
                 "coa_pass": coa_pass,
             }
         )

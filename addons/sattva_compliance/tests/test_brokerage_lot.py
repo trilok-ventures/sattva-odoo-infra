@@ -42,6 +42,24 @@ class TestBrokerageLot(TransactionCase):
             }
         )
 
+    def _apply(self, lot, moisture=5.0, mesh=True, spec_m=6.0, spec_mesh=True, **vals):
+        return self.env["sattva.fabric.lot"].with_user(self.fabric_user).apply_coa_green(
+            lot.id,
+            vals.get("filename", "coa.pdf"),
+            SHA,
+            moisture,
+            mesh,
+            spec_m,
+            spec_mesh,
+            vals.get("salmonella_absent", True),
+            vals.get("spec_salmonella_required", True),
+            vals.get("tpc_cfu", 1000.0),
+            vals.get("spec_tpc_max", 100000.0),
+            vals.get("pyruvic_umol", 0.0),
+            vals.get("spec_pyruvic_required", False),
+            vals.get("spec_pyruvic_min", 0.0),
+        )
+
     def test_new_lot_defaults_to_quarantine(self):
         lot = self._lot()
         self.assertEqual(lot.state, "quarantine")
@@ -50,22 +68,20 @@ class TestBrokerageLot(TransactionCase):
 
     def test_apply_coa_green_pass_stays_quarantine(self):
         lot = self._lot()
-        self.env["sattva.fabric.lot"].with_user(self.fabric_user).apply_coa_green(
-            lot.id, "coa.pdf", SHA, 5.5, True, 6.0, True
-        )
+        self._apply(lot, moisture=5.5)
         lot.invalidate_recordset()
         self.assertTrue(lot.coa_pass)
         self.assertEqual(lot.coa_sha256, SHA)
         self.assertEqual(lot.coa_filename, "coa.pdf")
         self.assertEqual(lot.moisture_pct, 5.5)
         self.assertTrue(lot.mesh_pass)
+        self.assertTrue(lot.salmonella_absent)
+        self.assertEqual(lot.tpc_cfu, 1000.0)
         self.assertEqual(lot.state, "quarantine")
 
     def test_apply_coa_green_fail_opens_capa_and_stays_quarantine(self):
         lot = self._lot()
-        self.env["sattva.fabric.lot"].with_user(self.fabric_user).apply_coa_green(
-            lot.id, "coa.pdf", SHA, 9.0, False, 6.0, True
-        )
+        self._apply(lot, moisture=9.0, mesh=False, spec_mesh=True)
         lot.invalidate_recordset()
         self.assertFalse(lot.coa_pass)
         self.assertEqual(lot.state, "quarantine")
@@ -92,47 +108,65 @@ class TestBrokerageLot(TransactionCase):
         lot = self._lot()
         with self.assertRaises(AccessError):
             self.env["sattva.fabric.lot"].with_user(self.unauthorized).apply_coa_green(
-                lot.id, "coa.pdf", SHA, 5.0, True, 6.0, True
+                lot.id,
+                "coa.pdf",
+                SHA,
+                5.0,
+                True,
+                6.0,
+                True,
+                True,
+                True,
+                1000.0,
+                100000.0,
+                0.0,
+                False,
+                0.0,
             )
 
     def test_apply_coa_green_rejects_path_filename(self):
         lot = self._lot()
         with self.assertRaises(UserError):
             self.env["sattva.fabric.lot"].with_user(self.fabric_user).apply_coa_green(
-                lot.id, "/Clients/x/coa.pdf", SHA, 5.0, True, 6.0, True
+                lot.id,
+                "/Clients/x/coa.pdf",
+                SHA,
+                5.0,
+                True,
+                6.0,
+                True,
+                True,
+                True,
+                1000.0,
+                100000.0,
+                0.0,
+                False,
+                0.0,
             )
 
     def test_n8n_cannot_release_lot(self):
         lot = self._lot()
-        self.env["sattva.fabric.lot"].with_user(self.fabric_user).apply_coa_green(
-            lot.id, "coa.pdf", SHA, 5.0, True, 6.0, True
-        )
+        self._apply(lot)
         with self.assertRaises(AccessError):
             lot.with_user(self.fabric_user).action_release()
         self.assertEqual(lot.state, "quarantine")
 
     def test_officer_releases_only_when_coa_pass(self):
         lot = self._lot()
-        self.env["sattva.fabric.lot"].with_user(self.fabric_user).apply_coa_green(
-            lot.id, "coa.pdf", SHA, 5.0, True, 6.0, True
-        )
+        self._apply(lot)
         lot.with_user(self.officer).action_release()
         self.assertEqual(lot.state, "available")
 
     def test_officer_cannot_release_failed_coa(self):
         lot = self._lot()
-        self.env["sattva.fabric.lot"].with_user(self.fabric_user).apply_coa_green(
-            lot.id, "coa.pdf", SHA, 9.0, True, 6.0, True
-        )
+        self._apply(lot, moisture=9.0)
         with self.assertRaises(UserError):
             lot.with_user(self.officer).action_release()
         self.assertEqual(lot.state, "quarantine")
 
     def test_sales_cannot_release(self):
         lot = self._lot()
-        self.env["sattva.fabric.lot"].with_user(self.fabric_user).apply_coa_green(
-            lot.id, "coa.pdf", SHA, 5.0, True, 6.0, True
-        )
+        self._apply(lot)
         with self.assertRaises(AccessError):
             lot.with_user(self.sales).action_release()
 
@@ -144,11 +178,13 @@ class TestBrokerageLot(TransactionCase):
                 "state": "available",
                 "coa_pass": True,
                 "coa_sha256": SHA,
+                "salmonella_absent": True,
             }
         )
         self.assertEqual(lot.state, "quarantine")
         self.assertFalse(lot.coa_pass)
         self.assertFalse(lot.coa_sha256)
+        self.assertFalse(lot.salmonella_absent)
 
     def test_officer_write_cannot_mark_available(self):
         lot = self._lot()
@@ -168,6 +204,10 @@ class TestBrokerageLot(TransactionCase):
         lot = self._lot()
         with self.assertRaises(AccessError):
             lot.with_user(self.officer).write({"coa_pass": True, "coa_sha256": SHA})
+        with self.assertRaises(AccessError):
+            lot.with_user(self.officer).write(
+                {"salmonella_absent": True, "tpc_cfu": 1.0, "pyruvic_umol": 4.0}
+            )
 
     def test_officer_cannot_call_write_coa_green(self):
         lot = self._lot()
@@ -197,18 +237,14 @@ class TestBrokerageLot(TransactionCase):
             groups="sattva_compliance.group_n8n_fabric_service,sattva_compliance.group_compliance_officer",
         )
         lot = self._lot()
-        self.env["sattva.fabric.lot"].with_user(self.fabric_user).apply_coa_green(
-            lot.id, "coa.pdf", SHA, 5.0, True, 6.0, True
-        )
+        self._apply(lot)
         with self.assertRaises(AccessError):
             lot.with_user(dual).action_release()
         self.assertEqual(lot.state, "quarantine")
 
     def test_mesh_not_required_passes_without_mesh(self):
         lot = self._lot()
-        self.env["sattva.fabric.lot"].with_user(self.fabric_user).apply_coa_green(
-            lot.id, "coa.pdf", SHA, 5.0, False, 6.0, False
-        )
+        self._apply(lot, mesh=False, spec_mesh=False)
         lot.invalidate_recordset()
         self.assertTrue(lot.coa_pass)
         self.assertEqual(lot.state, "quarantine")
@@ -217,7 +253,20 @@ class TestBrokerageLot(TransactionCase):
         lot = self._lot()
         with self.assertRaises(UserError):
             self.env["sattva.fabric.lot"].with_user(self.fabric_user).apply_coa_green(
-                lot.id, "folder\\coa.pdf", SHA, 5.0, True, 6.0, True
+                lot.id,
+                "folder\\coa.pdf",
+                SHA,
+                5.0,
+                True,
+                6.0,
+                True,
+                True,
+                True,
+                1000.0,
+                100000.0,
+                0.0,
+                False,
+                0.0,
             )
 
     def test_chatter_rejects_attachments(self):
@@ -227,10 +276,59 @@ class TestBrokerageLot(TransactionCase):
 
     def test_officer_reject_then_cannot_release(self):
         lot = self._lot()
-        self.env["sattva.fabric.lot"].with_user(self.fabric_user).apply_coa_green(
-            lot.id, "coa.pdf", SHA, 5.0, True, 6.0, True
-        )
+        self._apply(lot)
         lot.with_user(self.officer).action_reject()
         self.assertEqual(lot.state, "rejected")
         with self.assertRaises(UserError):
             lot.with_user(self.officer).action_release()
+
+    def test_salmonella_present_fails_when_required(self):
+        lot = self._lot()
+        self._apply(lot, salmonella_absent=False, spec_salmonella_required=True)
+        lot.invalidate_recordset()
+        self.assertFalse(lot.coa_pass)
+        self.assertEqual(lot.state, "quarantine")
+
+    def test_tpc_over_max_fails(self):
+        lot = self._lot()
+        self._apply(lot, tpc_cfu=200000.0, spec_tpc_max=100000.0)
+        lot.invalidate_recordset()
+        self.assertFalse(lot.coa_pass)
+        self.assertEqual(lot.state, "quarantine")
+
+    def test_onion_pyruvic_below_min_fails(self):
+        lot = self._lot()
+        self._apply(
+            lot,
+            pyruvic_umol=2.0,
+            spec_pyruvic_required=True,
+            spec_pyruvic_min=4.0,
+        )
+        lot.invalidate_recordset()
+        self.assertFalse(lot.coa_pass)
+        self.assertEqual(lot.state, "quarantine")
+
+    def test_garlic_skips_pyruvic(self):
+        lot = self._lot()
+        self._apply(
+            lot,
+            pyruvic_umol=0.0,
+            spec_pyruvic_required=False,
+            spec_pyruvic_min=4.0,
+        )
+        lot.invalidate_recordset()
+        self.assertTrue(lot.coa_pass)
+        self.assertEqual(lot.state, "quarantine")
+
+    def test_onion_pyruvic_at_min_passes(self):
+        lot = self._lot()
+        self._apply(
+            lot,
+            pyruvic_umol=4.0,
+            spec_pyruvic_required=True,
+            spec_pyruvic_min=4.0,
+        )
+        lot.invalidate_recordset()
+        self.assertTrue(lot.coa_pass)
+        self.assertEqual(lot.pyruvic_umol, 4.0)
+        self.assertEqual(lot.state, "quarantine")

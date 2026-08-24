@@ -102,8 +102,14 @@ for (const file of files) {
       !code.includes("unknown COA key forbidden") ||
       !code.includes("Number.isFinite") ||
       !code.includes("typeof b.mesh_pass !== 'boolean'") ||
+      !code.includes("typeof b.salmonella_absent !== 'boolean'") ||
+      !code.includes("typeof b.tpc_cfu !== 'number'") ||
+      !code.includes("typeof b.pyruvic_umol !== 'number'") ||
       !code.includes("^[a-f0-9]{64}$") ||
-      !code.includes("!b.spec_mesh_required || b.mesh_pass")
+      !code.includes("!b.spec_mesh_required || b.mesh_pass") ||
+      !code.includes("!b.spec_salmonella_required || b.salmonella_absent") ||
+      !code.includes("b.tpc_cfu <= b.spec_tpc_max") ||
+      !code.includes("!b.spec_pyruvic_required || b.pyruvic_umol >= b.spec_pyruvic_min")
     ) {
       throw new Error(`${file}: COA comparison must allowlist keys, validate, and treat mesh as implication`);
     }
