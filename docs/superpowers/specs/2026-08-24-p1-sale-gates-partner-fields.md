@@ -1,6 +1,6 @@
 # P1 sale gates and partner fields (SFC, exporter IDs, 3PL, Incoterms)
 
-**Status:** Implementing  
+**Status:** Implemented on `cursor/paas-feature-ranking-952c` (`6b87300`; `TestSaleGates` green)  
 **Date:** 2026-08-24  
 **Owner:** IPCo  
 **Companion ranking:** `2026-08-24-spice-trade-paas-feature-ranking.md` (P1 #3–7, #9)  
