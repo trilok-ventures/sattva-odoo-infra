@@ -12,7 +12,7 @@ Give Odoo a brokerage lot SoR row (not `stock.lot`) that defaults to quarantine.
 
 ## Behaviour
 
-- Model `sattva.brokerage.lot`: `state` ∈ {quarantine, available, rejected}; default quarantine. `create` always stores quarantine and drops GREEN values. `write` of GREEN fields requires `apply_coa_green` context. `state=available` requires `action_release` context; `state=rejected` requires `action_reject`.
+- Model `sattva.brokerage.lot`: `state` ∈ {quarantine, available, rejected}; default quarantine. `create` always stores quarantine and drops GREEN values. Public `write` rejects GREEN fields and any `state` change even if the client injects context flags. GREEN persist is `_write_coa_green` (always quarantine). `state=available` / `rejected` only via `action_release` / `action_reject` calling `super().write`.
 - GREEN fields only: filename (strict basename), sha256, moisture %, mesh pass, spec thresholds, `coa_pass`. Mesh pass is required only when `spec_mesh_required`.
 - `sattva.fabric.lot.apply_coa_green` is the only n8n write path. Requires `group_n8n_fabric_service`. Always leaves `state=quarantine`. Fail opens a CAPA `mail.activity` for a human compliance officer.
 - `action_release` is compliance-officer-only, denies the n8n fabric group even if dual-grouped, and requires quarantine + `coa_pass` + a 64-hex `coa_sha256`.

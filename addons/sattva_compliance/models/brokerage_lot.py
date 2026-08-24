@@ -96,16 +96,20 @@ class BrokerageLot(models.Model):
     def write(self, vals):
         self.check_access("write")
         vals = dict(vals)
-        if _GREEN & set(vals) and not self.env.context.get("sattva_apply_coa_green"):
+        if _GREEN & set(vals):
             raise AccessError("GREEN COA fields are written only by apply_coa_green")
-        if vals.get("state") == "available" and not self.env.context.get(
-            "sattva_lot_release"
-        ):
-            raise UserError("Available for sale is only set by action_release")
-        if vals.get("state") == "rejected" and not self.env.context.get(
-            "sattva_lot_reject"
-        ):
-            raise UserError("Rejected is only set by action_reject")
+        if "state" in vals:
+            raise UserError(
+                "Lot state changes only via action_release or action_reject"
+            )
+        return super().write(vals)
+
+    def _write_coa_green(self, vals):
+        vals = dict(vals)
+        extra = set(vals) - _GREEN
+        if extra:
+            raise UserError("apply_coa_green may only write GREEN fields")
+        vals["state"] = "quarantine"
         return super().write(vals)
 
     def action_release(self):
@@ -122,8 +126,7 @@ class BrokerageLot(models.Model):
                 raise UserError(
                     f"Cannot release lot '{lot.name}': hashed GREEN COA pass required."
                 )
-            lot.with_context(sattva_lot_release=True).write({"state": "available"})
-        return True
+        return super().write({"state": "available"})
 
     def action_reject(self):
         if self.env.user.has_group("sattva_compliance.group_n8n_fabric_service"):
@@ -135,8 +138,7 @@ class BrokerageLot(models.Model):
                 raise UserError(
                     f"Cannot reject lot '{lot.name}': already rejected."
                 )
-            lot.with_context(sattva_lot_reject=True).write({"state": "rejected"})
-        return True
+        return super().write({"state": "rejected"})
 
     def message_post(self, *, attachments=None, attachment_ids=None, **kwargs):
         if attachments or attachment_ids:
@@ -184,7 +186,7 @@ class FabricLot(models.AbstractModel):
         coa_pass = _coa_compare_pass(
             moisture_pct, mesh_pass, spec_moisture_max, spec_mesh_required
         )
-        lot.sudo().with_context(sattva_apply_coa_green=True).write(
+        lot.sudo()._write_coa_green(
             {
                 "coa_filename": filename,
                 "coa_sha256": sha256.lower(),
@@ -193,7 +195,6 @@ class FabricLot(models.AbstractModel):
                 "spec_moisture_max": spec_moisture_max,
                 "spec_mesh_required": spec_mesh_required,
                 "coa_pass": coa_pass,
-                "state": "quarantine",
             }
         )
         if not coa_pass:

@@ -156,10 +156,27 @@ class TestBrokerageLot(TransactionCase):
             lot.with_user(self.officer).write({"state": "available"})
         self.assertEqual(lot.state, "quarantine")
 
+    def test_officer_cannot_inject_release_context(self):
+        lot = self._lot()
+        with self.assertRaises(UserError):
+            lot.with_user(self.officer).with_context(sattva_lot_release=True).write(
+                {"state": "available"}
+            )
+        self.assertEqual(lot.state, "quarantine")
+
     def test_officer_write_cannot_set_coa_pass(self):
         lot = self._lot()
         with self.assertRaises(AccessError):
             lot.with_user(self.officer).write({"coa_pass": True, "coa_sha256": SHA})
+
+    def test_officer_cannot_inject_green_context(self):
+        lot = self._lot()
+        with self.assertRaises(AccessError):
+            lot.with_user(self.officer).with_context(
+                sattva_apply_coa_green=True
+            ).write({"coa_pass": True, "coa_sha256": SHA})
+        self.assertFalse(lot.coa_pass)
+        self.assertFalse(lot.coa_sha256)
 
     def test_n8n_write_cannot_mark_available(self):
         lot = self._lot()
