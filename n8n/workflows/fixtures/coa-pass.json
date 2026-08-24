@@ -1,5 +1,6 @@
 {
-  "filename": "SYNTHETIC-COA-pass.pdf",
+    "lot_id": 1,
+    "filename": "SYNTHETIC-COA-pass.pdf",
   "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
   "moisture_pct": 4.8,
   "mesh_pass": true,

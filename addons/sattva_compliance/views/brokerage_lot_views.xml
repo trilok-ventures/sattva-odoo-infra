@@ -23,7 +23,10 @@
                             class="btn-primary"
                             invisible="state != 'quarantine' or not coa_pass"
                             groups="sattva_compliance.group_compliance_officer"/>
-                    <field name="state" widget="statusbar"/>
+                    <button name="action_reject" type="object" string="Reject lot"
+                            invisible="state == 'rejected'"
+                            groups="sattva_compliance.group_compliance_officer"/>
+                    <field name="state" widget="statusbar" options="{'clickable': False}"/>
                 </header>
                 <sheet>
                     <group>

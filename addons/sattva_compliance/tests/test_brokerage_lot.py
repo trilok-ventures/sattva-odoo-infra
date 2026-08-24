@@ -135,3 +135,78 @@ class TestBrokerageLot(TransactionCase):
         )
         with self.assertRaises(AccessError):
             lot.with_user(self.sales).action_release()
+
+    def test_create_cannot_start_available_or_set_green(self):
+        lot = self.env["sattva.brokerage.lot"].with_user(self.officer).create(
+            {
+                "name": "SYN-LOT-FORCE",
+                "supplier_id": self.supplier.id,
+                "state": "available",
+                "coa_pass": True,
+                "coa_sha256": SHA,
+            }
+        )
+        self.assertEqual(lot.state, "quarantine")
+        self.assertFalse(lot.coa_pass)
+        self.assertFalse(lot.coa_sha256)
+
+    def test_officer_write_cannot_mark_available(self):
+        lot = self._lot()
+        with self.assertRaises(UserError):
+            lot.with_user(self.officer).write({"state": "available"})
+        self.assertEqual(lot.state, "quarantine")
+
+    def test_officer_write_cannot_set_coa_pass(self):
+        lot = self._lot()
+        with self.assertRaises(AccessError):
+            lot.with_user(self.officer).write({"coa_pass": True, "coa_sha256": SHA})
+
+    def test_n8n_write_cannot_mark_available(self):
+        lot = self._lot()
+        with self.assertRaises(AccessError):
+            lot.with_user(self.fabric_user).write({"state": "available"})
+
+    def test_dual_grouped_n8n_officer_cannot_release(self):
+        dual = new_test_user(
+            self.env,
+            login="synthetic_lot_dual",
+            groups="sattva_compliance.group_n8n_fabric_service,sattva_compliance.group_compliance_officer",
+        )
+        lot = self._lot()
+        self.env["sattva.fabric.lot"].with_user(self.fabric_user).apply_coa_green(
+            lot.id, "coa.pdf", SHA, 5.0, True, 6.0, True
+        )
+        with self.assertRaises(AccessError):
+            lot.with_user(dual).action_release()
+        self.assertEqual(lot.state, "quarantine")
+
+    def test_mesh_not_required_passes_without_mesh(self):
+        lot = self._lot()
+        self.env["sattva.fabric.lot"].with_user(self.fabric_user).apply_coa_green(
+            lot.id, "coa.pdf", SHA, 5.0, False, 6.0, False
+        )
+        lot.invalidate_recordset()
+        self.assertTrue(lot.coa_pass)
+        self.assertEqual(lot.state, "quarantine")
+
+    def test_backslash_filename_rejected(self):
+        lot = self._lot()
+        with self.assertRaises(UserError):
+            self.env["sattva.fabric.lot"].with_user(self.fabric_user).apply_coa_green(
+                lot.id, "folder\\coa.pdf", SHA, 5.0, True, 6.0, True
+            )
+
+    def test_chatter_rejects_attachments(self):
+        lot = self._lot()
+        with self.assertRaises(UserError):
+            lot.message_post(body="note", attachments=[("coa.pdf", b"%PDF")])
+
+    def test_officer_reject_then_cannot_release(self):
+        lot = self._lot()
+        self.env["sattva.fabric.lot"].with_user(self.fabric_user).apply_coa_green(
+            lot.id, "coa.pdf", SHA, 5.0, True, 6.0, True
+        )
+        lot.with_user(self.officer).action_reject()
+        self.assertEqual(lot.state, "rejected")
+        with self.assertRaises(UserError):
+            lot.with_user(self.officer).action_release()

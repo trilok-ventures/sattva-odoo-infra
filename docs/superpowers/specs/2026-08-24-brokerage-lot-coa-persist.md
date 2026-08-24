@@ -12,11 +12,12 @@ Give Odoo a brokerage lot SoR row (not `stock.lot`) that defaults to quarantine.
 
 ## Behaviour
 
-- Model `sattva.brokerage.lot`: `state` ∈ {quarantine, available, rejected}; default quarantine.
-- GREEN fields only: filename (basename), sha256, moisture %, mesh pass, spec thresholds, `coa_pass`.
+- Model `sattva.brokerage.lot`: `state` ∈ {quarantine, available, rejected}; default quarantine. `create` always stores quarantine and drops GREEN values. `write` of GREEN fields requires `apply_coa_green` context. `state=available` requires `action_release` context; `state=rejected` requires `action_reject`.
+- GREEN fields only: filename (strict basename), sha256, moisture %, mesh pass, spec thresholds, `coa_pass`. Mesh pass is required only when `spec_mesh_required`.
 - `sattva.fabric.lot.apply_coa_green` is the only n8n write path. Requires `group_n8n_fabric_service`. Always leaves `state=quarantine`. Fail opens a CAPA `mail.activity` for a human compliance officer.
-- `action_release` is compliance-officer-only and requires `coa_pass`.
-- RED PDF stays in Nextcloud. Filename must not contain `/` or `..`.
+- `action_release` is compliance-officer-only, denies the n8n fabric group even if dual-grouped, and requires quarantine + `coa_pass` + a 64-hex `coa_sha256`.
+- RED PDF stays in Nextcloud. Lot chatter rejects attachments. Filename must be `os.path.basename` with no `/`, `\`, NUL, or `..`.
+- HMAC GREEN metadata webhook is the persist path. The Nextcloud COA webhook node stays disconnected (OCR is out of scope).
 
 ## Out of scope
 

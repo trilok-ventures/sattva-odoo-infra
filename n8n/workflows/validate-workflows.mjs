@@ -80,20 +80,38 @@ for (const file of files) {
     throw new Error(`${file}: order folder must persist via sattva.fabric.vault.set_order_path`);
   }
   if (wf.name === "wf.coa.verify") {
+    if (wf.connections && wf.connections["Nextcloud COA webhook"]) {
+      throw new Error(`${file}: Nextcloud COA webhook must not connect to the GREEN persist path`);
+    }
+    if (
+      text.includes("action_release") ||
+      text.includes("stock.lot") ||
+      text.includes("button_confirm")
+    ) {
+      throw new Error(`${file}: COA workflow must not release lots, touch stock.lot, or confirm orders`);
+    }
     const code = wf.nodes
       .map((node) => node.parameters?.jsCode || "")
       .join("\n");
     if (
       code.includes("Boolean(") ||
-      !code.includes("assertNoForbidden(child)") ||
+      !code.includes("COA_GREEN_ALLOWLIST") ||
+      !code.includes("unknown COA key forbidden") ||
       !code.includes("Number.isFinite") ||
       !code.includes("typeof b.mesh_pass !== 'boolean'") ||
-      !code.includes("^[a-f0-9]{64}$")
+      !code.includes("^[a-f0-9]{64}$") ||
+      !code.includes("!b.spec_mesh_required || b.mesh_pass")
     ) {
-      throw new Error(`${file}: COA comparison must validate recursively and fail closed`);
+      throw new Error(`${file}: COA comparison must allowlist keys, validate, and treat mesh as implication`);
     }
     if (!text.includes("sattva.fabric.lot") || !text.includes("apply_coa_green")) {
       throw new Error(`${file}: COA compare must persist via sattva.fabric.lot.apply_coa_green`);
+    }
+    if (
+      !text.includes("JSON.stringify($json.filename)") ||
+      !text.includes("JSON.stringify($json.sha256)")
+    ) {
+      throw new Error(`${file}: persist body must JSON.stringify filename and sha256`);
     }
   }
   if (

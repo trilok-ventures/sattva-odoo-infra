@@ -1,5 +1,6 @@
 {
-  "filename": "SYNTHETIC-COA-fail.pdf",
+    "lot_id": 1,
+    "filename": "SYNTHETIC-COA-fail.pdf",
   "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
   "moisture_pct": 12.0,
   "mesh_pass": false,
