@@ -68,6 +68,7 @@
         Live HMAC POST is off unless an operator sets sessionStorage keys
         <code>sattva_lead_webhook</code> and <code>sattva_lead_hmac</code>.
         Otherwise this page only validates the allowlist locally.
+        Do not add a Vercel API route or a browser-exposed n8n URL to work around CORS — use operator curl or a browser that can reach the webhook origin.
       </p>
       <button type="submit">Submit request</button>
       <p class="err" id="err"></p>

@@ -82,4 +82,5 @@ assert.ok(html.includes("product_family_code"));
 assert.ok(html.includes("/webhook/lead-inbound"));
 assert.ok(html.includes('if (!webhook || !hmac)'));
 assert.ok(html.includes('parsed.protocol !== "https:"'));
+assert.ok(html.includes("operator curl"));
 console.log("inbound lead tests passed");
