@@ -5,3 +5,6 @@ from . import test_lead_green_score
 from . import test_notify_activity
 from . import test_order_handoff
 from . import test_partner_form_view
+from . import test_roles_licence_3pl
+from . import test_sattva_lot
+from . import test_sale_order_hold

@@ -12,6 +12,13 @@ class TestPartnerFormView(TransactionCase):
             "haccp_certified",
             "brc_certified",
             "nextcloud_folder_path",
+            "sfc_licence_status",
+            "sfc_licence_masked",
+            "is_freight_forwarder",
+            "forwarder_status",
+            "cfia_swi_capable",
+            "insurance_meets_min",
+            "supported_incoterms",
         ):
             self.assertIn(name, arch)
 

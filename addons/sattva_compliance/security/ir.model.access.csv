@@ -1,2 +1,7 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 access_sattva_fabric_event_n8n_service,sattva.fabric.event n8n service,model_sattva_fabric_event,group_n8n_fabric_service,1,1,0,0
+access_sattva_lot_user,sattva.lot user read,model_sattva_lot,base.group_user,1,0,0,0
+access_sattva_lot_officer,sattva.lot officer,model_sattva_lot,group_compliance_officer,1,1,1,0
+access_sattva_lot_n8n,sattva.lot n8n service,model_sattva_lot,group_n8n_fabric_service,1,1,1,0
+access_sattva_lot_logistics,sattva.lot logistics read,model_sattva_lot,group_logistics_exec,1,0,0,0
+access_sattva_lot_sales,sattva.lot sales read,model_sattva_lot,group_sales_exec,1,0,0,0

@@ -6,4 +6,13 @@
     <record id="group_compliance_officer" model="res.groups">
         <field name="name">Sattva Compliance Officer</field>
     </record>
+    <record id="group_sales_exec" model="res.groups">
+        <field name="name">Sattva Sales Exec</field>
+    </record>
+    <record id="group_finance_manager" model="res.groups">
+        <field name="name">Sattva Finance Manager</field>
+    </record>
+    <record id="group_logistics_exec" model="res.groups">
+        <field name="name">Sattva Logistics Exec</field>
+    </record>
 </odoo>

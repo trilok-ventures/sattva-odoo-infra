@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_order_form_sattva_first_order" model="ir.ui.view">
+        <field name="name">sale.order.form.sattva.first.order</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_order_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//header" position="inside">
+                <button name="action_release_first_order_hold"
+                    type="object"
+                    string="Release first-order hold"
+                    class="btn-secondary"
+                    invisible="not sattva_compliance_hold"
+                    groups="sattva_compliance.group_compliance_officer"/>
+            </xpath>
+            <xpath expr="//sheet" position="before">
+                <div class="alert alert-warning" role="alert" invisible="not sattva_compliance_hold">
+                    <field name="sattva_hold_reason"/>
+                </div>
+            </xpath>
+            <xpath expr="//notebook" position="inside">
+                <page string="Sattva First-order" name="sattva_first_order">
+                    <group>
+                        <group>
+                            <field name="sattva_supplier_id"/>
+                            <field name="sattva_forwarder_id"/>
+                            <field name="sattva_incoterm"/>
+                        </group>
+                        <group>
+                            <field name="sattva_first_order"/>
+                            <field name="sattva_compliance_hold"/>
+                            <field name="sattva_hold_released"/>
+                        </group>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>
