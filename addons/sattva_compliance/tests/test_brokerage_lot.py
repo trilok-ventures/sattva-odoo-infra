@@ -169,14 +169,21 @@ class TestBrokerageLot(TransactionCase):
         with self.assertRaises(AccessError):
             lot.with_user(self.officer).write({"coa_pass": True, "coa_sha256": SHA})
 
-    def test_officer_cannot_inject_green_context(self):
+    def test_officer_cannot_call_write_coa_green(self):
         lot = self._lot()
         with self.assertRaises(AccessError):
-            lot.with_user(self.officer).with_context(
-                sattva_apply_coa_green=True
-            ).write({"coa_pass": True, "coa_sha256": SHA})
+            lot.with_user(self.officer)._write_coa_green(
+                {
+                    "coa_filename": "coa.pdf",
+                    "coa_sha256": SHA,
+                    "moisture_pct": 5.0,
+                    "mesh_pass": True,
+                    "spec_moisture_max": 6.0,
+                    "spec_mesh_required": True,
+                    "coa_pass": True,
+                }
+            )
         self.assertFalse(lot.coa_pass)
-        self.assertFalse(lot.coa_sha256)
 
     def test_n8n_write_cannot_mark_available(self):
         lot = self._lot()

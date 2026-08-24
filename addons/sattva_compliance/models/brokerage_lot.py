@@ -105,6 +105,7 @@ class BrokerageLot(models.Model):
         return super().write(vals)
 
     def _write_coa_green(self, vals):
+        require_n8n_fabric_service(self.env)
         vals = dict(vals)
         extra = set(vals) - _GREEN
         if extra:
