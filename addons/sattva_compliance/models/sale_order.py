@@ -26,7 +26,7 @@ class SaleOrder(models.Model):
     forwarder_id = fields.Many2one(
         "res.partner",
         string="Approved forwarder",
-        domain="[('is_logistics_partner', '=', True)]",
+        domain="[('is_logistics_partner', '=', True), ('supplier_rank', '=', 0)]",
         ondelete="restrict",
         tracking=True,
     )
@@ -67,15 +67,19 @@ class SaleOrder(models.Model):
 
     def _sattva_check_sale_gates(self):
         for order in self:
-            partner = order.partner_id
-            if partner.buyer_sfc_status != "active":
+            buyer = order.partner_id.commercial_partner_id
+            if buyer.buyer_sfc_status != "active":
                 raise UserError(
                     "Compliance Gate Blocked: Cannot confirm SO.\n"
-                    f"Buyer '{partner.name}' has SFC status "
-                    f"'{partner.buyer_sfc_status}'. Sale confirm requires SFC Active."
+                    f"Buyer '{buyer.name}' has SFC status "
+                    f"'{buyer.buyer_sfc_status}'. Sale confirm requires SFC Active."
                 )
             forwarder = order.forwarder_id
-            if not forwarder or not forwarder.is_logistics_partner:
+            if (
+                not forwarder
+                or not forwarder.is_logistics_partner
+                or forwarder.supplier_rank > 0
+            ):
                 raise UserError(
                     "Compliance Gate Blocked: Cannot confirm SO.\n"
                     "Select a logistics / 3PL partner (not a supplier_rank vendor)."
@@ -98,6 +102,12 @@ class SaleOrder(models.Model):
                     f"Forwarder '{forwarder.name}' does not support "
                     f"{order.sattva_incoterm.upper()}."
                 )
+            native = order._sattva_native_incoterm_code()
+            if native == "DDP":
+                raise UserError(
+                    "Compliance Gate Blocked: Cannot confirm SO.\n"
+                    "Set Incoterm to FOB, CIF, or DAP. DDP is not offered."
+                )
             if order._sattva_is_first_confirm() and not order._sattva_first_order_pcp_ok():
                 raise UserError(
                     "Compliance Gate Blocked: Cannot confirm first SO.\n"
@@ -105,12 +115,20 @@ class SaleOrder(models.Model):
                     "n8n must not confirm the PO."
                 )
 
+    def _sattva_native_incoterm_code(self):
+        self.ensure_one()
+        if "incoterm" not in self._fields:
+            return ""
+        record = self.incoterm
+        return (record.code or "").upper() if record else ""
+
     def _sattva_is_first_confirm(self):
         self.ensure_one()
+        commercial = self.partner_id.commercial_partner_id
         return (
             self.search_count(
                 [
-                    ("partner_id", "=", self.partner_id.id),
+                    ("partner_id", "child_of", commercial.id),
                     ("state", "in", ("sale", "done")),
                     ("id", "!=", self.id),
                 ]
@@ -121,8 +139,10 @@ class SaleOrder(models.Model):
     def _sattva_first_order_pcp_ok(self):
         self.ensure_one()
         intent = self.purchase_intent_id
+        mill = intent.partner_id if intent else self.env["res.partner"]
         return bool(
-            intent
-            and intent.partner_id
-            and intent.partner_id.supplier_pcp_status == "approved"
+            mill
+            and mill.supplier_rank > 0
+            and not mill.is_logistics_partner
+            and mill.supplier_pcp_status == "approved"
         )

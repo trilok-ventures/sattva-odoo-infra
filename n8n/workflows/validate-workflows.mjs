@@ -12,6 +12,9 @@ for (const file of files) {
   if (text.includes('saveDataErrorExecution":"all"') || text.includes('saveDataErrorExecution": "all"')) {
     throw new Error(`${file}: saveDataErrorExecution all is forbidden`);
   }
+  if (/"button_confirm"|"action_confirm"/.test(text)) {
+    throw new Error(`${file}: n8n must not call button_confirm or action_confirm`);
+  }
   const wf = JSON.parse(text);
   if (typeof wf.id !== "string" || !wf.id) {
     throw new Error(`${file}: top-level id string required`);

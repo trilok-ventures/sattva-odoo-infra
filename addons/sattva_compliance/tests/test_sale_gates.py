@@ -1,6 +1,6 @@
 import re
 
-from odoo.exceptions import AccessError, UserError
+from odoo.exceptions import AccessError, UserError, ValidationError
 from odoo.tests import TransactionCase, tagged
 from odoo.tests.common import new_test_user
 
@@ -91,11 +91,53 @@ class TestSaleGates(TransactionCase):
         values.update(vals)
         return self.env["sale.order"].create(values)
 
+    def test_logistics_partner_cannot_be_vendor(self):
+        with self.assertRaises(ValidationError):
+            self.env["res.partner"].create(
+                {
+                    "name": "Synthetic Dual Forwarder",
+                    "is_logistics_partner": True,
+                    "supplier_rank": 1,
+                }
+            )
+        with self.assertRaises(ValidationError):
+            self.forwarder.supplier_rank = 1
+
+    def test_delivery_contact_uses_commercial_sfc(self):
+        self.buyer.buyer_sfc_status = "active"
+        dock = self.env["res.partner"].create(
+            {
+                "name": "Synthetic Receiving Dock",
+                "parent_id": self.buyer.id,
+                "type": "delivery",
+            }
+        )
+        self.assertEqual(dock.buyer_sfc_status, "pending")
+        order = self._so(partner_id=dock.id)
+        order.action_confirm()
+        self.assertEqual(order.state, "sale")
+
     def test_logistics_partner_does_not_queue_supplier_folder(self):
         events = self.env["sattva.fabric.event"].search(
             [("partner_id", "=", self.forwarder.id)]
         )
         self.assertFalse(events)
+
+    def test_native_ddp_blocks_confirm(self):
+        if "incoterm" not in self.env["sale.order"]._fields:
+            return
+        self.buyer.buyer_sfc_status = "active"
+        ddp = self.env["account.incoterms"].search([("code", "=", "DDP")], limit=1)
+        if not ddp:
+            ddp = self.env["account.incoterms"].create(
+                {"name": "Synthetic DDP", "code": "DDP"}
+            )
+        order = self._so()
+        order.incoterm = ddp
+        with self.assertRaises(UserError) as err:
+            order.action_confirm()
+        self.assertIn("DDP", str(err.exception))
+        self.assertEqual(order.state, "draft")
 
     def test_so_create_queues_order_folder(self):
         order = self._so()
@@ -175,6 +217,29 @@ class TestSaleGates(TransactionCase):
         self.buyer.buyer_sfc_status = "active"
         self.supplier.supplier_pcp_status = "pending"
         order = self._so()
+        with self.assertRaises(UserError) as err:
+            order.action_confirm()
+        self.assertIn("first SO", str(err.exception))
+
+    def test_logistics_intent_does_not_satisfy_first_order(self):
+        self.buyer.buyer_sfc_status = "active"
+        intent = self.env["purchase.order"].create(
+            {
+                "partner_id": self.forwarder.id,
+                "order_line": [
+                    (
+                        0,
+                        0,
+                        {
+                            "product_id": self.product.id,
+                            "product_qty": 1,
+                            "price_unit": 1.0,
+                        },
+                    )
+                ],
+            }
+        )
+        order = self._so(purchase_intent_id=intent.id)
         with self.assertRaises(UserError) as err:
             order.action_confirm()
         self.assertIn("first SO", str(err.exception))

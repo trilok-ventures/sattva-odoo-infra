@@ -1,6 +1,7 @@
 import re
 
 from odoo import api, fields, models
+from odoo.exceptions import ValidationError
 
 
 class ResPartner(models.Model):
@@ -10,7 +11,9 @@ class ResPartner(models.Model):
     def create(self, vals_list):
         partners = super().create(vals_list)
         events = []
-        for partner in partners.filtered(lambda record: record.supplier_rank > 0):
+        for partner in partners.filtered(
+            lambda record: record.supplier_rank > 0 and not record.is_logistics_partner
+        ):
             folder_name = re.sub(r"\W+", "_", partner.name).strip("_")
             events.append(
                 {
@@ -98,7 +101,7 @@ class ResPartner(models.Model):
     is_logistics_partner = fields.Boolean(
         string="Logistics / 3PL partner",
         default=False,
-        help="Do not set supplier_rank on a forwarder. That would queue supplier vault folders and the PCP PO gate.",
+        help="Do not set supplier_rank on a forwarder. That would queue mill vault folders and the PCP PO gate.",
     )
     forwarder_status = fields.Selection(
         [
@@ -122,3 +125,12 @@ class ResPartner(models.Model):
     incoterm_fob = fields.Boolean(string="Supports FOB", default=False)
     incoterm_cif = fields.Boolean(string="Supports CIF", default=False)
     incoterm_dap = fields.Boolean(string="Supports DAP", default=False)
+
+    @api.constrains("is_logistics_partner", "supplier_rank")
+    def _check_logistics_not_vendor(self):
+        for partner in self:
+            if partner.is_logistics_partner and partner.supplier_rank > 0:
+                raise ValidationError(
+                    "A logistics / 3PL partner cannot be a vendor (supplier_rank). "
+                    "That would queue mill vault folders and the PCP PO gate."
+                )
