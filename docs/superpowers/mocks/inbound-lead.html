@@ -77,7 +77,11 @@
       <pre id="payload"></pre>
       <p id="status"></p>
     </div>
-    <p><a href="./index.html">Back to mocks index</a></p>
+    <p>
+      <a href="./sattva-middleware-portal.html?view=map">Back to prototype map</a>
+      ·
+      <a href="./index.html">Mocks index</a>
+    </p>
   </main>
   <script>
     const ALLOWLIST = ["contact_name", "work_email", "company_name", "product_family_code", "fcl_band", "content_topic"];
@@ -126,7 +130,12 @@
           status.textContent = "Validated locally. No webhook keys in sessionStorage, so nothing was posted.";
           return;
         }
-        if (!/^https:\/\//.test(webhook)) throw new Error("webhook must be https");
+        const parsed = new URL(webhook);
+        if (parsed.protocol !== "https:") throw new Error("webhook must be https");
+        if (parsed.search || parsed.hash) throw new Error("webhook must not have query or hash");
+        if (!parsed.pathname.endsWith("/webhook/lead-inbound")) {
+          throw new Error("webhook path must be /webhook/lead-inbound");
+        }
         const response = await fetch(webhook, {
           method: "POST",
           headers: {

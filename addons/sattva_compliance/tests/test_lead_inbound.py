@@ -64,6 +64,8 @@ class TestLeadInbound(TransactionCase):
     def test_ingest_rejects_bad_email(self):
         with self.assertRaises(UserError):
             self._ingest(work_email="not-an-email")
+        with self.assertRaises(UserError):
+            self._ingest(work_email="a@b")
 
     def test_ingest_rejects_non_service_user(self):
         with self.assertRaises(AccessError):

@@ -44,14 +44,16 @@ for (const file of files) {
       }
     }
   }
-  if (wf.nodes.some((node) => node.type === "n8n-nodes-base.webhook")) {
+    if (wf.nodes.some((node) => node.type === "n8n-nodes-base.webhook")) {
     const code = wf.nodes
       .filter((node) => node.type === "n8n-nodes-base.code")
       .map((node) => node.parameters?.jsCode || "")
       .join("\n");
+    const hmacEnv =
+      code.includes("N8N_WEBHOOK_HMAC") || code.includes("N8N_LEAD_INBOUND_HMAC");
     if (
       !code.includes("x-sattva-webhook-hmac") ||
-      !code.includes("N8N_WEBHOOK_HMAC") ||
+      !hmacEnv ||
       !code.includes("body ??")
     ) {
       throw new Error(`${file}: webhook envelope and HMAC check required`);
@@ -137,10 +139,13 @@ for (const file of files) {
       !code.includes("INBOUND_LEAD_ALLOWLIST") ||
       !code.includes("unknown inbound lead key forbidden") ||
       !code.includes("hashed_partner_id") ||
+      !code.includes("N8N_LEAD_INBOUND_HMAC") ||
+      code.includes("N8N_WEBHOOK_HMAC") ||
       !text.includes("sattva.fabric.lead.ingest") ||
       !text.includes("create_inbound") ||
       !text.includes("sattva.fabric.leadscore") ||
       !text.includes("JSON.stringify($json.work_email)") ||
+      !text.includes('"responseMode": "onReceived"') ||
       /keycloak/i.test(text)
     ) {
       throw new Error(`${file}: inbound lead must HMAC-allowlist, create_inbound, score GREEN, and skip Keycloak`);

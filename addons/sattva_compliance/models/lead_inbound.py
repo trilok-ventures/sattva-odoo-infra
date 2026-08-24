@@ -1,3 +1,5 @@
+import re
+
 from odoo import api, models
 from odoo.exceptions import UserError
 
@@ -6,6 +8,7 @@ from .service_security import require_n8n_fabric_service
 _PRODUCT_FAMILY = frozenset({"ONION", "GARLIC", "CHILLI", "OTHER"})
 _FCL_BAND = frozenset({"1", "2_5", "6_plus"})
 _CONTENT_TOPIC = frozenset({"sfcr", "coa_spec", "steam_sterilization"})
+_EMAIL_RE = r"^[^\s@]+@[^\s@]+\.[^\s@]+$"
 
 
 class FabricLeadIngest(models.AbstractModel):
@@ -55,6 +58,6 @@ def _require_label(value, field_name):
 
 def _require_email(value):
     email = _require_label(value, "work_email").lower()
-    if "@" not in email or email.startswith("@") or email.endswith("@") or " " in email:
+    if not re.fullmatch(_EMAIL_RE, email):
         raise UserError("work_email must be a short email")
     return email

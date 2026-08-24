@@ -45,3 +45,4 @@ chmod 644 "${CERT_DIR}/origin.pem"
 
 log "Wrote ${OUT} and ${CERT_DIR}/origin.{pem,key} (mode 600 on secrets). Values not logged."
 log "Set ODOO_N8N_UID in ${OUT} after creating Odoo user n8n.fabric (do not use admin uid 2)."
+log "Do not fetch n8n-lead-inbound-hmac until AssetCo has a version; then set N8N_LEAD_INBOUND_HMAC in ${OUT}."

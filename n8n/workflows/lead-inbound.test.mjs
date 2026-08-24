@@ -23,6 +23,7 @@ const ok = {
 assert.throws(() => assertInboundLead({ ...ok, notes: "call me" }));
 assert.throws(() => assertInboundLead({ ...ok, email: ok.work_email }));
 assert.throws(() => assertInboundLead({ ...ok, work_email: "not-an-email" }));
+assert.throws(() => assertInboundLead({ ...ok, work_email: "a@b" }));
 assert.throws(() => assertInboundLead({ ...ok, product_family_code: "BEEF" }));
 assert.throws(() => assertInboundLead({ ...ok, fcl_band: "99" }));
 assert.throws(() =>
@@ -78,4 +79,7 @@ assert.ok(/does not create Keycloak users/i.test(html));
 assert.ok(html.includes("sattva_lead_webhook"));
 assert.ok(html.includes("sattva_lead_hmac"));
 assert.ok(html.includes("product_family_code"));
+assert.ok(html.includes("/webhook/lead-inbound"));
+assert.ok(html.includes('if (!webhook || !hmac)'));
+assert.ok(html.includes('parsed.protocol !== "https:"'));
 console.log("inbound lead tests passed");

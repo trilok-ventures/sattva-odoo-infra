@@ -107,6 +107,18 @@
       "data_class": "Identity",
       "sor": "Keycloak is IdP, not CRM",
       "phase": "3"
+    },
+    {
+      "id": "svc.lead.inbound",
+      "caller": "Public mocks form (operator sessionStorage HMAC)",
+      "callee": "n8n webhook wf.lead.inbound",
+      "hostname": "n8n.trilokventures.org",
+      "ingress": "POST /webhook/lead-inbound + N8N_LEAD_INBOUND_HMAC (not the shared n8n-webhook-hmac)",
+      "tls_rung": "T1 HTTPS",
+      "access_policy": "Dedicated inbound HMAC. Path /webhook/lead-inbound only. No Keycloak provision. Browsers never receive Odoo JSON-RPC.",
+      "data_class": "AMBER contact in transit; GREEN family/FCL/topic/hash",
+      "sor": "Creates crm.lead; n8n stores no lead state",
+      "phase": "2"
     }
   ]
 }
