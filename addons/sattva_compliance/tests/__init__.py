@@ -5,3 +5,4 @@ from . import test_lead_green_score
 from . import test_notify_activity
 from . import test_order_handoff
 from . import test_partner_form_view
+from . import test_brokerage_lot

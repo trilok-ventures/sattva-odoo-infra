@@ -88,6 +88,9 @@ for (const file of files) {
     ) {
       throw new Error(`${file}: COA comparison must validate recursively and fail closed`);
     }
+    if (!text.includes("sattva.fabric.lot") || !text.includes("apply_coa_green")) {
+      throw new Error(`${file}: COA compare must persist via sattva.fabric.lot.apply_coa_green`);
+    }
   }
   if (
     wf.name === "wf.lead.score" &&

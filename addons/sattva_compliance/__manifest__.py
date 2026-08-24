@@ -7,11 +7,12 @@
         Adds Traffic Light compliance fields to Contacts (res.partner).
         Enforces a hard block on Purchase Orders if the supplier is not PCP Approved.
     """,
-    'depends': ['base', 'purchase', 'contacts', 'crm'],
+    'depends': ['base', 'purchase', 'contacts', 'crm', 'mail'],
     'data': [
         'security/sattva_security.xml',
         'security/ir.model.access.csv',
         'views/res_partner_views.xml',
+        'views/brokerage_lot_views.xml',
     ],
     'installable': True,
     'application': False,
