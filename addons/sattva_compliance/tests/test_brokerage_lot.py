@@ -137,7 +137,7 @@ class TestBrokerageLot(TransactionCase):
             lot.with_user(self.sales).action_release()
 
     def test_create_cannot_start_available_or_set_green(self):
-        lot = self.env["sattva.brokerage.lot"].with_user(self.officer).create(
+        lot = self.env["sattva.brokerage.lot"].create(
             {
                 "name": "SYN-LOT-FORCE",
                 "supplier_id": self.supplier.id,

@@ -94,6 +94,7 @@ class BrokerageLot(models.Model):
         return super().create(cleaned)
 
     def write(self, vals):
+        self.check_access("write")
         vals = dict(vals)
         if _GREEN & set(vals) and not self.env.context.get("sattva_apply_coa_green"):
             raise AccessError("GREEN COA fields are written only by apply_coa_green")
