@@ -7,3 +7,4 @@ from . import notify
 from . import order_handoff
 from . import leadscore
 from . import brokerage_lot
+from . import sale_order

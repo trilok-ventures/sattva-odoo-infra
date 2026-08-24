@@ -1,0 +1,162 @@
+{
+  "name": "wf.order.folder",
+  "id": "wf-order-folder",
+  "nodes": [
+    {
+      "id": "poll-order-events",
+      "name": "Poll queued order folder events",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [0, 0],
+      "parameters": { "rule": { "interval": [{ "field": "minutes", "minutesInterval": 5 }] } }
+    },
+    {
+      "id": "search-order-events",
+      "name": "Search queued order events",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [220, 0],
+      "credentials": {
+        "httpHeaderAuth": {
+          "name": "odooN8nFabric"
+        }
+      },
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.ODOO_JSON2_URL}}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\"jsonrpc\":\"2.0\",\"method\":\"call\",\"params\":{\"service\":\"object\",\"method\":\"execute_kw\",\"args\":[\"sattva\",\"{{$env.ODOO_N8N_UID}}\",\"{{$credentials.odooN8nFabric.value}}\",\"sattva.fabric.event\",\"search_read\",[[[\"event_type\",\"=\",\"order_folder_requested\"],[\"state\",\"=\",\"queued\"]]],{\"fields\":[\"id\",\"partner_id\",\"sale_order_id\",\"requested_path\"]}]}}"
+      }
+    },
+    {
+      "id": "unwrap-order-events",
+      "name": "Unwrap search_read order events",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [440, 0],
+      "parameters": {
+        "jsCode": "const raw = $input.first().json;\nconst envelope = raw.result !== undefined ? raw.result : raw;\nconst rows = Array.isArray(envelope) ? envelope : (envelope?.result ?? []);\nif (!rows.length) return [];\nreturn rows.map((row) => {\n  let partnerId = row.partner_id;\n  if (Array.isArray(partnerId)) partnerId = partnerId[0];\n  let orderId = row.sale_order_id;\n  if (Array.isArray(orderId)) orderId = orderId[0];\n  return { json: { id: row.id, partner_id: partnerId, sale_order_id: orderId, requested_path: row.requested_path } };\n});"
+      }
+    },
+    {
+      "id": "expand-order-mkcol-prefixes",
+      "name": "Expand order MKCOL prefixes",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [550, 0],
+      "parameters": {
+        "jsCode": "const output = [];\nfor (const [itemIndex, item] of $input.all().entries()) {\n  const event = item.json;\n  const parts = String(event.requested_path ?? '').split('/').filter(Boolean);\n  if (!parts.length) throw new Error('requested_path must contain a folder');\n  for (let index = 0; index < parts.length; index += 1) {\n    output.push({\n      json: {\n        id: event.id,\n        partner_id: event.partner_id,\n        sale_order_id: event.sale_order_id,\n        requested_path: event.requested_path,\n        prefix_path: '/' + parts.slice(0, index + 1).join('/') + '/',\n      },\n      pairedItem: { item: itemIndex },\n    });\n  }\n}\nreturn output;"
+      }
+    },
+    {
+      "id": "mkcol-order-vault",
+      "name": "MKCOL Nextcloud order path",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [700, 0],
+      "credentials": {
+        "httpBasicAuth": {
+          "name": "nextcloudN8nVault"
+        }
+      },
+      "parameters": {
+        "method": "MKCOL",
+        "url": "={{$env.NEXTCLOUD_WEBDAV_BASE}}{{$json.prefix_path}}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true,
+              "responseFormat": "text"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "validate-order-mkcol-responses",
+      "name": "Validate order MKCOL responses",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [850, 0],
+      "parameters": {
+        "jsCode": "const responses = $input.all();\nconst expanded = $('Expand order MKCOL prefixes').all();\nif (responses.length !== expanded.length) throw new Error('MKCOL response count mismatch');\nconst completed = [];\nfor (let index = 0; index < responses.length; index += 1) {\n  const status = Number(responses[index].json.statusCode);\n  if (!((status >= 200 && status < 300) || status === 405 || status === 409)) {\n    throw new Error('MKCOL failed with status ' + status);\n  }\n  const event = expanded[index].json;\n  if (event.prefix_path === event.requested_path) {\n    completed.push({ json: { id: event.id, partner_id: event.partner_id, sale_order_id: event.sale_order_id, requested_path: event.requested_path }, pairedItem: { item: index } });\n  }\n}\nreturn completed;"
+      }
+    },
+    {
+      "id": "write-order-path",
+      "name": "Write nextcloud_order_folder_path",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1000, 0],
+      "credentials": {
+        "httpHeaderAuth": {
+          "name": "odooN8nFabric"
+        }
+      },
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.ODOO_JSON2_URL}}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\"jsonrpc\":\"2.0\",\"method\":\"call\",\"params\":{\"service\":\"object\",\"method\":\"execute_kw\",\"args\":[\"sattva\",\"{{$env.ODOO_N8N_UID}}\",\"{{$credentials.odooN8nFabric.value}}\",\"sattva.fabric.vault\",\"set_order_path\",[{{$json.sale_order_id}},\"{{$json.requested_path}}\"]]}}"
+      }
+    },
+    {
+      "id": "mark-order-event-processed",
+      "name": "Mark order event processed",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1200, 0],
+      "credentials": {
+        "httpHeaderAuth": {
+          "name": "odooN8nFabric"
+        }
+      },
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.ODOO_JSON2_URL}}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\"jsonrpc\":\"2.0\",\"method\":\"call\",\"params\":{\"service\":\"object\",\"method\":\"execute_kw\",\"args\":[\"sattva\",\"{{$env.ODOO_N8N_UID}}\",\"{{$credentials.odooN8nFabric.value}}\",\"sattva.fabric.event\",\"write\",[[{{$('Validate order MKCOL responses').item.json.id}}],{\"state\":\"processed\"}]]}}"
+      }
+    }
+  ],
+  "connections": {
+    "Poll queued order folder events": {
+      "main": [[{ "node": "Search queued order events", "type": "main", "index": 0 }]]
+    },
+    "Search queued order events": {
+      "main": [[{ "node": "Unwrap search_read order events", "type": "main", "index": 0 }]]
+    },
+    "Unwrap search_read order events": {
+      "main": [[{ "node": "Expand order MKCOL prefixes", "type": "main", "index": 0 }]]
+    },
+    "Expand order MKCOL prefixes": {
+      "main": [[{ "node": "MKCOL Nextcloud order path", "type": "main", "index": 0 }]]
+    },
+    "MKCOL Nextcloud order path": {
+      "main": [[{ "node": "Validate order MKCOL responses", "type": "main", "index": 0 }]]
+    },
+    "Validate order MKCOL responses": {
+      "main": [[{ "node": "Write nextcloud_order_folder_path", "type": "main", "index": 0 }]]
+    },
+    "Write nextcloud_order_folder_path": {
+      "main": [[{ "node": "Mark order event processed", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "saveDataSuccessExecution": "none",
+    "saveDataErrorExecution": "none",
+    "executionTimeout": 60
+  }
+}

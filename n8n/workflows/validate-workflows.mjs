@@ -56,7 +56,8 @@ for (const file of files) {
   }
   if (
     wf.name === "wf.supplier.folder" ||
-    wf.name === "wf.buyer.onboard.folder"
+    wf.name === "wf.buyer.onboard.folder" ||
+    wf.name === "wf.order.folder"
   ) {
     const bodies = wf.nodes
       .map((node) => node.parameters?.jsonBody || "")
@@ -74,6 +75,9 @@ for (const file of files) {
     ) {
       throw new Error(`${file}: idempotent parent MKCOL walk required`);
     }
+  }
+  if (wf.name === "wf.order.folder" && !text.includes("set_order_path")) {
+    throw new Error(`${file}: order folder must persist via sattva.fabric.vault.set_order_path`);
   }
   if (wf.name === "wf.coa.verify") {
     const code = wf.nodes

@@ -26,3 +26,20 @@ class FabricVault(models.AbstractModel):
             raise UserError("vault path already set")
         partner.sudo().write({field: requested_path})
         return True
+
+    @api.model
+    def set_order_path(self, order_id, requested_path):
+        require_n8n_fabric_service(self.env)
+        path = str(requested_path or "")
+        if not path or ".." in path or "//" in path:
+            raise UserError("invalid requested_path")
+        if not path.startswith("/Clients/") or "/Orders/" not in path:
+            raise UserError("order path must be under /Clients/{name}/Orders/")
+        order = self.env["sale.order"].browse(int(order_id))
+        if not order.exists():
+            raise UserError("sale order not found")
+        current = order.nextcloud_order_folder_path
+        if current and current != path:
+            raise UserError("vault path already set")
+        order.sudo().write({"nextcloud_order_folder_path": path})
+        return True

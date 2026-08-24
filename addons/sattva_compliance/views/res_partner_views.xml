@@ -19,6 +19,27 @@
                             <field name="buyer_kyc_status"/>
                             <field name="nextcloud_client_folder_path"/>
                         </group>
+                        <group string="Buyer SFC">
+                            <field name="buyer_sfc_status"/>
+                            <field name="buyer_sfc_licence"/>
+                        </group>
+                        <group string="Exporter IDs">
+                            <field name="spices_board_rcm"/>
+                            <field name="fssai_licence"/>
+                            <field name="us_fda_fei"/>
+                            <field name="steam_sterilization_cap"/>
+                            <field name="last_audit_date"/>
+                        </group>
+                        <group string="Logistics / 3PL">
+                            <field name="is_logistics_partner"/>
+                            <field name="forwarder_status"/>
+                            <field name="cbsa_bond_ref"/>
+                            <field name="insurance_coverage_ref"/>
+                            <field name="cfia_swi_capable"/>
+                            <field name="incoterm_fob"/>
+                            <field name="incoterm_cif"/>
+                            <field name="incoterm_dap"/>
+                        </group>
                     </group>
                 </page>
             </xpath>

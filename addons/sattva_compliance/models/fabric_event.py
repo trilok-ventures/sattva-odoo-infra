@@ -13,5 +13,11 @@ class FabricEvent(models.Model):
         index=True,
         ondelete="cascade",
     )
+    sale_order_id = fields.Many2one(
+        "sale.order",
+        index=True,
+        ondelete="set null",
+        help="Set for order_folder_requested events. Leave empty for partner folder events.",
+    )
     requested_path = fields.Char(required=True)
     state = fields.Char(default="queued", required=True, index=True)
