@@ -125,7 +125,7 @@ class TestSaleGates(TransactionCase):
 
     def test_native_ddp_blocks_confirm(self):
         if "incoterm" not in self.env["sale.order"]._fields:
-            return
+            self.skipTest("native sale.order incoterm is absent without sale_stock")
         self.buyer.buyer_sfc_status = "active"
         ddp = self.env["account.incoterms"].search([("code", "=", "DDP")], limit=1)
         if not ddp:
