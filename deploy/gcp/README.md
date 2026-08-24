@@ -16,7 +16,11 @@ the existing uid-2 admin (and Nextcloud `admin` email) with
 `docs/runbooks/app-local-admin-and-roles.md`. Do not add a second Settings
 user. `/web/login` uses AssetCo `odoo-web-admin-password` (never
 `nextcloud-admin-password`). `odoo-admin-passwd` is the database-manager
-master only. Set the login hash with `deploy/gcp/set-odoo-web-admin-password.sh`.
+master only. Write the login hash from AssetCo `odoo-web-admin-password`:
+`deploy/gcp/set-odoo-web-admin-password.sh` writes into a live web container;
+`deploy/gcp/recreate-odoo-web.sh` stops web → write → `up --force-recreate`
+when workers may cache `res.users`. See
+`docs/runbooks/app-local-admin-and-roles.md` for the operator path.
 
 ## Prerequisites
 
@@ -163,6 +167,16 @@ sudo systemctl enable --now sattva-odoo-backup.timer
 `gs://${PROJECT}-backups` (that bucket is versioned, not WORM).
 
 See `deploy/prod/README.md` for DB init and the PCP-gate smoke test.
+
+After the operator can log in, initialize required SoR state (config + empty
+trees + service users only — no synthetic counterparties):
+
+```bash
+sudo ./deploy/gcp/init-sor.sh
+```
+
+Spec: `docs/superpowers/specs/2026-08-23-phase3a-t1-sor-init.md`.
+Runbook: `docs/runbooks/phase3a-t1-sor-init.md`. Do not deploy Keycloak.
 
 ## 4. Cloudflare Access (before DNS goes live)
 

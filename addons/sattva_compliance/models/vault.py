@@ -15,7 +15,7 @@ class FabricVault(models.AbstractModel):
             raise UserError("unknown path kind")
         if not requested_path or ".." in str(requested_path):
             raise UserError("invalid requested_path")
-        partner = self.env["res.partner"].browse(int(partner_id))
+        partner = self.env["res.partner"].sudo().browse(int(partner_id))
         if not partner.exists():
             raise UserError("partner not found")
         field = (

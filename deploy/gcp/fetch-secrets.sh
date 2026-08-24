@@ -20,6 +20,10 @@ fetch() {
   gcloud secrets versions access latest --secret="${secret_id}" --project="${ASSET}"
 }
 
+if [[ -z "${ODOO_N8N_UID:-}" && -f "${OUT}" ]]; then
+  ODOO_N8N_UID="$(grep '^ODOO_N8N_UID=' "${OUT}" | head -1 | cut -d= -f2- || true)"
+fi
+
 umask 077
 TMP="$(mktemp)"
 {
@@ -32,6 +36,7 @@ TMP="$(mktemp)"
   printf 'NEXTCLOUD_ADMIN_PASSWORD=%s\n' "$(fetch nextcloud-admin-password)"
   printf 'NEXTCLOUD_N8N_USER=%s\n' "${NEXTCLOUD_N8N_USER:-n8n.vault}"
   printf 'ODOO_N8N_UID=%s\n' "${ODOO_N8N_UID:-}"
+  # init-odoo-sor.sh overwrites this uid after n8n.fabric exists. Do not use 2.
   printf 'ACME_EMAIL=%s\n' "${ACME_EMAIL:-admin@trilokventures.org}"
 } > "${TMP}"
 mv "${TMP}" "${OUT}"
