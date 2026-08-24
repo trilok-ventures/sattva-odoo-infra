@@ -1,0 +1,125 @@
+{
+  "name": "wf.lead.inbound",
+  "id": "wf-lead-inbound",
+  "nodes": [
+    {
+      "id": "lead-inbound-webhook",
+      "name": "Inbound lead webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, 0],
+      "webhookId": "wf-lead-inbound",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "lead-inbound",
+        "responseMode": "lastNode",
+        "options": {}
+      }
+    },
+    {
+      "id": "allowlist-inbound-lead",
+      "name": "Allowlist inbound lead",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [240, 0],
+      "parameters": {
+        "jsCode": "// keep in sync with n8n/workflows/lead-inbound.mjs\nconst INBOUND_LEAD_ALLOWLIST = ['contact_name','work_email','company_name','product_family_code','fcl_band','content_topic'];\nconst PRODUCT_FAMILY_CODES = ['ONION','GARLIC','CHILLI','OTHER'];\nconst FCL_BANDS = ['1','2_5','6_plus'];\nconst CONTENT_TOPICS = ['sfcr','coa_spec','steam_sterilization'];\nconst EMAIL_RE = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/;\nfunction assertInboundLead(payload) {\n  if (payload == null || typeof payload !== 'object' || Array.isArray(payload)) throw new Error('payload required');\n  for (const key of Object.keys(payload)) {\n    if (!INBOUND_LEAD_ALLOWLIST.includes(key)) throw new Error('unknown inbound lead key forbidden: ' + key);\n    if (payload[key] != null && typeof payload[key] === 'object') throw new Error('nested objects forbidden');\n  }\n  for (const key of INBOUND_LEAD_ALLOWLIST) {\n    if (!(key in payload)) throw new Error('missing ' + key);\n    if (typeof payload[key] !== 'string' || !payload[key].trim()) throw new Error(key + ' must be a non-empty string');\n  }\n  const email = payload.work_email.trim().toLowerCase();\n  if (!EMAIL_RE.test(email) || email.length > 120) throw new Error('work_email must be a short email');\n  if (!PRODUCT_FAMILY_CODES.includes(payload.product_family_code)) throw new Error('unknown product_family_code');\n  if (!FCL_BANDS.includes(payload.fcl_band)) throw new Error('unknown fcl_band');\n  if (!CONTENT_TOPICS.includes(payload.content_topic)) throw new Error('unknown content_topic');\n}\nconst input = $input.first().json;\nconst headers = input.headers ?? {};\nconst provided = headers['x-sattva-webhook-hmac'] ?? headers['X-Sattva-Webhook-Hmac'];\nconst expected = $env.N8N_WEBHOOK_HMAC;\nif (typeof expected !== 'string' || !expected || typeof provided !== 'string' || provided !== expected) {\n  throw new Error('invalid x-sattva-webhook-hmac');\n}\nconst payload = input.body ?? input;\nassertInboundLead(payload);\nconst work_email = payload.work_email.trim().toLowerCase();\nconst hashed_partner_id = require('crypto').createHash('sha256').update(work_email).digest('hex');\nreturn [{ json: {\n  contact_name: payload.contact_name.trim().slice(0, 120),\n  work_email,\n  company_name: payload.company_name.trim().slice(0, 120),\n  product_family_code: payload.product_family_code,\n  fcl_band: payload.fcl_band,\n  content_topic: payload.content_topic,\n  hashed_partner_id,\n} }];"
+      }
+    },
+    {
+      "id": "create-inbound-lead",
+      "name": "Create crm.lead inbound",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [480, 0],
+      "credentials": {
+        "httpHeaderAuth": {
+          "name": "odooN8nFabric"
+        }
+      },
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.ODOO_JSON2_URL}}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\"jsonrpc\":\"2.0\",\"method\":\"call\",\"params\":{\"service\":\"object\",\"method\":\"execute_kw\",\"args\":[\"sattva\",\"{{$env.ODOO_N8N_UID}}\",\"{{$credentials.odooN8nFabric.value}}\",\"sattva.fabric.lead.ingest\",\"create_inbound\",[{{JSON.stringify($json.contact_name)}},{{JSON.stringify($json.work_email)}},{{JSON.stringify($json.company_name)}},{{JSON.stringify($json.product_family_code)}},{{JSON.stringify($json.fcl_band)}},{{JSON.stringify($json.content_topic)}}]]}}"
+      }
+    },
+    {
+      "id": "score-inbound-green",
+      "name": "Score inbound GREEN",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [720, 0],
+      "parameters": {
+        "jsCode": "// keep in sync with n8n/workflows/leadscore.mjs; do not pass work_email\nconst inbound = $('Allowlist inbound lead').first().json;\nconst created = $input.first().json;\nconst lead_id = created.result;\nif (typeof lead_id !== 'number' || !Number.isInteger(lead_id) || lead_id < 1) throw new Error('lead_id missing');\nconst features = {\n  hashed_partner_id: inbound.hashed_partner_id,\n  stage_rank: 1,\n  days_in_stage: 0,\n  product_family_code: inbound.product_family_code,\n  order_count: 0,\n};\nif ('work_email' in features || 'contact_name' in features || 'company_name' in features) throw new Error('RED/AMBER key forbidden in lead score');\nconst stage = Number(features.stage_rank) || 0;\nconst recency = Math.max(0, 10 - (Number(features.days_in_stage) || 0)) / 10;\nconst orders = Math.min(Number(features.order_count) || 0, 3) / 3;\nconst score = Math.min(1, (stage / 3) * 0.5 + recency * 0.3 + orders * 0.2);\nreturn [{ json: {\n  lead_id,\n  score: Math.round(score * 100) / 100,\n  qualified: score >= 0.7,\n  product_family_code: inbound.product_family_code,\n} }];"
+      }
+    },
+    {
+      "id": "write-inbound-score",
+      "name": "Write crm.lead GREEN score",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [960, 0],
+      "credentials": {
+        "httpHeaderAuth": {
+          "name": "odooN8nFabric"
+        }
+      },
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.ODOO_JSON2_URL}}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\"jsonrpc\":\"2.0\",\"method\":\"call\",\"params\":{\"service\":\"object\",\"method\":\"execute_kw\",\"args\":[\"sattva\",\"{{$env.ODOO_N8N_UID}}\",\"{{$credentials.odooN8nFabric.value}}\",\"sattva.fabric.leadscore\",\"write_score\",[{{$json.lead_id}},{{$json.score}},{{$json.qualified}}]]}}"
+      }
+    },
+    {
+      "id": "notify-sales-inbound",
+      "name": "Notify sales.exec inbound",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1200, 0],
+      "credentials": {
+        "httpHeaderAuth": {
+          "name": "odooN8nFabric"
+        }
+      },
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.ODOO_JSON2_URL}}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\"jsonrpc\":\"2.0\",\"method\":\"call\",\"params\":{\"service\":\"object\",\"method\":\"execute_kw\",\"args\":[\"sattva\",\"{{$env.ODOO_N8N_UID}}\",\"{{$credentials.odooN8nFabric.value}}\",\"sattva.fabric.notify\",\"create_role_activity\",[{{$('Score inbound GREEN').item.json.lead_id}},{{JSON.stringify('Inbound ' + $('Score inbound GREEN').item.json.product_family_code + ' technical lead')}},\"sales.exec\"]]}}"
+      }
+    }
+  ],
+  "connections": {
+    "Inbound lead webhook": {
+      "main": [[{ "node": "Allowlist inbound lead", "type": "main", "index": 0 }]]
+    },
+    "Allowlist inbound lead": {
+      "main": [[{ "node": "Create crm.lead inbound", "type": "main", "index": 0 }]]
+    },
+    "Create crm.lead inbound": {
+      "main": [[{ "node": "Score inbound GREEN", "type": "main", "index": 0 }]]
+    },
+    "Score inbound GREEN": {
+      "main": [[{ "node": "Write crm.lead GREEN score", "type": "main", "index": 0 }]]
+    },
+    "Write crm.lead GREEN score": {
+      "main": [[{ "node": "Notify sales.exec inbound", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "saveDataSuccessExecution": "none",
+    "saveDataErrorExecution": "none",
+    "executionTimeout": 30
+  }
+}

@@ -16,6 +16,7 @@
         'views/product_template_views.xml',
         'views/sale_order_views.xml',
         'views/payment_score_views.xml',
+        'views/crm_lead_views.xml',
     ],
     'installable': True,
     'application': False,

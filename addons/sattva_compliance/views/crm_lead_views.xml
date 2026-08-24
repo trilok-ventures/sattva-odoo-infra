@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_crm_lead_form_sattva_compliance" model="ir.ui.view">
+        <field name="name">crm.lead.form.sattva.compliance</field>
+        <field name="model">crm.lead</field>
+        <field name="inherit_id" ref="crm.crm_lead_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//notebook" position="inside">
+                <page string="Sattva GREEN" name="sattva_green">
+                    <group>
+                        <field name="sattva_green_score"/>
+                        <field name="sattva_lead_qualified"/>
+                        <field name="sattva_product_family_code"/>
+                        <field name="sattva_fcl_band"/>
+                        <field name="sattva_inbound_topic"/>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>

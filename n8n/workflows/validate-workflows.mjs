@@ -129,5 +129,22 @@ for (const file of files) {
   ) {
     throw new Error(`${file}: lead score must use the narrow Odoo helper`);
   }
+  if (wf.name === "wf.lead.inbound") {
+    const code = wf.nodes
+      .map((node) => node.parameters?.jsCode || "")
+      .join("\n");
+    if (
+      !code.includes("INBOUND_LEAD_ALLOWLIST") ||
+      !code.includes("unknown inbound lead key forbidden") ||
+      !code.includes("hashed_partner_id") ||
+      !text.includes("sattva.fabric.lead.ingest") ||
+      !text.includes("create_inbound") ||
+      !text.includes("sattva.fabric.leadscore") ||
+      !text.includes("JSON.stringify($json.work_email)") ||
+      /keycloak/i.test(text)
+    ) {
+      throw new Error(`${file}: inbound lead must HMAC-allowlist, create_inbound, score GREEN, and skip Keycloak`);
+    }
+  }
 }
 console.log("workflow validation passed");

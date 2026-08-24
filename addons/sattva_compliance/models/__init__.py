@@ -6,6 +6,7 @@ from . import vault
 from . import notify
 from . import order_handoff
 from . import leadscore
+from . import lead_inbound
 from . import brokerage_lot
 from . import sale_order
 from . import product_template
