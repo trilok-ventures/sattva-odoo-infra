@@ -1,6 +1,6 @@
 # P2 credit score v1 and Incoterm × risk-tier
 
-**Status:** Implementing on `cursor/paas-feature-ranking-952c`  
+**Status:** Implemented on `cursor/paas-feature-ranking-952c` (`TestCreditScore` / `TestCreditFormula` green; SoD follow-ups after fabric review)  
 **Date:** 2026-08-24  
 **Owner:** IPCo (software); Sattva Brokers OpCo (finance assigns terms)  
 **Companion ranking:** `2026-08-24-spice-trade-paas-feature-ranking.md` (P2 #10–11; §5 item 5)  
