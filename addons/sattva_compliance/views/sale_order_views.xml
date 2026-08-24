@@ -14,6 +14,7 @@
                 <page string="Sattva Compliance" name="sattva_compliance">
                     <group>
                         <field name="nextcloud_order_folder_path"/>
+                        <field name="fcl_count"/>
                     </group>
                 </page>
             </xpath>

@@ -16,6 +16,9 @@ class TestPartnerFormView(TransactionCase):
             "is_logistics_partner",
             "forwarder_status",
             "fssai_licence",
+            "industry_sector",
+            "payment_score_total",
+            "credit_risk_tier",
         ):
             self.assertIn(name, arch)
 

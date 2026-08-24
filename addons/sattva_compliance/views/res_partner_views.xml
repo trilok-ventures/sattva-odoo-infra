@@ -40,7 +40,21 @@
                             <field name="incoterm_cif"/>
                             <field name="incoterm_dap"/>
                         </group>
+                        <group string="Credit (v1)">
+                            <field name="industry_sector"/>
+                            <field name="payment_score_punctuality"/>
+                            <field name="payment_score_volume"/>
+                            <field name="payment_score_market"/>
+                            <field name="payment_score_financial" groups="account.group_account_manager"/>
+                            <field name="payment_score_paydex" groups="account.group_account_manager"/>
+                            <field name="payment_score_total"/>
+                            <field name="credit_risk_tier"/>
+                        </group>
                     </group>
+                    <button name="action_recompute_payment_score" type="object"
+                            string="Snapshot credit score"
+                            class="btn-secondary"
+                            groups="account.group_account_manager"/>
                 </page>
             </xpath>
         </field>

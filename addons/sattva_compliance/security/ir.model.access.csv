@@ -3,3 +3,7 @@ access_sattva_fabric_event_n8n_service,sattva.fabric.event n8n service,model_sat
 access_sattva_brokerage_lot_user,sattva.brokerage.lot user,model_sattva_brokerage_lot,base.group_user,1,0,0,0
 access_sattva_brokerage_lot_officer,sattva.brokerage.lot officer,model_sattva_brokerage_lot,group_compliance_officer,1,1,1,0
 access_sattva_brokerage_lot_n8n,sattva.brokerage.lot n8n,model_sattva_brokerage_lot,group_n8n_fabric_service,1,0,0,0
+access_sattva_payment_score_user,sattva.payment.score user,model_sattva_payment_score,base.group_user,1,0,0,0
+access_sattva_payment_score_officer,sattva.payment.score officer,model_sattva_payment_score,group_compliance_officer,1,0,0,0
+access_sattva_payment_score_n8n,sattva.payment.score n8n,model_sattva_payment_score,group_n8n_fabric_service,1,0,0,0
+access_sattva_payment_score_finance,sattva.payment.score finance,model_sattva_payment_score,account.group_account_manager,1,1,1,0

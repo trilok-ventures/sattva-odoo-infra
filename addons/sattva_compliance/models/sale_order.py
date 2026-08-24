@@ -1,7 +1,9 @@
 import re
 
 from odoo import api, fields, models
-from odoo.exceptions import UserError
+from odoo.exceptions import UserError, ValidationError
+
+from .credit_access import check_order_credit_vals
 
 _INCOTERM_FLAG = {
     "fob": "incoterm_fob",
@@ -41,9 +43,16 @@ class SaleOrder(models.Model):
         readonly=True,
         help="Path in Nextcloud for this SO. Files stay in the vault.",
     )
+    fcl_count = fields.Integer(
+        string="FCL count",
+        default=0,
+        help="AMBER container count. Confirmed SOs feed volume V on the buyer credit score.",
+    )
 
     @api.model_create_multi
     def create(self, vals_list):
+        for vals in vals_list:
+            check_order_credit_vals(self.env, vals)
         orders = super().create(vals_list)
         events = []
         for order in orders:
@@ -60,6 +69,16 @@ class SaleOrder(models.Model):
         if events:
             self.env["sattva.fabric.event"].sudo().create(events)
         return orders
+
+    def write(self, vals):
+        check_order_credit_vals(self.env, vals)
+        return super().write(vals)
+
+    @api.constrains("fcl_count")
+    def _check_fcl_count(self):
+        for order in self:
+            if order.fcl_count < 0:
+                raise ValidationError("FCL count cannot be negative.")
 
     def action_confirm(self):
         self._sattva_check_sale_gates()
@@ -113,6 +132,11 @@ class SaleOrder(models.Model):
                     "Compliance Gate Blocked: Cannot confirm first SO.\n"
                     "Link a PO intent whose supplier is PCP Approved. "
                     "n8n must not confirm the PO."
+                )
+            if buyer.credit_risk_tier == "4" and order.sattva_incoterm != "fob":
+                raise UserError(
+                    "Compliance Gate Blocked: Cannot confirm SO.\n"
+                    f"Buyer '{buyer.name}' is credit tier 4. Incoterm must be FOB."
                 )
 
     def _sattva_native_incoterm_code(self):

@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_sattva_payment_score_tree" model="ir.ui.view">
+        <field name="name">sattva.payment.score.tree</field>
+        <field name="model">sattva.payment.score</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="create_date"/>
+                <field name="partner_id"/>
+                <field name="score_p"/>
+                <field name="score_v"/>
+                <field name="score_m"/>
+                <field name="score_f"/>
+                <field name="score_r"/>
+                <field name="score_total"/>
+                <field name="credit_risk_tier"/>
+            </list>
+        </field>
+    </record>
+    <record id="view_sattva_payment_score_form" model="ir.ui.view">
+        <field name="name">sattva.payment.score.form</field>
+        <field name="model">sattva.payment.score</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <field name="partner_id"/>
+                        <field name="score_p"/>
+                        <field name="score_v"/>
+                        <field name="score_m"/>
+                        <field name="score_f"/>
+                        <field name="score_r"/>
+                        <field name="score_total"/>
+                        <field name="credit_risk_tier"/>
+                        <field name="fcl_sum"/>
+                        <field name="invoice_count"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    <record id="action_sattva_payment_score" model="ir.actions.act_window">
+        <field name="name">Payment Scores</field>
+        <field name="res_model">sattva.payment.score</field>
+        <field name="view_mode">list,form</field>
+    </record>
+    <menuitem id="menu_sattva_payment_score"
+              name="Payment Scores"
+              parent="menu_sattva_compliance_root"
+              action="action_sattva_payment_score"
+              sequence="20"/>
+</odoo>
