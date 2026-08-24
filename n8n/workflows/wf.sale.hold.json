@@ -1,0 +1,64 @@
+{
+  "name": "wf.sale.hold",
+  "id": "wf-sale-hold",
+  "nodes": [
+    {
+      "id": "sale-hold-webhook",
+      "name": "First-order hold webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, 0],
+      "webhookId": "wf-sale-hold",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "sale-hold",
+        "responseMode": "lastNode",
+        "options": {}
+      }
+    },
+    {
+      "id": "verify-sale-hold-hmac",
+      "name": "Verify sale-hold webhook HMAC",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [240, 0],
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\nconst headers = input.headers ?? {};\nconst provided = headers['x-sattva-webhook-hmac'] ?? headers['X-Sattva-Webhook-Hmac'];\nconst expected = $env.N8N_WEBHOOK_HMAC;\nif (typeof expected !== 'string' || !expected || typeof provided !== 'string' || provided !== expected) {\n  throw new Error('invalid x-sattva-webhook-hmac');\n}\nconst payload = input.body ?? input;\nif (payload == null || typeof payload !== 'object' || Array.isArray(payload)) throw new Error('payload required');\nconst forbidden = new Set(['bytes','pdf','path','nextcloud_folder_path','file_bytes','sfc_licence_number','cbsa_bond_number','insurance_policy_no']);\nfor (const key of Object.keys(payload)) {\n  if (forbidden.has(key)) throw new Error('RED key forbidden in sale hold: ' + key);\n}\nif (payload.order_id == null) throw new Error('order_id required');\nif (typeof payload.reason !== 'string' || !payload.reason) throw new Error('reason required');\nreturn [{ json: { order_id: Number(payload.order_id), reason: payload.reason.slice(0, 255) } }];"
+      }
+    },
+    {
+      "id": "set-sale-hold",
+      "name": "Set hold never confirm",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [480, 0],
+      "credentials": {
+        "httpHeaderAuth": {
+          "name": "odooN8nFabric"
+        }
+      },
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.ODOO_JSON2_URL}}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\"jsonrpc\":\"2.0\",\"method\":\"call\",\"params\":{\"service\":\"object\",\"method\":\"execute_kw\",\"args\":[\"sattva\",\"{{$env.ODOO_N8N_UID}}\",\"{{$credentials.odooN8nFabric.value}}\",\"sattva.fabric.salehold\",\"set_hold\",[{{$json.order_id}},\"{{$json.reason}}\"]]}}"
+      }
+    }
+  ],
+  "connections": {
+    "First-order hold webhook": {
+      "main": [[{ "node": "Verify sale-hold webhook HMAC", "type": "main", "index": 0 }]]
+    },
+    "Verify sale-hold webhook HMAC": {
+      "main": [[{ "node": "Set hold never confirm", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "saveDataSuccessExecution": "none",
+    "saveDataErrorExecution": "none",
+    "executionTimeout": 30
+  }
+}
