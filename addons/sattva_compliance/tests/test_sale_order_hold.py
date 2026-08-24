@@ -87,7 +87,7 @@ class TestSaleOrderFirstOrderHold(TransactionCase):
         self.assertFalse(order.sattva_compliance_hold)
         self.assertTrue(order.sattva_hold_released)
         self.assertEqual(order.state, "draft")
-        order.with_user(self.officer).action_confirm()
+        order.action_confirm()
         self.assertIn(order.state, ("sale", "done"))
 
     def test_approved_path_skips_hold(self):

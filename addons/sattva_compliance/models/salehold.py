@@ -20,6 +20,7 @@ class FabricSaleHold(models.AbstractModel):
             {
                 "sattva_compliance_hold": True,
                 "sattva_hold_released": False,
+                "sattva_hold_forced": True,
                 "sattva_hold_reason": reason.strip()[:255],
             }
         )

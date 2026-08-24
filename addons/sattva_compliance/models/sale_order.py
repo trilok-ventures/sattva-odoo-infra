@@ -40,6 +40,12 @@ class SaleOrder(models.Model):
         default=False,
         copy=False,
     )
+    sattva_hold_forced = fields.Boolean(
+        string="n8n/manual hold",
+        default=False,
+        copy=False,
+        help="When set, auto first-order logic must not clear the hold. Officer release still can.",
+    )
     sattva_hold_reason = fields.Char(string="Hold reason", copy=False)
 
     @api.depends("partner_id")
@@ -95,6 +101,7 @@ class SaleOrder(models.Model):
             order.sudo().write(
                 {
                     "sattva_hold_released": True,
+                    "sattva_hold_forced": False,
                     "sattva_compliance_hold": False,
                     "sattva_hold_reason": False,
                 }
@@ -123,6 +130,8 @@ class SaleOrder(models.Model):
             if order.state in ("cancel", "sale", "done"):
                 continue
             if order.sattva_hold_released:
+                continue
+            if order.sattva_hold_forced:
                 continue
             if not order.sattva_first_order:
                 if order.sattva_compliance_hold:

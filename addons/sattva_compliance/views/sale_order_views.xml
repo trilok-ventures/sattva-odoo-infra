@@ -30,6 +30,7 @@
                             <field name="sattva_first_order"/>
                             <field name="sattva_compliance_hold"/>
                             <field name="sattva_hold_released"/>
+                            <field name="sattva_hold_forced"/>
                         </group>
                     </group>
                 </page>
