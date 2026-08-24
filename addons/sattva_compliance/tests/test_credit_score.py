@@ -271,6 +271,7 @@ class TestCreditScore(TransactionCase):
             {"payment_score_financial": 0, "payment_score_paydex": 0}
         )
         self.assertEqual(self.buyer.payment_score_financial, 0)
+        self.assertEqual(dock.payment_score_financial, 50)
         self.assertEqual(self.buyer.credit_risk_tier, "4")
         self.assertEqual(dock.credit_risk_tier, "4")
         cif = self._so(partner_id=dock.id, sattva_incoterm="cif")
@@ -338,6 +339,18 @@ class TestCreditScore(TransactionCase):
             self.buyer.with_user(self.fabric_user).write(
                 {"industry_sector": "retail"}
             )
+
+    def test_sales_copy_drops_finance_score_fields(self):
+        self.buyer.with_user(self.finance).write(
+            {
+                "industry_sector": "food_service",
+                "payment_score_financial": 80,
+            }
+        )
+        clone = self.buyer.with_user(self.sales).copy({"name": "Synthetic Credit Clone"})
+        self.assertFalse(clone.industry_sector)
+        self.assertEqual(clone.payment_score_financial, 50)
+        self.assertEqual(self.buyer.payment_score_financial, 80)
 
     def test_n8n_cannot_write_scores_or_terms_or_recompute(self):
         net60 = self._term(60, "SYN n8n Net 60")

@@ -4,7 +4,7 @@
         <field name="name">sattva.payment.score.tree</field>
         <field name="model">sattva.payment.score</field>
         <field name="arch" type="xml">
-            <list create="false" edit="false">
+            <list create="false" edit="false" delete="false">
                 <field name="create_date"/>
                 <field name="partner_id"/>
                 <field name="score_p"/>
@@ -21,7 +21,7 @@
         <field name="name">sattva.payment.score.form</field>
         <field name="model">sattva.payment.score</field>
         <field name="arch" type="xml">
-            <form create="false" edit="false">
+            <form create="false" edit="false" delete="false">
                 <sheet>
                     <group>
                         <field name="partner_id"/>

@@ -3,7 +3,7 @@ import re
 from odoo import api, fields, models
 from odoo.exceptions import AccessError, ValidationError
 
-from .credit_access import check_partner_credit_vals, is_n8n
+from .credit_access import check_partner_credit_vals, is_finance_manager, is_n8n
 from .credit_formula import (
     composite_score,
     credit_tier,
@@ -25,12 +25,17 @@ class ResPartner(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
-        snapshot = False
+        prepared = []
         for vals in vals_list:
             check_partner_credit_vals(self.env, vals)
-            if any(field in vals for field in _SNAPSHOT_FIELDS):
-                snapshot = True
-        partners = super().create(vals_list)
+            credit_vals = {
+                field: vals[field] for field in _SNAPSHOT_FIELDS if field in vals
+            }
+            other_vals = {
+                key: value for key, value in vals.items() if key not in credit_vals
+            }
+            prepared.append((other_vals, credit_vals))
+        partners = super().create([other_vals for other_vals, _credit in prepared])
         events = []
         for partner in partners.filtered(
             lambda record: record.supplier_rank > 0 and not record.is_logistics_partner
@@ -54,8 +59,15 @@ class ResPartner(models.Model):
             )
         if events:
             self.env["sattva.fabric.event"].sudo().create(events)
-        if snapshot:
-            partners._sattva_snapshot_payment_score()
+        snapshot_roots = self.env["res.partner"]
+        for partner, (_other_vals, credit_vals) in zip(partners, prepared):
+            if not credit_vals:
+                continue
+            root = partner.commercial_partner_id
+            super(ResPartner, root).write(credit_vals)
+            snapshot_roots |= root
+        if snapshot_roots:
+            snapshot_roots._sattva_snapshot_payment_score()
         return partners
 
     supplier_pcp_status = fields.Selection([
@@ -204,9 +216,18 @@ class ResPartner(models.Model):
             result = super().write(other_vals)
         if credit_vals:
             roots = self.mapped("commercial_partner_id")
-            super(ResPartner, self | roots).write(credit_vals)
+            super(ResPartner, roots).write(credit_vals)
             roots._sattva_snapshot_payment_score()
         return result
+
+    def copy_data(self, default=None):
+        vals_list = super().copy_data(default)
+        if is_finance_manager(self.env):
+            return vals_list
+        for vals in vals_list:
+            for field in _SNAPSHOT_FIELDS:
+                vals.pop(field, None)
+        return vals_list
 
     def action_recompute_payment_score(self):
         if is_n8n(self.env):
