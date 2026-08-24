@@ -1,9 +1,9 @@
 import re
 
 from odoo import api, fields, models
-from odoo.exceptions import UserError, ValidationError
+from odoo.exceptions import AccessError, UserError, ValidationError
 
-from .credit_access import check_order_credit_vals
+from .credit_access import check_order_credit_vals, is_finance_manager, is_n8n
 
 _INCOTERM_FLAG = {
     "fob": "incoterm_fob",
@@ -71,7 +71,15 @@ class SaleOrder(models.Model):
         return orders
 
     def write(self, vals):
-        check_order_credit_vals(self.env, vals)
+        check_order_credit_vals(self.env, vals, orders=self)
+        if "fcl_count" in vals:
+            for order in self:
+                if order.state in ("sale", "done") and not is_finance_manager(
+                    self.env
+                ):
+                    raise UserError(
+                        "Finance manager must change FCL on a confirmed order."
+                    )
         return super().write(vals)
 
     @api.constrains("fcl_count")
@@ -81,6 +89,8 @@ class SaleOrder(models.Model):
                 raise ValidationError("FCL count cannot be negative.")
 
     def action_confirm(self):
+        if is_n8n(self.env):
+            raise AccessError("n8n cannot confirm sale orders.")
         self._sattva_check_sale_gates()
         return super().action_confirm()
 

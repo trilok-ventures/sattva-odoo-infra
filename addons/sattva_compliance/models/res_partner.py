@@ -25,8 +25,11 @@ class ResPartner(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
+        snapshot = False
         for vals in vals_list:
             check_partner_credit_vals(self.env, vals)
+            if any(field in vals for field in _SNAPSHOT_FIELDS):
+                snapshot = True
         partners = super().create(vals_list)
         events = []
         for partner in partners.filtered(
@@ -51,6 +54,8 @@ class ResPartner(models.Model):
             )
         if events:
             self.env["sattva.fabric.event"].sudo().create(events)
+        if snapshot:
+            partners._sattva_snapshot_payment_score()
         return partners
 
     supplier_pcp_status = fields.Selection([
@@ -152,16 +157,20 @@ class ResPartner(models.Model):
             ("other", "Other"),
         ],
         string="Industry sector",
+        tracking=True,
+        help="Finance manager only. Stored on the commercial partner.",
     )
     payment_score_financial = fields.Integer(
         string="Financial score F",
         default=50,
-        help="Manual 0-100. Finance manager only. Not a live bureau pull.",
+        tracking=True,
+        help="Manual 0-100. Finance manager only. Not a live bureau pull. Stored on the commercial partner.",
     )
     payment_score_paydex = fields.Integer(
         string="Paydex stand-in R",
         default=50,
-        help="Manual 0-100 until a dated finance spec wires D&B. Finance manager only.",
+        tracking=True,
+        help="Manual 0-100 until a dated finance spec wires D&B. Finance manager only. Stored on the commercial partner.",
     )
     payment_score_punctuality = fields.Integer(
         string="Punctuality P", compute="_compute_credit_scores"
@@ -188,9 +197,15 @@ class ResPartner(models.Model):
 
     def write(self, vals):
         check_partner_credit_vals(self.env, vals)
-        result = super().write(vals)
-        if any(field in vals for field in _SNAPSHOT_FIELDS):
-            self._sattva_snapshot_payment_score()
+        credit_vals = {field: vals[field] for field in _SNAPSHOT_FIELDS if field in vals}
+        other_vals = {key: value for key, value in vals.items() if key not in credit_vals}
+        result = True
+        if other_vals:
+            result = super().write(other_vals)
+        if credit_vals:
+            roots = self.mapped("commercial_partner_id")
+            super(ResPartner, self | roots).write(credit_vals)
+            roots._sattva_snapshot_payment_score()
         return result
 
     def action_recompute_payment_score(self):
@@ -290,7 +305,9 @@ class ResPartner(models.Model):
                 }
             )
         if rows:
-            self.env["sattva.payment.score"].sudo().create(rows)
+            self.env["sattva.payment.score"].sudo().with_context(
+                sattva_score_snapshot=True
+            ).create(rows)
 
     @api.constrains("payment_score_financial", "payment_score_paydex")
     def _check_manual_credit_scores(self):

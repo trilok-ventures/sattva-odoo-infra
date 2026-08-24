@@ -1,4 +1,5 @@
-from odoo import fields, models
+from odoo import api, fields, models
+from odoo.exceptions import AccessError
 
 
 class SattvaPaymentScore(models.Model):
@@ -11,13 +12,14 @@ class SattvaPaymentScore(models.Model):
         required=True,
         ondelete="cascade",
         index=True,
+        readonly=True,
     )
-    score_p = fields.Integer(string="Punctuality P")
-    score_v = fields.Integer(string="Volume V")
-    score_m = fields.Integer(string="Market M")
-    score_f = fields.Integer(string="Financial F")
-    score_r = fields.Integer(string="Paydex R")
-    score_total = fields.Integer(string="Score S")
+    score_p = fields.Integer(string="Punctuality P", readonly=True)
+    score_v = fields.Integer(string="Volume V", readonly=True)
+    score_m = fields.Integer(string="Market M", readonly=True)
+    score_f = fields.Integer(string="Financial F", readonly=True)
+    score_r = fields.Integer(string="Paydex R", readonly=True)
+    score_total = fields.Integer(string="Score S", readonly=True)
     credit_risk_tier = fields.Selection(
         [
             ("1", "Tier 1"),
@@ -26,6 +28,16 @@ class SattvaPaymentScore(models.Model):
             ("4", "Tier 4"),
         ],
         string="Credit risk tier",
+        readonly=True,
     )
-    fcl_sum = fields.Integer(string="Confirmed FCL sum")
-    invoice_count = fields.Integer(string="Posted invoice count")
+    fcl_sum = fields.Integer(string="Confirmed FCL sum", readonly=True)
+    invoice_count = fields.Integer(string="Posted invoice count", readonly=True)
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        if not self.env.context.get("sattva_score_snapshot"):
+            raise AccessError("Payment score rows are snapshots only.")
+        return super().create(vals_list)
+
+    def write(self, vals):
+        raise AccessError("Payment score snapshots are read-only.")

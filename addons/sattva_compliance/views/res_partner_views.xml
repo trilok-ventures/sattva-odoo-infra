@@ -41,14 +41,14 @@
                             <field name="incoterm_dap"/>
                         </group>
                         <group string="Credit (v1)">
-                            <field name="industry_sector"/>
-                            <field name="payment_score_punctuality"/>
-                            <field name="payment_score_volume"/>
-                            <field name="payment_score_market"/>
+                            <field name="industry_sector" groups="account.group_account_manager"/>
+                            <field name="payment_score_punctuality" readonly="1"/>
+                            <field name="payment_score_volume" readonly="1"/>
+                            <field name="payment_score_market" readonly="1"/>
                             <field name="payment_score_financial" groups="account.group_account_manager"/>
                             <field name="payment_score_paydex" groups="account.group_account_manager"/>
-                            <field name="payment_score_total"/>
-                            <field name="credit_risk_tier"/>
+                            <field name="payment_score_total" readonly="1"/>
+                            <field name="credit_risk_tier" readonly="1"/>
                         </group>
                     </group>
                     <button name="action_recompute_payment_score" type="object"

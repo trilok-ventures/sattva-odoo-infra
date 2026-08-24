@@ -64,6 +64,16 @@ class TestCreditScore(TransactionCase):
             login="synthetic_credit_sales",
             groups="sales_team.group_sale_salesman,sales_team.group_sale_manager",
         )
+        cls.n8n_sales = new_test_user(
+            cls.env,
+            login="synthetic_n8n_credit_sales",
+            groups="sattva_compliance.group_n8n_fabric_service,sales_team.group_sale_manager",
+        )
+        cls.accountant = new_test_user(
+            cls.env,
+            login="synthetic_credit_account_user",
+            groups="account.group_account_user,sales_team.group_sale_manager",
+        )
         cls.finance = new_test_user(
             cls.env,
             login="synthetic_credit_finance",
@@ -224,6 +234,110 @@ class TestCreditScore(TransactionCase):
             {"property_payment_term_id": net60.id}
         )
         self.assertEqual(self.buyer.property_payment_term_id, net60)
+        order.with_user(self.sales).write({"payment_term_id": net60.id})
+        self.assertEqual(order.payment_term_id, net60)
+
+    def test_account_user_cannot_write_scores_or_net_60(self):
+        net60 = self._term(60, "SYN accountant Net 60")
+        with self.assertRaises(UserError):
+            self.buyer.with_user(self.accountant).write(
+                {"payment_score_financial": 90}
+            )
+        with self.assertRaises(UserError):
+            self.buyer.with_user(self.accountant).write(
+                {"industry_sector": "food_service"}
+            )
+        with self.assertRaises(UserError):
+            self.buyer.with_user(self.accountant).write(
+                {"property_payment_term_id": net60.id}
+            )
+
+    def test_sales_cannot_write_industry_sector(self):
+        with self.assertRaises(UserError):
+            self.buyer.with_user(self.sales).write(
+                {"industry_sector": "food_service"}
+            )
+        self.assertFalse(self.buyer.industry_sector)
+
+    def test_child_score_write_updates_commercial(self):
+        dock = self.env["res.partner"].create(
+            {
+                "name": "Synthetic Credit Dock",
+                "parent_id": self.buyer.id,
+                "type": "delivery",
+            }
+        )
+        dock.with_user(self.finance).write(
+            {"payment_score_financial": 0, "payment_score_paydex": 0}
+        )
+        self.assertEqual(self.buyer.payment_score_financial, 0)
+        self.assertEqual(self.buyer.credit_risk_tier, "4")
+        self.assertEqual(dock.credit_risk_tier, "4")
+        cif = self._so(partner_id=dock.id, sattva_incoterm="cif")
+        with self.assertRaises(UserError) as err:
+            cif.action_confirm()
+        self.assertIn("tier 4", str(err.exception).lower())
+
+    def test_sales_cannot_change_confirmed_fcl(self):
+        order = self._so(fcl_count=1)
+        order.action_confirm()
+        with self.assertRaises(UserError):
+            order.with_user(self.sales).write({"fcl_count": 9})
+        order.with_user(self.finance).write({"fcl_count": 4})
+        self.assertEqual(order.fcl_count, 4)
+
+    def test_dual_group_n8n_cannot_confirm(self):
+        order = self._so()
+        with self.assertRaises(AccessError):
+            order.with_user(self.n8n_sales).action_confirm()
+        self.assertEqual(order.state, "draft")
+
+    def test_score_log_is_read_only(self):
+        self.buyer.action_recompute_payment_score()
+        row = self.env["sattva.payment.score"].search(
+            [("partner_id", "=", self.buyer.id)], limit=1
+        )
+        with self.assertRaises(AccessError):
+            row.write({"score_total": 99})
+        with self.assertRaises(AccessError):
+            self.env["sattva.payment.score"].create(
+                {
+                    "partner_id": self.buyer.id,
+                    "score_p": 100,
+                    "score_v": 100,
+                    "score_m": 100,
+                    "score_f": 100,
+                    "score_r": 100,
+                    "score_total": 100,
+                    "credit_risk_tier": "1",
+                }
+            )
+
+    def test_sales_cannot_self_serve_net_60_on_invoice(self):
+        net60 = self._term(60, "SYN invoice Net 60")
+        move = self.env["account.move"].create(
+            {
+                "move_type": "out_invoice",
+                "partner_id": self.buyer.id,
+            }
+        )
+        with self.assertRaises(UserError):
+            move.with_user(self.accountant).write(
+                {"invoice_payment_term_id": net60.id}
+            )
+        self.buyer.with_user(self.finance).write(
+            {"property_payment_term_id": net60.id}
+        )
+        move.with_user(self.accountant).write(
+            {"invoice_payment_term_id": net60.id}
+        )
+        self.assertEqual(move.invoice_payment_term_id, net60)
+
+    def test_n8n_cannot_write_industry(self):
+        with self.assertRaises(UserError):
+            self.buyer.with_user(self.fabric_user).write(
+                {"industry_sector": "retail"}
+            )
 
     def test_n8n_cannot_write_scores_or_terms_or_recompute(self):
         net60 = self._term(60, "SYN n8n Net 60")

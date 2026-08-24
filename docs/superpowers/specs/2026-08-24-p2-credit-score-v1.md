@@ -62,15 +62,16 @@ Default new buyer: \(P=V=M=F=R=50\) → \(S=50\) → tier 3. Existing P1 sale-co
 
 ## Behaviour
 
-- `res.partner`: `industry_sector`; stored manual `payment_score_financial`, `payment_score_paydex` (0–100, default 50); computed (non-stored) \(P,V,M,S\) and `credit_risk_tier`.
-- `sattva.payment.score`: AMBER snapshot log (`partner_id`, component scores, total, tier, FCL sum, invoice count). Created on finance write of \(F\)/\(R\)/`industry_sector` and on `action_recompute_payment_score`. Not an n8n SoR.
+- `res.partner`: `industry_sector` (finance-only); stored manual `payment_score_financial`, `payment_score_paydex` (0–100, default 50); computed (non-stored) \(P,V,M,S\) and `credit_risk_tier`. Score inputs are read from the commercial partner.
+- `sattva.payment.score`: AMBER snapshot log (`partner_id`, component scores, total, tier, FCL sum, invoice count). Created on finance write of \(F\)/\(R\)/`industry_sector` (including create) and on `action_recompute_payment_score`. Rows are append-only snapshots (`sattva_score_snapshot` context). Not an n8n SoR.
 - `sale.order.fcl_count`: Integer ≥ 0, AMBER, default 0. Sales may set FCL. Volume uses **already confirmed** SOs, so the SO being confirmed does not count toward \(V\) yet.
 - `sale.order` confirm: after existing P1 gates, if commercial buyer `credit_risk_tier == '4'` and `sattva_incoterm != 'fob'` → `UserError` “Compliance Gate Blocked” (FOB only).
 - Payment term SoD: max `account.payment.term.line.nb_days` across the term. **Net 60** means that max ≥ 60. Immediate / Net 30 remain self-serve for sales.
-- Users with `sales_team.group_sale_salesman` and **without** `account.group_account_manager` cannot write \(F\), \(R\), `property_payment_term_id` when max days ≥ 60, or `sale.order.payment_term_id` when max days ≥ 60.
-- `account.group_account_manager` may write \(F\)/\(R\) and Net 60+ terms. `account.group_account_user` alone cannot.
-- n8n fabric service: read-only on the score log; cannot write \(F\)/\(R\)/industry/payment terms; cannot call `action_recompute_payment_score`; no workflow helper that posts terms. n8n still must not call `button_confirm` / `action_confirm`.
-- Public `write()` on the partner and SO enforces the SoD even if a client injects fields over JSON-RPC.
+- Users with `sales_team.group_sale_salesman` and **without** `account.group_account_manager` cannot write \(F\), \(R\), `industry_sector`, `property_payment_term_id` when max days ≥ 60, or a **new** Net 60+ term on `sale.order` / customer `account.move`. Copying a finance-assigned partner Net 60 onto the SO or invoice is allowed.
+- `account.group_account_manager` may write \(F\)/\(R\)/`industry_sector` and Net 60+ terms. `account.group_account_user` alone cannot. Writes of \(F\)/\(R\)/`industry_sector` apply to the **commercial** partner (child/delivery contacts cannot desync the gate).
+- Confirmed SO `fcl_count` is frozen for sales; finance may still correct it.
+- n8n fabric service: read-only on the score log (snapshots are not manually writable); cannot write \(F\)/\(R\)/industry/payment terms; cannot call `action_recompute_payment_score`; cannot call `sale.order.action_confirm` or `purchase.order.button_confirm` even if dual-grouped with sales. No workflow helper that posts terms.
+- Public `write()` on the partner, SO, and customer invoice enforces the SoD even if a client injects fields over JSON-RPC.
 
 ## Out of scope
 
