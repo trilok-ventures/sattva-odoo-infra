@@ -15,3 +15,9 @@ test sink. It is not Nextcloud and not production `upload.trilokventures.org`.
 
 Credential names used by workflows (values stay in the n8n store, not git):
 `odooN8nFabric`, `nextcloudN8nVault`.
+
+`wf.coa.ocr` HMAC-gates GREEN CoA numbers + hash (`POST /webhook/coa-ocr`) and
+persists via `apply_coa_green`. Source PDFs stay in Nextcloud — the workflow
+must not WebDAV-GET. Optional Hugging Face classification lives in
+`coa-ocr-green.mjs` (GREEN numbers + sha256 only; off unless `HF_API_TOKEN`
+and `HF_COA_MODEL` are set; not a node in the imported workflow).

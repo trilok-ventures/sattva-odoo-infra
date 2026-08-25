@@ -25,6 +25,7 @@ const ALLOWED_IDS = new Set([
   "svc.kc.oidc",
   "svc.lead.inbound",
   "svc.dossier.index",
+  "svc.coa.ocr.green",
 ]);
 const FORBIDDEN_IDS = new Set(["svc.portal.nc"]);
 
@@ -59,6 +60,24 @@ for (const row of register.services) {
   }
   if (row.id === "svc.kc.oidc" && String(row.phase) !== "3") {
     throw new Error("svc.kc.oidc phase must be 3");
+  }
+  if (row.id === "svc.coa.ocr.green") {
+    const blob = JSON.stringify(row);
+    if (!/GREEN/i.test(blob)) {
+      throw new Error("svc.coa.ocr.green must be GREEN-only (no source PDF to Hugging Face)");
+    }
+    if (!blob.includes("apply_coa_green") || !blob.includes("coa-ocr")) {
+      throw new Error("svc.coa.ocr.green must persist via apply_coa_green after POST /webhook/coa-ocr");
+    }
+    if (!/never PDFs/i.test(blob) || !/keeps the PDF/i.test(blob)) {
+      throw new Error("svc.coa.ocr.green must keep the source PDF in Nextcloud and never send PDFs to HF");
+    }
+    if (!/No WebDAV GET/i.test(row.access_policy)) {
+      throw new Error("svc.coa.ocr.green must forbid WebDAV GET of CoA PDFs");
+    }
+    if (/action_release/.test(blob) || /PROPFIND/.test(blob)) {
+      throw new Error("svc.coa.ocr.green must not list vault files or release lots");
+    }
   }
   if (row.id === "svc.dossier.index") {
     const blob = JSON.stringify(row);

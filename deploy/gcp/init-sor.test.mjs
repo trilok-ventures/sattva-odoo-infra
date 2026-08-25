@@ -107,6 +107,9 @@ if (/rm -rf "\$\{root\}\/PCP"/.test(nc) || nc.includes('rm -rf "${root}/Supplier
 if (!n8n.includes("import:workflow") || !n8n.includes("wf.coa.verify.json")) {
   fail("n8n init must import committed wf.*.json");
 }
+if (!n8n.includes("wf.coa.ocr.json") || !n8n.includes("wf-coa-ocr")) {
+  fail("n8n init must import and activate GREEN COA OCR (wf.coa.ocr)");
+}
 if (!n8n.includes("odooN8nFabric") || !n8n.includes("nextcloudN8nVault")) {
   fail("n8n init must create the named credentials");
 }
