@@ -41,6 +41,16 @@ export const RED_FORBIDDEN = [
 
 const HF_ROUTER = "https://router.huggingface.co/hf-inference/models/";
 
+function assertHfModel(model) {
+  if (typeof model !== "string" || !model) {
+    throw new Error("HF model required");
+  }
+  if (model.includes("..") || model.includes("\\") || model.includes("\0") || model.includes("://")) {
+    throw new Error("HF model path forbidden");
+  }
+  return model.replace(/^\/+/, "");
+}
+
 const NUMBER_KEYS = [
   "moisture_pct",
   "spec_moisture_max",
@@ -156,7 +166,7 @@ export async function classifyWithOptionalHf(payload, opts = {}) {
   if (typeof fetchFn !== "function") {
     throw new Error("fetch is required for Hugging Face GREEN inference");
   }
-  const res = await fetchFn(HF_ROUTER + encodeURIComponent(model), {
+  const res = await fetchFn(HF_ROUTER + assertHfModel(model), {
     method: "POST",
     headers: {
       Authorization: "Bearer " + token,
