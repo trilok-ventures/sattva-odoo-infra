@@ -1,6 +1,6 @@
 # P3 buyer GREEN lot status (mock BFF)
 
-**Status:** Implemented on `cursor/buyer-green-lots-952c` (middleware build + contract-check green)  
+**Status:** Implemented on `cursor/buyer-green-lots-952c` (middleware build + contract-check green). Next increment: `2026-08-25-p3-buyer-green-lots-json2.md`.  
 **Date:** 2026-08-25  
 **Owner:** IPCo  
 **Companion ranking:** `2026-08-24-spice-trade-paas-feature-ranking.md` (P3 #15; after P2 #14)  
@@ -27,4 +27,4 @@ Lot JSON (GREEN + officer flag): `id`, `sku`, `state`, `officer_released`, `coa_
 
 ## Out of scope
 
-`FABRIC_MODE=live`, Keycloak, live Odoo JSON-2 lot adapter, B3 quotes/contracts, PDF bytes, `sale_management` ops install, retargeting root `vercel.json`, OCR / Hugging Face.
+`FABRIC_MODE=live`, Keycloak, B3 quotes/contracts, PDF bytes, `sale_management` ops install, retargeting root `vercel.json`, OCR / Hugging Face. Live Odoo JSON-2 lot adapter is the next increment (`2026-08-25-p3-buyer-green-lots-json2.md`).

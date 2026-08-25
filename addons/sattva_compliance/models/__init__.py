@@ -13,3 +13,4 @@ from . import sale_order
 from . import payment_score
 from . import account_move
 from . import dossier
+from . import portal

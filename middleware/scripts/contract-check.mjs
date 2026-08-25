@@ -81,6 +81,19 @@ assert("lots page has no NEXT_PUBLIC_", !lotsPage.includes("NEXT_PUBLIC_"));
 assert("lots page labels compare separately", lotsPage.includes("coaCompareLabel"));
 assert("lots page uses officer sale status", lotsPage.includes("saleStatusLabel"));
 
+const json2Src = readFileSync(join(root, "src/lib/odoo-json2.ts"), "utf8");
+assert("json-2 allowlists portal list_lots", json2Src.includes('ALLOWED_MODEL = "sattva.fabric.portal"') && json2Src.includes('ALLOWED_METHOD = "list_lots"'));
+assert("json-2 has no release or confirm", !/action_release|action_reject|action_confirm|button_confirm/.test(json2Src));
+const odooLotsSrc = readFileSync(join(root, "src/lib/adapters/odoo-lots.ts"), "utf8");
+assert("odoo lots adapter is read-only list_lots", odooLotsSrc.includes("portalListLots") && !/action_release|write\(/.test(odooLotsSrc));
+assert("buyer without partner id is empty", odooLotsSrc.includes('persona === "buyer" && scoped === false'));
+const mapperSrc = readFileSync(join(root, "src/lib/lot-from-odoo.ts"), "utf8");
+assert("mapper derives officer_released from state", mapperSrc.includes("officerReleased(state)") && mapperSrc.includes("coaPresent(sha)"));
+assert("mapper ignores odoo officer_released", !mapperSrc.includes("row.officer_released"));
+const adapterIndex = readFileSync(join(root, "src/lib/adapters/index.ts"), "utf8");
+assert("adapter uses json-2 only when odoo lots configured", adapterIndex.includes("odooLotsConfigured") && adapterIndex.includes("odooLotsAdapter"));
+assert("live mode still not implied by json-2 lots", !adapterIndex.includes('FABRIC_MODE === "live"'));
+
 const publicLotsSrc = readFileSync(join(root, "src/lib/lot-public.ts"), "utf8");
 assert("lots allowlist helper strips RED", publicLotsSrc.includes("stripRedKeys") && publicLotsSrc.includes("officer_released"));
 assert("lots API uses publicLots", readFileSync(join(root, "src/app/api/lots/route.ts"), "utf8").includes("publicLots"));

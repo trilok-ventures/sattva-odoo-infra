@@ -81,7 +81,9 @@ paths:
         "200":
           description: >
             GREEN fields and officer_released only. coa_pass is the compare
-            result and is not available-for-sale. No vault paths or file bytes.
+            result and is not available-for-sale. When Odoo JSON-2 is
+            configured the BFF calls read-only sattva.fabric.portal.list_lots;
+            otherwise mock fixtures. No vault paths or file bytes.
   /api/documents:
     post:
       summary: Supplier document receipt (hash only)
