@@ -1,6 +1,6 @@
 # P3 buyer GREEN lot status (mock BFF)
 
-**Status:** Implementing on `cursor/buyer-green-lots-952c`  
+**Status:** Implemented on `cursor/buyer-green-lots-952c` (middleware build + contract-check green)  
 **Date:** 2026-08-25  
 **Owner:** IPCo  
 **Companion ranking:** `2026-08-24-spice-trade-paas-feature-ranking.md` (P3 #15; after P2 #14)  

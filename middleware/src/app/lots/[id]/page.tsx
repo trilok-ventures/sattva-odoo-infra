@@ -2,6 +2,7 @@ import { getAdapter } from "@/lib/adapters";
 import { fabricMode } from "@/lib/fabric";
 import {
   coaCompareLabel,
+  releaseIndependenceNote,
   saleStatusLabel,
   truncateHash,
 } from "@/lib/lot-status";
@@ -71,10 +72,7 @@ export default async function LotDetailPage({
           <span className={`pill ${lot.state}`}>{saleStatusLabel(lot.state)}</span>{" "}
           <span className="pill">{coaCompareLabel(lot.coa_pass)}</span>
         </p>
-        <div className="banner">
-          Officer release is independent of COA compare. A compare pass in
-          quarantine is not available-for-sale.
-        </div>
+        <div className="banner">{releaseIndependenceNote(lot.state)}</div>
         <div className="metrics">
           <div>Moisture {lot.moisture_pct}%</div>
           <div>Mesh {lot.mesh_pass ? "pass" : "fail"}</div>

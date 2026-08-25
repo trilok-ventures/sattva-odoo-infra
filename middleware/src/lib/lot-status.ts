@@ -31,3 +31,18 @@ export function truncateHash(sha256: string): string {
   if (!coaPresent(sha256)) return "none";
   return `${sha256.slice(0, 8)}…`;
 }
+
+export function releaseIndependenceNote(state: LotState): string {
+  switch (state) {
+    case "quarantine":
+      return "Officer release is independent of COA compare. A compare pass in quarantine is not available-for-sale.";
+    case "available":
+      return "Officer released this lot. COA compare pass is a separate GREEN signal, not the release.";
+    case "rejected":
+      return "This lot is rejected. It is not available-for-sale.";
+    default: {
+      const _exhaustive: never = state;
+      return _exhaustive;
+    }
+  }
+}
