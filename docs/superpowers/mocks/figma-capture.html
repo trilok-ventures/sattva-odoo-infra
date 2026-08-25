@@ -89,8 +89,18 @@
       <li>Odoo on <code>:8069</code> — employees-only back office, not the GREEN edge.</li>
     </ul>
 
+    <h2>Fabric elements page (2026-08-25)</h2>
+    <p>Reusable SoR / write-gate components live on <a href="https://www.figma.com/design/NcyHhLoppe3f72fs5KjrvP/Sattva-Middleware?node-id=48-2">02 · Fabric elements 2026-08-25</a>. Do not overwrite Persona Index or 01 Product platform.</p>
+    <ul>
+      <li><code>SoRBadge</code> — Odoo commercial SoR, Nextcloud vault, n8n pass-through.</li>
+      <li><code>WriteGate</code> — allowed / denied / hidden. Unauthorized personas never get an enabled write.</li>
+      <li><code>VaultPointer</code> — employee path metadata vs buyer filename + sha256 only.</li>
+      <li><code>WorkflowChip</code> — IT may see workflow id; buyers never see an n8n hostname.</li>
+      <li>Screens on that page: E5 lot board (compliance), E3 dossier (sales write denied), B2 order (buyer GREEN read-only).</li>
+    </ul>
+
     <h2>Locks (do not regress in Figma)</h2>
-    <p><span class="chip">scripted chat</span> <span class="chip">no Confirm anyway</span> <span class="chip">four PCP statuses</span> <span class="chip">no vault hostnames for buyer/seller</span> <span class="chip">SoD: sales cannot Approve</span></p>
+    <p><span class="chip">scripted chat</span> <span class="chip">no Confirm anyway</span> <span class="chip">four PCP statuses</span> <span class="chip">no vault hostnames for buyer/seller</span> <span class="chip">SoD: sales cannot Approve</span> <span class="chip">no write for unauthorized</span></p>
   </main>
 </body>
 </html>
