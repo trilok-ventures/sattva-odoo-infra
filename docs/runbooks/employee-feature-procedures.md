@@ -285,3 +285,19 @@ Thought-leadership / SFCR explainers stay on the mocks site + Notion KB. No Ghos
 8. After files land in the SO folder, IT runs dossier index.
 
 If any confirm dialog says **Compliance Gate Blocked**, fix the named partner/lot field. Do not disable the addon.
+
+---
+
+## 16. Notion index (GREEN process wiki)
+
+This file stays canonical for click-by-click steps. Notion indexes the same SOP **by role / department** and **by weekly / monthly / quarterly**. No RED files, HMAC values, or live CRM rows go in Notion.
+
+| Surface | URL |
+| --- | --- |
+| OpCo hub (Sattva Brokers) | https://app.notion.com/p/21fe8d8c60c780f8b260e20d555ef456 |
+| Operating cadence | https://app.notion.com/p/3c7e8d8c60c781f6aacaeb27d1285575 |
+| Cadence board (Weekly / Monthly / Quarterly) | https://app.notion.com/p/833adc378f7d44e98b88288d315625f5 |
+| SOP catalog twin (Draft until human publish) | https://app.notion.com/p/3c7e8d8c60c781048eadf8b947af2d79 |
+| Knowledge Base | https://app.notion.com/p/3bbe8d8c60c78198b879e272e52dd5d4 |
+
+Department pages on the OpCo hub now carry a short role guide plus a filtered cadence view. Do not treat the Sales Lead Database as CRM.
