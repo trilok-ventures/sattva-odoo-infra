@@ -1,5 +1,8 @@
 # Training counterparties — field and endpoint walkthrough
 
+Day-to-day employee SOP (lots, CoA, sale gates, credit, leads, dossier):
+`docs/runbooks/employee-feature-procedures.md`.
+
 Login: operator mailbox + `odoo-web-admin-password` on `https://sattva.trilokventures.org`.  
 Vault: `https://vault.trilokventures.org` as Nextcloud `admin`. Folder MKCOLs land on **`n8n.vault`** until Group Folders land (T1 two-root drift).  
 Do not approve the TRAINING supplier. Do not upload COA PDFs.
