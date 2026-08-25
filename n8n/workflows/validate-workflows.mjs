@@ -84,6 +84,38 @@ for (const file of files) {
   if (wf.name === "wf.order.folder" && !text.includes("set_order_path")) {
     throw new Error(`${file}: order folder must persist via sattva.fabric.vault.set_order_path`);
   }
+  if (wf.name === "wf.coa.ocr") {
+    const code = wf.nodes
+      .map((node) => node.parameters?.jsCode || "")
+      .join("\n");
+    if (
+      !code.includes("N8N_WEBHOOK_HMAC") ||
+      !code.includes("body ??") ||
+      !code.includes("RED COA key forbidden") ||
+      !code.includes("RED binary payload forbidden") ||
+      !code.includes("file_bytes") ||
+      !code.includes("unknown COA key forbidden")
+    ) {
+      throw new Error(`${file}: COA OCR must HMAC-allowlist GREEN keys and fail closed on RED bytes/paths`);
+    }
+    if (
+      !text.includes("sattva.fabric.lot") ||
+      !text.includes("apply_coa_green") ||
+      !text.includes("JSON.stringify($json.filename)") ||
+      !text.includes("JSON.stringify($json.sha256)")
+    ) {
+      throw new Error(`${file}: COA OCR must persist via sattva.fabric.lot.apply_coa_green`);
+    }
+    if (
+      text.includes("action_release") ||
+      /PROPFIND/i.test(text) ||
+      /webdav/i.test(text) ||
+      text.includes("button_confirm") ||
+      text.includes("action_confirm")
+    ) {
+      throw new Error(`${file}: COA OCR must not WebDAV-GET PDFs, confirm orders, or release lots`);
+    }
+  }
   if (wf.name === "wf.coa.verify") {
     if (wf.connections && wf.connections["Nextcloud COA webhook"]) {
       throw new Error(`${file}: Nextcloud COA webhook must not connect to the GREEN persist path`);

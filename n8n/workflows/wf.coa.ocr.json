@@ -1,0 +1,64 @@
+{
+  "name": "wf.coa.ocr",
+  "id": "wf-coa-ocr",
+  "nodes": [
+    {
+      "id": "coa-ocr-webhook",
+      "name": "COA OCR GREEN webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, 0],
+      "webhookId": "wf-coa-ocr",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "coa-ocr",
+        "responseMode": "lastNode",
+        "options": {}
+      }
+    },
+    {
+      "id": "coa-ocr-dlp",
+      "name": "DLP GREEN extract",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [240, 0],
+      "parameters": {
+        "jsCode": "const COA_GREEN_ALLOWLIST = ['lot_id','filename','sha256','moisture_pct','mesh_pass','spec_moisture_max','spec_mesh_required','salmonella_absent','spec_salmonella_required','tpc_cfu','spec_tpc_max','pyruvic_umol','spec_pyruvic_required','spec_pyruvic_min'];\nconst RED_FORBIDDEN = ['bytes','pdf','path','file_bytes','nextcloud_folder_path','vault_href'];\nfunction assertAllowlist(payload) {\n  if (payload == null || typeof payload !== 'object' || Array.isArray(payload)) throw new Error('payload required');\n  for (const key of Object.keys(payload)) {\n    if (RED_FORBIDDEN.includes(key)) throw new Error('RED COA key forbidden: ' + key);\n    if (!COA_GREEN_ALLOWLIST.includes(key)) throw new Error('unknown COA key forbidden: ' + key);\n    if (payload[key] != null && typeof payload[key] === 'object') throw new Error('nested objects forbidden');\n  }\n}\nfunction assertBasename(name) {\n  if (typeof name !== 'string' || !name) throw new Error('filename must be a basename with no path');\n  if (name.includes('/') || name.includes('\\\\') || name.includes('..') || name.includes('\\0')) {\n    throw new Error('filename must be a basename with no path');\n  }\n}\nconst item = $input.first();\nif (item.binary && Object.keys(item.binary).length) throw new Error('RED binary payload forbidden');\nconst input = item.json;\nconst headers = input.headers ?? {};\nconst provided = headers['x-sattva-webhook-hmac'] ?? headers['X-Sattva-Webhook-Hmac'];\nconst expected = $env.N8N_WEBHOOK_HMAC;\nif (typeof expected !== 'string' || !expected || typeof provided !== 'string' || provided !== expected) {\n  throw new Error('invalid x-sattva-webhook-hmac');\n}\nconst payload = input.body ?? input;\nassertAllowlist(payload);\nif (typeof payload.lot_id !== 'number' || !Number.isInteger(payload.lot_id) || payload.lot_id < 1) throw new Error('lot_id must be a positive integer');\nassertBasename(payload.filename);\nif (typeof payload.sha256 !== 'string' || !/^[a-f0-9]{64}$/i.test(payload.sha256)) throw new Error('sha256 must be 64 hex characters');\nif (typeof payload.moisture_pct !== 'number' || !Number.isFinite(payload.moisture_pct)) throw new Error('moisture_pct must be a number');\nif (typeof payload.spec_moisture_max !== 'number' || !Number.isFinite(payload.spec_moisture_max)) throw new Error('spec_moisture_max must be a number');\nif (typeof payload.mesh_pass !== 'boolean') throw new Error('mesh_pass must be boolean');\nif (typeof payload.spec_mesh_required !== 'boolean') throw new Error('spec_mesh_required must be boolean');\nif (typeof payload.salmonella_absent !== 'boolean') throw new Error('salmonella_absent must be boolean');\nif (typeof payload.spec_salmonella_required !== 'boolean') throw new Error('spec_salmonella_required must be boolean');\nif (typeof payload.tpc_cfu !== 'number' || !Number.isFinite(payload.tpc_cfu)) throw new Error('tpc_cfu must be a number');\nif (typeof payload.spec_tpc_max !== 'number' || !Number.isFinite(payload.spec_tpc_max)) throw new Error('spec_tpc_max must be a number');\nif (typeof payload.pyruvic_umol !== 'number' || !Number.isFinite(payload.pyruvic_umol)) throw new Error('pyruvic_umol must be a number');\nif (typeof payload.spec_pyruvic_required !== 'boolean') throw new Error('spec_pyruvic_required must be boolean');\nif (typeof payload.spec_pyruvic_min !== 'number' || !Number.isFinite(payload.spec_pyruvic_min)) throw new Error('spec_pyruvic_min must be a number');\nreturn [{ json: {\n  lot_id: payload.lot_id,\n  filename: payload.filename,\n  sha256: payload.sha256.toLowerCase(),\n  moisture_pct: payload.moisture_pct,\n  mesh_pass: payload.mesh_pass,\n  spec_moisture_max: payload.spec_moisture_max,\n  spec_mesh_required: payload.spec_mesh_required,\n  salmonella_absent: payload.salmonella_absent,\n  spec_salmonella_required: payload.spec_salmonella_required,\n  tpc_cfu: payload.tpc_cfu,\n  spec_tpc_max: payload.spec_tpc_max,\n  pyruvic_umol: payload.pyruvic_umol,\n  spec_pyruvic_required: payload.spec_pyruvic_required,\n  spec_pyruvic_min: payload.spec_pyruvic_min\n} }];\n"
+      }
+    },
+    {
+      "id": "coa-ocr-persist",
+      "name": "Write GREEN compare on brokerage lot",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [480, 0],
+      "credentials": {
+        "httpHeaderAuth": {
+          "name": "odooN8nFabric"
+        }
+      },
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.ODOO_JSON2_URL}}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\"jsonrpc\":\"2.0\",\"method\":\"call\",\"params\":{\"service\":\"object\",\"method\":\"execute_kw\",\"args\":[\"sattva\",\"{{$env.ODOO_N8N_UID}}\",\"{{$credentials.odooN8nFabric.value}}\",\"sattva.fabric.lot\",\"apply_coa_green\",[{{$json.lot_id}},{{JSON.stringify($json.filename)}},{{JSON.stringify($json.sha256)}},{{$json.moisture_pct}},{{$json.mesh_pass}},{{$json.spec_moisture_max}},{{$json.spec_mesh_required}},{{$json.salmonella_absent}},{{$json.spec_salmonella_required}},{{$json.tpc_cfu}},{{$json.spec_tpc_max}},{{$json.pyruvic_umol}},{{$json.spec_pyruvic_required}},{{$json.spec_pyruvic_min}}]]}}"
+      }
+    }
+  ],
+  "connections": {
+    "COA OCR GREEN webhook": {
+      "main": [[{ "node": "DLP GREEN extract", "type": "main", "index": 0 }]]
+    },
+    "DLP GREEN extract": {
+      "main": [[{ "node": "Write GREEN compare on brokerage lot", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "saveDataSuccessExecution": "none",
+    "saveDataErrorExecution": "none",
+    "executionTimeout": 30
+  }
+}

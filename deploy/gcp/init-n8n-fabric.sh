@@ -29,6 +29,7 @@ if [[ -z "${ODOO_N8N_PASSWORD:-}" || -z "${NEXTCLOUD_N8N_PASSWORD:-}" ]]; then
 fi
 
 for wf in /workflows/wf.coa.verify.json \
+  /workflows/wf.coa.ocr.json \
   /workflows/wf.supplier.folder.json \
   /workflows/wf.buyer.onboard.folder.json \
   /workflows/wf.order.handoff.json \
@@ -73,7 +74,7 @@ n8n import:credentials --input="$CRED_TMP"
 shred -u "$CRED_TMP" 2>/dev/null || rm -f "$CRED_TMP"
 SH
 
-for id in wf-coa-verify wf-supplier-folder wf-buyer-onboard-folder \
+for id in wf-coa-verify wf-coa-ocr wf-supplier-folder wf-buyer-onboard-folder \
   wf-order-handoff wf-notify-role wf-lead-score; do
   if docker exec "${N8N}" n8n update:workflow --id="${id}" --active=true; then
     log "activated ${id}"

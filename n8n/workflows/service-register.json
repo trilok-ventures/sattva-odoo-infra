@@ -121,6 +121,18 @@
       "phase": "1"
     },
     {
+      "id": "svc.coa.ocr.green",
+      "caller": "n8n wf.coa.ocr (HMAC)",
+      "callee": "Odoo apply_coa_green after local DLP; optional coa-ocr-green.mjs HF helper on GREEN numbers+hash, never PDFs (not a node in wf.coa.ocr)",
+      "hostname": "n8n.trilokventures.org",
+      "ingress": "POST /webhook/coa-ocr + N8N_WEBHOOK_HMAC",
+      "tls_rung": "T1 HTTPS webhook; HF helper is local/optional and not imported",
+      "access_policy": "IT/operator webhook. Allowlist GREEN CoA numbers + hash + basename. Fail closed on bytes/pdf/path/file_bytes/vault. No WebDAV GET. No lot release.",
+      "data_class": "GREEN extracts only",
+      "sor": "Odoo apply_coa_green; Nextcloud keeps the PDF; n8n stores no lots",
+      "phase": "2"
+    },
+    {
       "id": "svc.lead.inbound",
       "caller": "Public mocks form (operator sessionStorage HMAC)",
       "callee": "n8n webhook wf.lead.inbound",
