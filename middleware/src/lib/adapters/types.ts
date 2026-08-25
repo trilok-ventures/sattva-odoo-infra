@@ -10,13 +10,21 @@ export type PurchaseOrder = {
   state: string;
 };
 
+export type LotState = "quarantine" | "available" | "rejected";
+
 export type LotGreen = {
   id: string;
   sku: string;
-  moisture_pct: number;
-  mesh_pass: boolean;
+  state: LotState;
+  officer_released: boolean;
+  coa_present: boolean;
   coa_pass: boolean;
   coa_sha256: string;
+  moisture_pct: number;
+  mesh_pass: boolean;
+  salmonella_absent: boolean;
+  tpc_cfu: number;
+  pyruvic_umol: number;
   buyer_order?: string;
 };
 

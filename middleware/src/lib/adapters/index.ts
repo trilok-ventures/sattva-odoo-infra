@@ -6,11 +6,24 @@ import {
 } from "../fabric";
 import type { Reach } from "../fabric";
 import { mockAdapter } from "./mock";
+import { odooLotsAdapter } from "./odoo-lots";
 import type { FabricAdapter } from "./types";
 
+export function odooLotsConfigured(): boolean {
+  return Boolean(
+    process.env.ODOO_URL &&
+      process.env.ODOO_DB &&
+      process.env.ODOO_USERNAME &&
+      process.env.ODOO_API_KEY,
+  );
+}
+
 export function getAdapter(): FabricAdapter {
-  // JSON-2 live adapter attaches after Phase 1 Compose + GCP secrets. No WebDAV from this BFF.
-  // Mock records match the HTML twin (Example Foods / P00042 / SO-1042).
+  // JSON-2 live lots attach when server-only Odoo vars are set. FABRIC_MODE=live
+  // still 401s until Keycloak. No WebDAV from this BFF.
+  if (odooLotsConfigured()) {
+    return odooLotsAdapter;
+  }
   return mockAdapter;
 }
 

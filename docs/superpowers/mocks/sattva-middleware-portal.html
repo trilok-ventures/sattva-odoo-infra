@@ -425,12 +425,17 @@
 
         <section id="view-b1" class="view">
           <h1>B1 · Orders</h1>
-          <p class="muted">Northshore Foods Inc — own orders. GREEN status only.</p>
+          <p class="muted">Northshore Foods Inc — own orders. GREEN status only. COA compare pass is not released for sale.</p>
           <a class="card hotspot" data-hotspot="buyer:2" href="#/b2">
             <div class="t">SO-1042 · dehydrated onion 500 kg</div>
-            <div class="n">Lot L-882 · pass</div>
-            Expected window 12–18 Sep
+            <div class="n">Lot L-882 · officer released</div>
+            COA compare pass · expected window 12–18 Sep
             <span class="dest">Open B2 detail →</span>
+          </a>
+          <a class="card" href="#/b2">
+            <div class="t">SO-1042 · same order, still in quarantine</div>
+            <div class="n">Lot L-901 · not released</div>
+            COA compare pass · officer has not released
           </a>
         </section>
 
@@ -438,12 +443,14 @@
           <h1>B2 · Order detail SO-1042</h1>
           <div class="timeline">
             <div>Contract signed</div>
-            <div>Production · Example Foods (display name only)</div>
-            <div>COA GREEN: moisture 4.8% · mesh pass · hash 8f3a…</div>
+            <div>Production (display mill name only)</div>
+            <div>COA GREEN: moisture 4.8% · mesh pass · hash 8f3a… · compare pass</div>
+            <div>L-882 officer released for sale · L-901 still quarantine (compare pass ≠ release)</div>
             <div>CFIA clear</div>
             <div>Delivered window</div>
           </div>
-          <p class="muted">No vault path, no PDF bytes, no other buyers’ orders.</p>
+          <p class="muted">No vault path, no PDF bytes, no other buyers’ orders. Live UI: middleware /lots (separate Vercel project).</p>
+          <p><a class="dest" href="#/b1">← Back to B1 lots</a></p>
           <p><a class="dest hotspot" data-hotspot="buyer:3" href="#/b3">B3 Quotes &amp; contracts →</a></p>
         </section>
 

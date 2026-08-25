@@ -76,6 +76,34 @@ assert(
   httpSrc.includes('mode === "live"') && httpSrc.includes("Keycloak session required"),
 );
 
+const lotsPage = readFileSync(join(root, "src/app/lots/page.tsx"), "utf8");
+assert("lots page has no NEXT_PUBLIC_", !lotsPage.includes("NEXT_PUBLIC_"));
+assert("lots page labels compare separately", lotsPage.includes("coaCompareLabel"));
+assert("lots page uses officer sale status", lotsPage.includes("saleStatusLabel"));
+assert("chrome has view-as persona nav", readFileSync(join(root, "src/app/portal-chrome.tsx"), "utf8").includes("View as"));
+assert("lot detail has pager", readFileSync(join(root, "src/app/lots/[id]/page.tsx"), "utf8").includes("LotPager"));
+assert("lot pager has back previous next", readFileSync(join(root, "src/app/lot-pager.tsx"), "utf8").includes("Back to lots") && readFileSync(join(root, "src/app/lot-pager.tsx"), "utf8").includes("Previous") && readFileSync(join(root, "src/app/lot-pager.tsx"), "utf8").includes("Next"));
+
+const json2Src = readFileSync(join(root, "src/lib/odoo-json2.ts"), "utf8");
+assert("json-2 allowlists portal list_lots", json2Src.includes('ALLOWED_MODEL = "sattva.fabric.portal"') && json2Src.includes('ALLOWED_METHOD = "list_lots"'));
+assert("json-2 has no release or confirm", !/action_release|action_reject|action_confirm|button_confirm/.test(json2Src));
+const odooLotsSrc = readFileSync(join(root, "src/lib/adapters/odoo-lots.ts"), "utf8");
+assert("odoo lots adapter is read-only list_lots", odooLotsSrc.includes("portalListLots") && !/action_release|write\(/.test(odooLotsSrc));
+assert("buyer without partner id is empty", odooLotsSrc.includes('persona === "buyer" && scoped === false'));
+const mapperSrc = readFileSync(join(root, "src/lib/lot-from-odoo.ts"), "utf8");
+assert("mapper derives officer_released from state", mapperSrc.includes("officerReleased(state)") && mapperSrc.includes("coaPresent(sha)"));
+assert("mapper ignores odoo officer_released", !mapperSrc.includes("row.officer_released"));
+const adapterIndex = readFileSync(join(root, "src/lib/adapters/index.ts"), "utf8");
+assert("adapter uses json-2 only when odoo lots configured", adapterIndex.includes("odooLotsConfigured") && adapterIndex.includes("odooLotsAdapter"));
+assert("live mode still not implied by json-2 lots", !adapterIndex.includes('FABRIC_MODE === "live"'));
+
+const publicLotsSrc = readFileSync(join(root, "src/lib/lot-public.ts"), "utf8");
+assert("lots allowlist helper strips RED", publicLotsSrc.includes("stripRedKeys") && publicLotsSrc.includes("officer_released"));
+assert("lots API uses publicLots", readFileSync(join(root, "src/app/api/lots/route.ts"), "utf8").includes("publicLots"));
+
+const edge = readFileSync(join(root, "src/middleware.ts"), "utf8");
+assert("live HTML also 401s", edge.includes("Keycloak session required") && edge.includes('FABRIC_MODE !== "live"'));
+
 const rootVercel = JSON.parse(readFileSync(join(root, "../vercel.json"), "utf8"));
 assert(
   "root vercel.json still publishes mocks only",
@@ -140,7 +168,44 @@ try {
   const lotHits = [];
   walk(buyerLots.body, "$", lotHits);
   assert("buyer lots GREEN", lotHits.length === 0, lotHits.join(","));
-  assert("buyer sees SO-1042 lot", Array.isArray(buyerLots.body.lots) && buyerLots.body.lots.length === 1);
+  assert("buyer sees SO-1042 lots", Array.isArray(buyerLots.body.lots) && buyerLots.body.lots.length === 2);
+  const released = buyerLots.body.lots.find((lot) => lot.id === "l-882");
+  const quarantined = buyerLots.body.lots.find((lot) => lot.id === "l-901");
+  assert("released lot officer flag", released?.officer_released === true && released?.state === "available");
+  assert(
+    "quarantine lot can pass COA without release",
+    quarantined?.coa_pass === true &&
+      quarantined?.officer_released === false &&
+      quarantined?.state === "quarantine",
+  );
+  assert("buyer lots expose coa_present", buyerLots.body.lots.every((lot) => lot.coa_present === true));
+  assert(
+    "buyer lots have no mill key",
+    buyerLots.body.lots.every((lot) => lot.supplier_display === undefined && lot.mill === undefined),
+  );
+
+  const supplierLots = await httpJson("/api/lots", { headers: { "x-sattva-persona": "supplier" } });
+  assert("supplier lots forbidden", supplierLots.res.status === 403, String(supplierLots.res.status));
+
+  const lotsHtml = await fetch(base + "/lots?persona=buyer");
+  const lotsText = await lotsHtml.text();
+  assert("lots page 200", lotsHtml.status === 200, String(lotsHtml.status));
+  assert("lots page labels officer release", lotsText.includes("Released for sale"));
+  assert("lots page labels quarantine separately", lotsText.includes("Quarantine (not released)"));
+  assert("lots page labels COA compare", lotsText.includes("COA compare pass"));
+  assert("lots page has no vault", !/nextcloud|webdav|\/Suppliers\//i.test(lotsText));
+  assert("lots page has no download", !/download/i.test(lotsText));
+
+  const detailHtml = await fetch(base + "/lots/l-901?persona=buyer");
+  const detailText = await detailHtml.text();
+  assert("quarantine detail 200", detailHtml.status === 200);
+  assert("detail shows quarantine label", detailText.includes("Quarantine (not released)"));
+  assert("detail has no released-for-sale pill", !detailText.includes("Released for sale"));
+  assert("detail explains independence", detailText.includes("not available-for-sale"));
+  assert("detail has back to lots", detailText.includes("Back to lots"));
+  assert("detail has previous control", detailText.includes("Previous"));
+  assert("detail has next control", detailText.includes("Next"));
+  assert("header has view as", lotsText.includes("View as"));
 
   const badDoc = await httpJson("/api/documents", {
     method: "POST",
