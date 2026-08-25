@@ -1,8 +1,16 @@
 {
+  "lot_id": 1,
   "filename": "SYNTHETIC-COA-pass.pdf",
   "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
   "moisture_pct": 4.8,
   "mesh_pass": true,
   "spec_moisture_max": 6.0,
-  "spec_mesh_required": true
+  "spec_mesh_required": true,
+  "salmonella_absent": true,
+  "spec_salmonella_required": true,
+  "tpc_cfu": 1000,
+  "spec_tpc_max": 100000,
+  "pyruvic_umol": 0,
+  "spec_pyruvic_required": false,
+  "spec_pyruvic_min": 0
 }

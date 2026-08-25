@@ -1,8 +1,16 @@
 {
+  "lot_id": 1,
   "filename": "SYNTHETIC-COA-fail.pdf",
   "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
   "moisture_pct": 12.0,
   "mesh_pass": false,
   "spec_moisture_max": 6.0,
-  "spec_mesh_required": true
+  "spec_mesh_required": true,
+  "salmonella_absent": false,
+  "spec_salmonella_required": true,
+  "tpc_cfu": 200000,
+  "spec_tpc_max": 100000,
+  "pyruvic_umol": 1,
+  "spec_pyruvic_required": true,
+  "spec_pyruvic_min": 4
 }

@@ -10,6 +10,9 @@
                     <group>
                         <field name="sattva_green_score" readonly="1"/>
                         <field name="sattva_lead_qualified" readonly="1"/>
+                        <field name="sattva_product_family_code" readonly="1"/>
+                        <field name="sattva_fcl_band" readonly="1"/>
+                        <field name="sattva_inbound_topic" readonly="1"/>
                     </group>
                 </page>
             </xpath>

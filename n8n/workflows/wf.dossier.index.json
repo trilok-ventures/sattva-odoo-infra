@@ -1,0 +1,209 @@
+{
+  "name": "wf.dossier.index",
+  "id": "wf-dossier-index",
+  "nodes": [
+    {
+      "id": "dossier-index-webhook",
+      "name": "Dossier index webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, 0],
+      "webhookId": "wf-dossier-index",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "dossier-index",
+        "responseMode": "onReceived",
+        "options": {}
+      }
+    },
+    {
+      "id": "allowlist-dossier-trigger",
+      "name": "Allowlist dossier trigger",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [220, 0],
+      "parameters": {
+        "jsCode": "// keep in sync with n8n/workflows/dossier-index.mjs\nconst DOSSIER_TRIGGER_ALLOWLIST = ['sale_order_id','lot_id'];\nfunction assertDossierTrigger(payload) {\n  if (payload == null || typeof payload !== 'object' || Array.isArray(payload)) throw new Error('payload required');\n  for (const key of Object.keys(payload)) {\n    if (!DOSSIER_TRIGGER_ALLOWLIST.includes(key)) throw new Error('unknown dossier trigger key forbidden: ' + key);\n  }\n  if (typeof payload.sale_order_id !== 'number' || !Number.isInteger(payload.sale_order_id) || payload.sale_order_id < 1) throw new Error('sale_order_id must be a positive integer');\n  if ('lot_id' in payload && (typeof payload.lot_id !== 'number' || !Number.isInteger(payload.lot_id) || payload.lot_id < 1)) throw new Error('lot_id must be a positive integer');\n}\nconst input = $input.first().json;\nconst headers = input.headers ?? {};\nconst provided = headers['x-sattva-webhook-hmac'] ?? headers['X-Sattva-Webhook-Hmac'];\nconst expected = $env.N8N_WEBHOOK_HMAC;\nif (typeof expected !== 'string' || !expected || typeof provided !== 'string' || provided !== expected) {\n  throw new Error('invalid x-sattva-webhook-hmac');\n}\nconst payload = input.body ?? input;\nassertDossierTrigger(payload);\nreturn [{ json: { sale_order_id: payload.sale_order_id, lot_id: payload.lot_id ?? false } }];"
+      }
+    },
+    {
+      "id": "read-order-vault-path",
+      "name": "Read order vault path",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [440, 0],
+      "credentials": {
+        "httpHeaderAuth": {
+          "name": "odooN8nFabric"
+        }
+      },
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.ODOO_JSON2_URL}}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\"jsonrpc\":\"2.0\",\"method\":\"call\",\"params\":{\"service\":\"object\",\"method\":\"execute_kw\",\"args\":[\"sattva\",\"{{$env.ODOO_N8N_UID}}\",\"{{$credentials.odooN8nFabric.value}}\",\"sale.order\",\"search_read\",[[[\"id\",\"=\",{{$json.sale_order_id}}]]],{\"fields\":[\"id\",\"nextcloud_order_folder_path\"]}]}}"
+      }
+    },
+    {
+      "id": "unwrap-order-path",
+      "name": "Unwrap order vault path",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [660, 0],
+      "parameters": {
+        "jsCode": "const trigger = $('Allowlist dossier trigger').first().json;\nconst raw = $input.first().json;\nconst envelope = raw.result !== undefined ? raw.result : raw;\nconst rows = Array.isArray(envelope) ? envelope : (envelope?.result ?? []);\nconst row = rows[0];\nconst order_path = row?.nextcloud_order_folder_path;\nif (typeof order_path !== 'string' || !order_path.startsWith('/Clients/') || !order_path.includes('/Orders/') || order_path.includes('..')) {\n  throw new Error('order vault path missing');\n}\nreturn [{ json: { sale_order_id: trigger.sale_order_id, lot_id: trigger.lot_id, order_path } }];"
+      }
+    },
+    {
+      "id": "propfind-order-folder",
+      "name": "PROPFIND order folder",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [880, 0],
+      "credentials": {
+        "httpBasicAuth": {
+          "name": "nextcloudN8nVault"
+        }
+      },
+      "parameters": {
+        "method": "PROPFIND",
+        "url": "={{$env.NEXTCLOUD_WEBDAV_BASE}}{{$json.order_path}}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Depth", "value": "1" },
+            { "name": "Content-Type", "value": "application/xml" }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/xml",
+        "body": "<?xml version=\"1.0\"?><d:propfind xmlns:d=\"DAV:\"><d:prop><d:resourcetype/></d:prop></d:propfind>",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true,
+              "responseFormat": "text"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "parse-propfind-names",
+      "name": "Parse PROPFIND names",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1100, 0],
+      "parameters": {
+        "jsCode": "// keep in sync with n8n/workflows/dossier-index.mjs parsePropfind\nconst MAX_ENTRIES = 20;\nfunction assertBasename(filename) {\n  if (typeof filename !== 'string' || !filename) throw new Error('filename must be a basename with no path');\n  if (filename !== filename.split('/').pop() || filename.includes('\\\\') || filename.includes('..') || filename.includes('\\0')) {\n    throw new Error('filename must be a basename with no path');\n  }\n}\nfunction parsePropfind(xml, orderPath) {\n  if (typeof xml !== 'string' || !xml) throw new Error('PROPFIND body required');\n  const listed = [];\n  const blocks = xml.split(/<d:response[\\s>]/i).slice(1);\n  for (const block of blocks) {\n    if (/<d:collection\\s*\\/>/i.test(block) || /<d:collection>/i.test(block)) continue;\n    const hrefMatch = block.match(/<d:href>([^<]+)<\\/d:href>/i);\n    if (!hrefMatch) continue;\n    const href = decodeURIComponent(hrefMatch[1]);\n    const idx = href.indexOf(orderPath);\n    if (idx < 0) continue;\n    const rel = href.slice(idx + orderPath.length);\n    if (!rel || rel.endsWith('/')) continue;\n    const filename = rel.split('/').pop();\n    try { assertBasename(filename); } catch { continue; }\n    listed.push({ filename, vault_href: orderPath + filename });\n    if (listed.length >= MAX_ENTRIES) break;\n  }\n  return listed;\n}\nconst meta = $('Unwrap order vault path').first().json;\nconst raw = $input.first().json;\nconst xml = typeof raw.data === 'string' ? raw.data : (typeof raw.body === 'string' ? raw.body : (typeof raw === 'string' ? raw : ''));\nconst listed = parsePropfind(xml, meta.order_path);\nif (!listed.length) return [];\nreturn listed.map((row) => ({ json: { ...meta, ...row } }));"
+      }
+    },
+    {
+      "id": "get-vault-file",
+      "name": "GET vault file",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1320, 0],
+      "credentials": {
+        "httpBasicAuth": {
+          "name": "nextcloudN8nVault"
+        }
+      },
+      "parameters": {
+        "method": "GET",
+        "url": "={{$env.NEXTCLOUD_WEBDAV_BASE}}{{$json.vault_href}}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "hash-drop-bytes",
+      "name": "Hash file drop bytes",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1540, 0],
+      "parameters": {
+        "jsCode": "// hash in memory; do not forward file bytes\nconst { createHash } = require('crypto');\nconst item = $input.first();\nconst meta = $('Parse PROPFIND names').item.json;\nconst binKey = Object.keys(item.binary || {})[0];\nif (!binKey) throw new Error('file bytes missing');\nconst buf = Buffer.from(item.binary[binKey].data, 'base64');\nconst sha256 = createHash('sha256').update(buf).digest('hex');\nreturn [{ json: {\n  sale_order_id: meta.sale_order_id,\n  lot_id: meta.lot_id,\n  order_path: meta.order_path,\n  filename: meta.filename,\n  vault_href: meta.vault_href,\n  sha256,\n} }];"
+      }
+    },
+    {
+      "id": "assemble-dossier-entries",
+      "name": "Assemble dossier entries",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1760, 0],
+      "parameters": {
+        "jsCode": "// keep in sync with n8n/workflows/dossier-index.mjs assertDossierEntries\nconst DOSSIER_ENTRY_ALLOWLIST = ['filename','sha256','vault_href','doc_kind'];\nconst SHA256_RE = /^[a-f0-9]{64}$/i;\nfunction assertDossierEntries(entries, orderPath) {\n  if (!Array.isArray(entries) || !entries.length) throw new Error('entries required');\n  if (entries.length > 20) throw new Error('too many dossier entries');\n  for (const entry of entries) {\n    for (const key of Object.keys(entry)) {\n      if (!DOSSIER_ENTRY_ALLOWLIST.includes(key)) throw new Error('unknown dossier entry key forbidden: ' + key);\n    }\n    if (!entry.filename || entry.filename.includes('/') || entry.filename.includes('..')) throw new Error('filename must be a basename with no path');\n    if (typeof entry.sha256 !== 'string' || !SHA256_RE.test(entry.sha256)) throw new Error('sha256 must be 64 hex characters');\n    if (entry.vault_href !== orderPath + entry.filename) {\n      throw new Error('vault_href must stay under the order folder');\n    }\n  }\n}\nconst meta = $('Unwrap order vault path').first().json;\nconst entries = $input.all().map((item) => ({\n  filename: item.json.filename,\n  sha256: item.json.sha256,\n  vault_href: item.json.vault_href,\n}));\nassertDossierEntries(entries, meta.order_path);\nreturn [{ json: { sale_order_id: meta.sale_order_id, lot_id: meta.lot_id || false, entries } }];"
+      }
+    },
+    {
+      "id": "write-dossier-index",
+      "name": "Write dossier index",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1980, 0],
+      "credentials": {
+        "httpHeaderAuth": {
+          "name": "odooN8nFabric"
+        }
+      },
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.ODOO_JSON2_URL}}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\"jsonrpc\":\"2.0\",\"method\":\"call\",\"params\":{\"service\":\"object\",\"method\":\"execute_kw\",\"args\":[\"sattva\",\"{{$env.ODOO_N8N_UID}}\",\"{{$credentials.odooN8nFabric.value}}\",\"sattva.fabric.dossier\",\"apply_index\",[{{$json.sale_order_id}},{{$json.lot_id}},{{JSON.stringify($json.entries)}}]]}}"
+      }
+    }
+  ],
+  "connections": {
+    "Dossier index webhook": {
+      "main": [[{ "node": "Allowlist dossier trigger", "type": "main", "index": 0 }]]
+    },
+    "Allowlist dossier trigger": {
+      "main": [[{ "node": "Read order vault path", "type": "main", "index": 0 }]]
+    },
+    "Read order vault path": {
+      "main": [[{ "node": "Unwrap order vault path", "type": "main", "index": 0 }]]
+    },
+    "Unwrap order vault path": {
+      "main": [[{ "node": "PROPFIND order folder", "type": "main", "index": 0 }]]
+    },
+    "PROPFIND order folder": {
+      "main": [[{ "node": "Parse PROPFIND names", "type": "main", "index": 0 }]]
+    },
+    "Parse PROPFIND names": {
+      "main": [[{ "node": "GET vault file", "type": "main", "index": 0 }]]
+    },
+    "GET vault file": {
+      "main": [[{ "node": "Hash file drop bytes", "type": "main", "index": 0 }]]
+    },
+    "Hash file drop bytes": {
+      "main": [[{ "node": "Assemble dossier entries", "type": "main", "index": 0 }]]
+    },
+    "Assemble dossier entries": {
+      "main": [[{ "node": "Write dossier index", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "saveDataSuccessExecution": "none",
+    "saveDataErrorExecution": "none",
+    "executionTimeout": 60
+  }
+}

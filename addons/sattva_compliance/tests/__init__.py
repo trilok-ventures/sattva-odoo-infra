@@ -2,6 +2,12 @@ from . import test_supplier_folder_request
 from . import test_vault_path
 from . import test_buyer_kyc
 from . import test_lead_green_score
+from . import test_lead_inbound
 from . import test_notify_activity
 from . import test_order_handoff
 from . import test_partner_form_view
+from . import test_brokerage_lot
+from . import test_product_spec
+from . import test_sale_gates
+from . import test_credit_score
+from . import test_dossier_index

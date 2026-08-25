@@ -15,6 +15,7 @@ service account accessor. Map a subset into the Vercel BFF project as env vars
 | `n8n-encryption-key` | n8n | Not for Vercel |
 | `n8n-db-password` | n8n Postgres on the VM | Not for Vercel |
 | `n8n-webhook-hmac` | BFF / n8n callbacks | Optional |
+| `n8n-lead-inbound-hmac` | n8n `wf.lead.inbound` | Dedicated public-form HMAC. Create the id now; add a version before live POST. Not for Vercel. Do not reuse `n8n-webhook-hmac`. |
 | `origin-tls-cert` | Caddy Origin Certificate PEM | Not for Vercel |
 | `origin-tls-key` | Caddy Origin Certificate private key | Not for Vercel |
 | `nextcloud-admin-password` | OpCo VM | Not for Vercel |
@@ -32,7 +33,7 @@ Create ids in AssetCo (values added as versions; never commit them):
 ```bash
 ASSET=tv-assetco-secrets
 for id in odoo-db-password odoo-admin-passwd odoo-web-admin-password \
-  n8n-encryption-key n8n-webhook-hmac n8n-owner-password \
+  n8n-encryption-key n8n-webhook-hmac n8n-lead-inbound-hmac n8n-owner-password \
   n8n-db-password nextcloud-admin-password nextcloud-n8n-app-password \
   odoo-n8n-api-key origin-tls-cert origin-tls-key; do
   gcloud secrets describe "${id}" --project="${ASSET}" >/dev/null 2>&1 \

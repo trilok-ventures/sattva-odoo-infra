@@ -1,10 +1,14 @@
-from odoo import models, api
-from odoo.exceptions import UserError
+from odoo import models
+from odoo.exceptions import AccessError, UserError
+
+from .credit_access import is_n8n
 
 class PurchaseOrder(models.Model):
     _inherit = 'purchase.order'
 
     def button_confirm(self):
+        if is_n8n(self.env):
+            raise AccessError("n8n cannot confirm purchase orders.")
         # The Supplier Firewall: Gate Check
         for order in self:
             if order.partner_id:

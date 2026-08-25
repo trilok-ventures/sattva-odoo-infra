@@ -1,2 +1,12 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 access_sattva_fabric_event_n8n_service,sattva.fabric.event n8n service,model_sattva_fabric_event,group_n8n_fabric_service,1,1,0,0
+access_sattva_brokerage_lot_user,sattva.brokerage.lot user,model_sattva_brokerage_lot,base.group_user,1,0,0,0
+access_sattva_brokerage_lot_officer,sattva.brokerage.lot officer,model_sattva_brokerage_lot,group_compliance_officer,1,1,1,0
+access_sattva_brokerage_lot_n8n,sattva.brokerage.lot n8n,model_sattva_brokerage_lot,group_n8n_fabric_service,1,0,0,0
+access_sattva_payment_score_user,sattva.payment.score user,model_sattva_payment_score,base.group_user,1,0,0,0
+access_sattva_payment_score_officer,sattva.payment.score officer,model_sattva_payment_score,group_compliance_officer,1,0,0,0
+access_sattva_payment_score_n8n,sattva.payment.score n8n,model_sattva_payment_score,group_n8n_fabric_service,1,0,0,0
+access_sattva_payment_score_finance,sattva.payment.score finance,model_sattva_payment_score,account.group_account_manager,1,0,0,0
+access_sattva_dossier_entry_user,sattva.dossier.entry user,model_sattva_dossier_entry,base.group_user,1,0,0,0
+access_sattva_dossier_entry_officer,sattva.dossier.entry officer,model_sattva_dossier_entry,group_compliance_officer,1,0,0,0
+access_sattva_dossier_entry_n8n,sattva.dossier.entry n8n,model_sattva_dossier_entry,group_n8n_fabric_service,1,0,0,0

@@ -13,10 +13,14 @@
                             <field name="sattva_format"/>
                             <field name="sattva_mesh_label"/>
                             <field name="product_family_code"/>
+                            <field name="spec_pyruvic_required"/>
                         </group>
                         <group string="GREEN spec (compliance writes)">
                             <field name="spec_moisture_max"/>
                             <field name="spec_mesh_required"/>
+                            <field name="spec_salmonella_required"/>
+                            <field name="spec_tpc_max"/>
+                            <field name="spec_pyruvic_min"/>
                         </group>
                     </group>
                 </page>

@@ -12,6 +12,9 @@ for (const file of files) {
   if (text.includes('saveDataErrorExecution":"all"') || text.includes('saveDataErrorExecution": "all"')) {
     throw new Error(`${file}: saveDataErrorExecution all is forbidden`);
   }
+  if (/"button_confirm"|"action_confirm"/.test(text)) {
+    throw new Error(`${file}: n8n must not call button_confirm or action_confirm`);
+  }
   const wf = JSON.parse(text);
   if (typeof wf.id !== "string" || !wf.id) {
     throw new Error(`${file}: top-level id string required`);
@@ -41,14 +44,16 @@ for (const file of files) {
       }
     }
   }
-  if (wf.nodes.some((node) => node.type === "n8n-nodes-base.webhook")) {
+    if (wf.nodes.some((node) => node.type === "n8n-nodes-base.webhook")) {
     const code = wf.nodes
       .filter((node) => node.type === "n8n-nodes-base.code")
       .map((node) => node.parameters?.jsCode || "")
       .join("\n");
+    const hmacEnv =
+      code.includes("N8N_WEBHOOK_HMAC") || code.includes("N8N_LEAD_INBOUND_HMAC");
     if (
       !code.includes("x-sattva-webhook-hmac") ||
-      !code.includes("N8N_WEBHOOK_HMAC") ||
+      !hmacEnv ||
       !code.includes("body ??")
     ) {
       throw new Error(`${file}: webhook envelope and HMAC check required`);
@@ -56,7 +61,8 @@ for (const file of files) {
   }
   if (
     wf.name === "wf.supplier.folder" ||
-    wf.name === "wf.buyer.onboard.folder"
+    wf.name === "wf.buyer.onboard.folder" ||
+    wf.name === "wf.order.folder"
   ) {
     const bodies = wf.nodes
       .map((node) => node.parameters?.jsonBody || "")
@@ -75,18 +81,48 @@ for (const file of files) {
       throw new Error(`${file}: idempotent parent MKCOL walk required`);
     }
   }
+  if (wf.name === "wf.order.folder" && !text.includes("set_order_path")) {
+    throw new Error(`${file}: order folder must persist via sattva.fabric.vault.set_order_path`);
+  }
   if (wf.name === "wf.coa.verify") {
+    if (wf.connections && wf.connections["Nextcloud COA webhook"]) {
+      throw new Error(`${file}: Nextcloud COA webhook must not connect to the GREEN persist path`);
+    }
+    if (
+      text.includes("action_release") ||
+      text.includes("stock.lot") ||
+      text.includes("button_confirm")
+    ) {
+      throw new Error(`${file}: COA workflow must not release lots, touch stock.lot, or confirm orders`);
+    }
     const code = wf.nodes
       .map((node) => node.parameters?.jsCode || "")
       .join("\n");
     if (
       code.includes("Boolean(") ||
-      !code.includes("assertNoForbidden(child)") ||
+      !code.includes("COA_GREEN_ALLOWLIST") ||
+      !code.includes("unknown COA key forbidden") ||
       !code.includes("Number.isFinite") ||
       !code.includes("typeof b.mesh_pass !== 'boolean'") ||
-      !code.includes("^[a-f0-9]{64}$")
+      !code.includes("typeof b.salmonella_absent !== 'boolean'") ||
+      !code.includes("typeof b.tpc_cfu !== 'number'") ||
+      !code.includes("typeof b.pyruvic_umol !== 'number'") ||
+      !code.includes("^[a-f0-9]{64}$") ||
+      !code.includes("!b.spec_mesh_required || b.mesh_pass") ||
+      !code.includes("!b.spec_salmonella_required || b.salmonella_absent") ||
+      !code.includes("b.tpc_cfu <= b.spec_tpc_max") ||
+      !code.includes("!b.spec_pyruvic_required || b.pyruvic_umol >= b.spec_pyruvic_min")
     ) {
-      throw new Error(`${file}: COA comparison must validate recursively and fail closed`);
+      throw new Error(`${file}: COA comparison must allowlist keys, validate, and treat mesh as implication`);
+    }
+    if (!text.includes("sattva.fabric.lot") || !text.includes("apply_coa_green")) {
+      throw new Error(`${file}: COA compare must persist via sattva.fabric.lot.apply_coa_green`);
+    }
+    if (
+      !text.includes("JSON.stringify($json.filename)") ||
+      !text.includes("JSON.stringify($json.sha256)")
+    ) {
+      throw new Error(`${file}: persist body must JSON.stringify filename and sha256`);
     }
   }
   if (
@@ -94,6 +130,45 @@ for (const file of files) {
     !text.includes("sattva.fabric.leadscore")
   ) {
     throw new Error(`${file}: lead score must use the narrow Odoo helper`);
+  }
+  if (wf.name === "wf.dossier.index") {
+    const code = wf.nodes
+      .map((node) => node.parameters?.jsCode || "")
+      .join("\n");
+    if (
+      !code.includes("createHash") ||
+      !code.includes("unknown dossier trigger key forbidden") ||
+      !code.includes("unknown dossier entry key forbidden") ||
+      !code.includes("parsePropfind") ||
+      !text.includes("sattva.fabric.dossier") ||
+      !text.includes("apply_index") ||
+      !text.includes("PROPFIND") ||
+      !text.includes('"responseMode": "onReceived"') ||
+      text.includes("action_release") ||
+      /keycloak/i.test(text)
+    ) {
+      throw new Error(`${file}: dossier index must list names, hash in memory, apply_index, and skip release/Keycloak`);
+    }
+  }
+  if (wf.name === "wf.lead.inbound") {
+    const code = wf.nodes
+      .map((node) => node.parameters?.jsCode || "")
+      .join("\n");
+    if (
+      !code.includes("INBOUND_LEAD_ALLOWLIST") ||
+      !code.includes("unknown inbound lead key forbidden") ||
+      !code.includes("hashed_partner_id") ||
+      !code.includes("N8N_LEAD_INBOUND_HMAC") ||
+      code.includes("N8N_WEBHOOK_HMAC") ||
+      !text.includes("sattva.fabric.lead.ingest") ||
+      !text.includes("create_inbound") ||
+      !text.includes("sattva.fabric.leadscore") ||
+      !text.includes("JSON.stringify($json.work_email)") ||
+      !text.includes('"responseMode": "onReceived"') ||
+      /keycloak/i.test(text)
+    ) {
+      throw new Error(`${file}: inbound lead must HMAC-allowlist, create_inbound, score GREEN, and skip Keycloak`);
+    }
   }
 }
 console.log("workflow validation passed");

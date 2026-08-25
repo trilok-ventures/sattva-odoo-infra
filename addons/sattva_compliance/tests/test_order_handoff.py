@@ -33,9 +33,14 @@ class TestOrderHandoff(TransactionCase):
             )
         )
         self.assertEqual(po.state, "draft")
-        with self.assertRaises(UserError) as err:
+        with self.assertRaises(AccessError) as n8n_err:
             po.button_confirm()
+        self.assertIn("n8n cannot confirm", str(n8n_err.exception))
+        self.assertEqual(po.state, "draft")
+        with self.assertRaises(UserError) as err:
+            po.with_env(self.env).button_confirm()
         self.assertIn("Compliance Gate Blocked", str(err.exception))
+        self.assertEqual(po.state, "draft")
 
     def test_handoff_rejects_non_service_user(self):
         supplier = self.env["res.partner"].create(

@@ -107,6 +107,30 @@
       "data_class": "Identity",
       "sor": "Keycloak is IdP, not CRM",
       "phase": "3"
+    },
+    {
+      "id": "svc.dossier.index",
+      "caller": "n8n wf.dossier.index (IT HMAC)",
+      "callee": "Nextcloud PROPFIND/GET then Odoo apply_index",
+      "hostname": "nextcloud (Compose-internal) then odoo",
+      "ingress": "POST /webhook/dossier-index + N8N_WEBHOOK_HMAC; WebDAV cluster-internal",
+      "tls_rung": "T0 local; T1 prod",
+      "access_policy": "IT/operator webhook. Path from Odoo order pointer only. Hash in memory; drop file bytes before Odoo. No confirm or lot release.",
+      "data_class": "RED bytes in transit; GREEN sha256; AMBER filename + vault_href in Odoo",
+      "sor": "Nextcloud keeps files; Odoo stores the hash index only",
+      "phase": "1"
+    },
+    {
+      "id": "svc.lead.inbound",
+      "caller": "Public mocks form (operator sessionStorage HMAC)",
+      "callee": "n8n webhook wf.lead.inbound",
+      "hostname": "n8n.trilokventures.org",
+      "ingress": "POST /webhook/lead-inbound + N8N_LEAD_INBOUND_HMAC (not the shared n8n-webhook-hmac)",
+      "tls_rung": "T1 HTTPS",
+      "access_policy": "Dedicated inbound HMAC. Path /webhook/lead-inbound only. No Keycloak provision. Browsers never receive Odoo JSON-RPC.",
+      "data_class": "AMBER contact in transit; GREEN family/FCL/topic/hash",
+      "sor": "Creates crm.lead; n8n stores no lead state",
+      "phase": "2"
     }
   ]
 }

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_order_form_sattva_compliance" model="ir.ui.view">
+        <field name="name">sale.order.form.sattva.compliance</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_order_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//group[@name='partner_details']" position="inside">
+                <field name="sattva_incoterm"/>
+                <field name="forwarder_id"/>
+                <field name="purchase_intent_id"/>
+            </xpath>
+            <xpath expr="//form/sheet/notebook" position="inside">
+                <page string="Sattva Compliance" name="sattva_compliance">
+                    <group>
+                        <field name="nextcloud_order_folder_path"/>
+                        <field name="fcl_count"/>
+                    </group>
+                    <field name="dossier_entry_ids" nolabel="1">
+                        <list>
+                            <field name="filename"/>
+                            <field name="sha256"/>
+                            <field name="doc_kind"/>
+                            <field name="vault_href"/>
+                        </list>
+                    </field>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>

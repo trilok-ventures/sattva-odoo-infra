@@ -46,6 +46,29 @@ class TestProductSpec(TransactionCase):
         template.with_user(self.officer).write({"spec_moisture_max": 6.0})
         self.assertEqual(template.spec_moisture_max, 6.0)
 
+    def test_sales_cannot_write_coa_metric_thresholds(self):
+        template = self.env["product.template"].create(
+            {"name": "Synthetic Chilli Catalog Row", "sattva_crop": "chilli"}
+        )
+        with self.assertRaises(UserError):
+            template.with_user(self.sales).write({"spec_tpc_max": 100000.0})
+        template.with_user(self.officer).write(
+            {"spec_tpc_max": 100000.0, "spec_pyruvic_min": 4.0}
+        )
+        self.assertEqual(template.spec_tpc_max, 100000.0)
+        self.assertEqual(template.spec_pyruvic_min, 4.0)
+
+    def test_onion_requires_pyruvic(self):
+        onion = self.env["product.template"].create(
+            {"name": "SYNTHETIC-ONION-FLAKE", "sattva_crop": "onion"}
+        )
+        garlic = self.env["product.template"].create(
+            {"name": "SYNTHETIC-GARLIC-POWDER", "sattva_crop": "garlic"}
+        )
+        self.assertTrue(onion.spec_pyruvic_required)
+        self.assertFalse(garlic.spec_pyruvic_required)
+        self.assertTrue(onion.spec_salmonella_required)
+
     def test_crop_categories_exist(self):
         for xmlid in (
             "sattva_compliance.product_category_sattva",

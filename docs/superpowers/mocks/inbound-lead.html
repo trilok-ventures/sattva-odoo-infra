@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sattva Brokers — technical content request</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root { --sand: #f7f4ef; --ink: #1c1917; --forest: #1f4d3a; --muted: #57534e; --line: #e7e0d6; --rose: #9f1239; }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: Inter, system-ui, sans-serif; background: var(--sand); color: var(--ink); }
+    main { max-width: 640px; margin: 48px auto; padding: 0 20px 48px; }
+    h1 { font-size: 28px; margin: 0 0 8px; }
+    p, .hint { color: var(--muted); line-height: 1.5; }
+    form, .preview {
+      background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 18px; margin-top: 16px;
+    }
+    label { display: block; font-size: 13px; font-weight: 600; margin: 12px 0 6px; }
+    input, select {
+      width: 100%; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; font: inherit;
+    }
+    button {
+      margin-top: 16px; border: 0; border-radius: 8px; padding: 10px 14px; font: inherit; font-weight: 700;
+      background: var(--forest); color: #fff; cursor: pointer;
+    }
+    .err { color: var(--rose); font-size: 13px; min-height: 1.2em; }
+    .t { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+    a { color: var(--forest); }
+    pre { white-space: pre-wrap; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <main>
+    <p class="t">Public GREEN / AMBER ingest</p>
+    <h1>Request technical content</h1>
+    <p>
+      SFCR, CoA specs, and steam-sterilization notes for North American spice buyers.
+      This page ships on the mocks project only. It does not create Keycloak users and does not talk to the buyer portal.
+    </p>
+    <form id="lead-form" novalidate>
+      <label for="contact_name">Name</label>
+      <input id="contact_name" name="contact_name" maxlength="120" required />
+      <label for="work_email">Work email</label>
+      <input id="work_email" name="work_email" type="email" maxlength="120" required />
+      <label for="company_name">Company</label>
+      <input id="company_name" name="company_name" maxlength="120" required />
+      <label for="product_family_code">Product family</label>
+      <select id="product_family_code" name="product_family_code" required>
+        <option value="ONION">Dehydrated onion</option>
+        <option value="GARLIC">Dehydrated garlic</option>
+        <option value="CHILLI">Chilli</option>
+        <option value="OTHER">Other spices</option>
+      </select>
+      <label for="fcl_band">Typical FCL band</label>
+      <select id="fcl_band" name="fcl_band" required>
+        <option value="1">1 FCL</option>
+        <option value="2_5">2–5 FCL</option>
+        <option value="6_plus">6+ FCL</option>
+      </select>
+      <label for="content_topic">Content</label>
+      <select id="content_topic" name="content_topic" required>
+        <option value="sfcr">Safe Food for Canadians / CFIA import</option>
+        <option value="coa_spec">CoA moisture, mesh, Salmonella</option>
+        <option value="steam_sterilization">Steam sterilization</option>
+      </select>
+      <p class="hint">
+        Live HMAC POST is off unless an operator sets sessionStorage keys
+        <code>sattva_lead_webhook</code> and <code>sattva_lead_hmac</code>.
+        Otherwise this page only validates the allowlist locally.
+        Do not add a Vercel API route or a browser-exposed n8n URL to work around CORS — use operator curl or a browser that can reach the webhook origin.
+      </p>
+      <button type="submit">Submit request</button>
+      <p class="err" id="err"></p>
+    </form>
+    <div class="preview" id="preview" hidden>
+      <div class="t">Allowlisted payload</div>
+      <pre id="payload"></pre>
+      <p id="status"></p>
+    </div>
+    <p>
+      <a href="./sattva-middleware-portal.html?view=map">Back to prototype map</a>
+      ·
+      <a href="./index.html">Mocks index</a>
+    </p>
+  </main>
+  <script>
+    const ALLOWLIST = ["contact_name", "work_email", "company_name", "product_family_code", "fcl_band", "content_topic"];
+    const FAMILIES = ["ONION", "GARLIC", "CHILLI", "OTHER"];
+    const BANDS = ["1", "2_5", "6_plus"];
+    const TOPICS = ["sfcr", "coa_spec", "steam_sterilization"];
+    const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    function readForm() {
+      const payload = {};
+      for (const key of ALLOWLIST) {
+        payload[key] = document.getElementById(key).value.trim();
+      }
+      return payload;
+    }
+
+    function assertInbound(payload) {
+      for (const key of Object.keys(payload)) {
+        if (!ALLOWLIST.includes(key)) throw new Error("unknown inbound lead key forbidden: " + key);
+      }
+      for (const key of ALLOWLIST) {
+        if (!payload[key]) throw new Error(key + " must be a non-empty string");
+      }
+      const email = payload.work_email.toLowerCase();
+      if (!EMAIL_RE.test(email) || email.length > 120) throw new Error("work_email must be a short email");
+      if (!FAMILIES.includes(payload.product_family_code)) throw new Error("unknown product_family_code");
+      if (!BANDS.includes(payload.fcl_band)) throw new Error("unknown fcl_band");
+      if (!TOPICS.includes(payload.content_topic)) throw new Error("unknown content_topic");
+      payload.work_email = email;
+      return payload;
+    }
+
+    document.getElementById("lead-form").addEventListener("submit", async function (event) {
+      event.preventDefault();
+      const err = document.getElementById("err");
+      const preview = document.getElementById("preview");
+      const status = document.getElementById("status");
+      err.textContent = "";
+      try {
+        const payload = assertInbound(readForm());
+        document.getElementById("payload").textContent = JSON.stringify(payload, null, 2);
+        preview.hidden = false;
+        const webhook = sessionStorage.getItem("sattva_lead_webhook") || "";
+        const hmac = sessionStorage.getItem("sattva_lead_hmac") || "";
+        if (!webhook || !hmac) {
+          status.textContent = "Validated locally. No webhook keys in sessionStorage, so nothing was posted.";
+          return;
+        }
+        const parsed = new URL(webhook);
+        if (parsed.protocol !== "https:") throw new Error("webhook must be https");
+        if (parsed.search || parsed.hash) throw new Error("webhook must not have query or hash");
+        if (!parsed.pathname.endsWith("/webhook/lead-inbound")) {
+          throw new Error("webhook path must be /webhook/lead-inbound");
+        }
+        const response = await fetch(webhook, {
+          method: "POST",
+          headers: {
+            "content-type": "application/json",
+            "x-sattva-webhook-hmac": hmac,
+          },
+          body: JSON.stringify(payload),
+        });
+        status.textContent = response.ok
+          ? "Posted to the operator webhook."
+          : "Webhook rejected the payload.";
+      } catch (error) {
+        err.textContent = error.message;
+      }
+    });
+  </script>
+</body>
+</html>

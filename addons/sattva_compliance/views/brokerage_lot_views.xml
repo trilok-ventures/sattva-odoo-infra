@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_sattva_brokerage_lot_tree" model="ir.ui.view">
+        <field name="name">sattva.brokerage.lot.tree</field>
+        <field name="model">sattva.brokerage.lot</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="supplier_id"/>
+                <field name="state"/>
+                <field name="coa_pass"/>
+                <field name="moisture_pct"/>
+            </list>
+        </field>
+    </record>
+    <record id="view_sattva_brokerage_lot_form" model="ir.ui.view">
+        <field name="name">sattva.brokerage.lot.form</field>
+        <field name="model">sattva.brokerage.lot</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_release" type="object" string="Release for sale"
+                            class="btn-primary"
+                            invisible="state != 'quarantine' or not coa_pass"
+                            groups="sattva_compliance.group_compliance_officer"/>
+                    <button name="action_reject" type="object" string="Reject lot"
+                            invisible="state == 'rejected'"
+                            groups="sattva_compliance.group_compliance_officer"/>
+                    <field name="state" widget="statusbar" options="{'clickable': False}"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group string="Lot">
+                            <field name="name"/>
+                            <field name="supplier_id"/>
+                            <field name="purchase_order_id"/>
+                        </group>
+                        <group string="GREEN COA">
+                            <field name="coa_filename"/>
+                            <field name="coa_sha256"/>
+                            <field name="moisture_pct"/>
+                            <field name="mesh_pass"/>
+                            <field name="spec_moisture_max"/>
+                            <field name="spec_mesh_required"/>
+                            <field name="salmonella_absent"/>
+                            <field name="spec_salmonella_required"/>
+                            <field name="tpc_cfu"/>
+                            <field name="spec_tpc_max"/>
+                            <field name="pyruvic_umol"/>
+                            <field name="spec_pyruvic_required"/>
+                            <field name="spec_pyruvic_min"/>
+                            <field name="coa_pass"/>
+                        </group>
+                    </group>
+                    <field name="dossier_entry_ids" nolabel="1">
+                        <list>
+                            <field name="filename"/>
+                            <field name="sha256"/>
+                            <field name="doc_kind"/>
+                            <field name="vault_href"/>
+                        </list>
+                    </field>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+    <record id="action_sattva_brokerage_lot" model="ir.actions.act_window">
+        <field name="name">Brokerage Lots</field>
+        <field name="res_model">sattva.brokerage.lot</field>
+        <field name="view_mode">list,form</field>
+    </record>
+    <menuitem id="menu_sattva_compliance_root"
+              name="Sattva Compliance"
+              parent="contacts.menu_contacts"
+              sequence="50"/>
+    <menuitem id="menu_sattva_brokerage_lot"
+              name="Brokerage Lots"
+              parent="menu_sattva_compliance_root"
+              action="action_sattva_brokerage_lot"
+              sequence="10"/>
+</odoo>

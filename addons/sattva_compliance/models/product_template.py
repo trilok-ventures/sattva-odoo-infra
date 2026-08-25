@@ -1,6 +1,14 @@
 from odoo import api, fields, models
 from odoo.exceptions import UserError
 
+_SPEC_WRITE_KEYS = {
+    "spec_moisture_max",
+    "spec_mesh_required",
+    "spec_salmonella_required",
+    "spec_tpc_max",
+    "spec_pyruvic_min",
+}
+
 
 class ProductTemplate(models.Model):
     _inherit = "product.template"
@@ -11,6 +19,7 @@ class ProductTemplate(models.Model):
             ("garlic", "Garlic"),
             ("chilli", "Chilli"),
             ("turmeric", "Turmeric"),
+            ("coriander", "Coriander"),
             ("other", "Other"),
         ],
         string="Crop",
@@ -41,6 +50,17 @@ class ProductTemplate(models.Model):
         string="Spec mesh required",
         default=False,
     )
+    spec_salmonella_required = fields.Boolean(
+        string="Salmonella must be absent", default=True
+    )
+    spec_tpc_max = fields.Float(string="Spec TPC max CFU/g")
+    spec_pyruvic_min = fields.Float(string="Spec pyruvic min µmol/g")
+    spec_pyruvic_required = fields.Boolean(
+        string="Pyruvic required",
+        compute="_compute_spec_pyruvic_required",
+        store=True,
+        help="Required when crop is onion. Copy this flag into the GREEN CoA webhook.",
+    )
 
     @api.depends("sattva_crop")
     def _compute_product_family_code(self):
@@ -49,14 +69,22 @@ class ProductTemplate(models.Model):
                 template.sattva_crop.upper() if template.sattva_crop else False
             )
 
+    @api.depends("sattva_crop")
+    def _compute_spec_pyruvic_required(self):
+        for product in self:
+            product.spec_pyruvic_required = product.sattva_crop == "onion"
+
     def _is_explicit_spec_change(self, vals, creating=False):
-        present = {"spec_moisture_max", "spec_mesh_required"}.intersection(vals)
+        present = _SPEC_WRITE_KEYS.intersection(vals)
         if not present:
             return False
         if creating:
             moisture = vals.get("spec_moisture_max", 0) or 0
             mesh = bool(vals.get("spec_mesh_required", False))
-            return bool(moisture) or mesh
+            salmonella_set = "spec_salmonella_required" in vals
+            tpc = vals.get("spec_tpc_max", 0) or 0
+            pyruvic = vals.get("spec_pyruvic_min", 0) or 0
+            return bool(moisture) or mesh or salmonella_set or bool(tpc) or bool(pyruvic)
         return True
 
     def _check_spec_write(self, vals, creating=False):

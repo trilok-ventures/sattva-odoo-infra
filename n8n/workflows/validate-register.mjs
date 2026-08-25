@@ -23,6 +23,8 @@ const ALLOWED_IDS = new Set([
   "svc.catalogue.green",
   "svc.notify.cache",
   "svc.kc.oidc",
+  "svc.lead.inbound",
+  "svc.dossier.index",
 ]);
 const FORBIDDEN_IDS = new Set(["svc.portal.nc"]);
 
@@ -57,6 +59,24 @@ for (const row of register.services) {
   }
   if (row.id === "svc.kc.oidc" && String(row.phase) !== "3") {
     throw new Error("svc.kc.oidc phase must be 3");
+  }
+  if (row.id === "svc.dossier.index") {
+    const blob = JSON.stringify(row);
+    if (!/apply_index/i.test(blob) || /button_confirm|action_release/i.test(blob)) {
+      throw new Error("svc.dossier.index must persist via apply_index and must not confirm or release");
+    }
+    if (/vercel|huggingface/i.test(blob)) {
+      throw new Error("svc.dossier.index must not send vault bytes to Vercel or HF");
+    }
+  }
+  if (row.id === "svc.lead.inbound") {
+    const blob = JSON.stringify(row);
+    if (!blob.includes("N8N_LEAD_INBOUND_HMAC")) {
+      throw new Error("svc.lead.inbound must use dedicated N8N_LEAD_INBOUND_HMAC");
+    }
+    if (!blob.includes("/webhook/lead-inbound")) {
+      throw new Error("svc.lead.inbound ingress must be /webhook/lead-inbound");
+    }
   }
 }
 for (const id of ALLOWED_IDS) {
