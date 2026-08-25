@@ -1,6 +1,6 @@
 # P2 replenishment nudge (CRM, not inventory)
 
-**Status:** Implementing on `cursor/replenishment-nudge-952c`  
+**Status:** Implemented on `cursor/replenishment-nudge-952c` (`TestReplenishmentNudge` 10/10 green)  
 **Date:** 2026-08-25  
 **Owner:** IPCo  
 **Companion ranking:** `2026-08-24-spice-trade-paas-feature-ranking.md` (P2 #14; next slice after §5 item 7 / P2 #13)  
