@@ -43,6 +43,13 @@ class SaleOrder(models.Model):
         readonly=True,
         help="Path in Nextcloud for this SO. Files stay in the vault.",
     )
+    dossier_entry_ids = fields.One2many(
+        "sattva.dossier.entry",
+        "sale_order_id",
+        string="Dossier hash index",
+        readonly=True,
+        help="Filenames and SHA-256 only. PDFs stay in Nextcloud.",
+    )
     fcl_count = fields.Integer(
         string="FCL count",
         default=0,

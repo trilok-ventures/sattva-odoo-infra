@@ -129,6 +129,13 @@ class BrokerageLot(models.Model):
     spec_pyruvic_min = fields.Float(
         string="Spec pyruvic min µmol/g", readonly=True, copy=False
     )
+    dossier_entry_ids = fields.One2many(
+        "sattva.dossier.entry",
+        "lot_id",
+        string="Dossier hash index",
+        readonly=True,
+        help="Filenames and SHA-256 only. PDFs stay in Nextcloud.",
+    )
     coa_pass = fields.Boolean(
         string="COA compare pass",
         readonly=True,

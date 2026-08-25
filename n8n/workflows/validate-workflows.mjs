@@ -131,6 +131,25 @@ for (const file of files) {
   ) {
     throw new Error(`${file}: lead score must use the narrow Odoo helper`);
   }
+  if (wf.name === "wf.dossier.index") {
+    const code = wf.nodes
+      .map((node) => node.parameters?.jsCode || "")
+      .join("\n");
+    if (
+      !code.includes("createHash") ||
+      !code.includes("unknown dossier trigger key forbidden") ||
+      !code.includes("unknown dossier entry key forbidden") ||
+      !code.includes("parsePropfind") ||
+      !text.includes("sattva.fabric.dossier") ||
+      !text.includes("apply_index") ||
+      !text.includes("PROPFIND") ||
+      !text.includes('"responseMode": "onReceived"') ||
+      text.includes("action_release") ||
+      /keycloak/i.test(text)
+    ) {
+      throw new Error(`${file}: dossier index must list names, hash in memory, apply_index, and skip release/Keycloak`);
+    }
+  }
   if (wf.name === "wf.lead.inbound") {
     const code = wf.nodes
       .map((node) => node.parameters?.jsCode || "")

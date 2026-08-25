@@ -52,6 +52,14 @@
                             <field name="coa_pass"/>
                         </group>
                     </group>
+                    <field name="dossier_entry_ids" nolabel="1">
+                        <list>
+                            <field name="filename"/>
+                            <field name="sha256"/>
+                            <field name="doc_kind"/>
+                            <field name="vault_href"/>
+                        </list>
+                    </field>
                 </sheet>
                 <chatter/>
             </form>
