@@ -19,6 +19,11 @@ class TestPortalListLots(TransactionCase):
         cls.bff = new_test_user(
             cls.env,
             login="synthetic_bff_portal",
+            groups="base.group_user,sattva_compliance.group_middleware_bff",
+        )
+        cls.unauthorized = new_test_user(
+            cls.env,
+            login="synthetic_portal_denied",
             groups="base.group_user",
         )
         cls.officer = new_test_user(
@@ -30,6 +35,11 @@ class TestPortalListLots(TransactionCase):
             cls.env,
             login="synthetic_portal_share",
             groups="base.group_portal",
+        )
+        cls.n8n_and_bff = new_test_user(
+            cls.env,
+            login="synthetic_n8n_bff",
+            groups="sattva_compliance.group_n8n_fabric_service,sattva_compliance.group_middleware_bff",
         )
         cls.buyer = cls.env["res.partner"].create(
             {"name": "Synthetic Portal Buyer", "customer_rank": 1}
@@ -107,6 +117,10 @@ class TestPortalListLots(TransactionCase):
     def test_share_user_cannot_list_lots(self):
         with self.assertRaises(AccessError):
             self._list(self.share)
+
+    def test_internal_user_without_bff_group_cannot_list_lots(self):
+        with self.assertRaises(AccessError):
+            self._list(self.unauthorized)
 
     def test_employee_sees_all_lots_green_only(self):
         self._apply_coa(self.released, SHA)

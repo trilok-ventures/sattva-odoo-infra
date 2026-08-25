@@ -22,8 +22,8 @@ def _require_internal_bff_reader(env):
         raise AccessError("share users cannot call the buyer lot portal")
     if env.user.has_group("sattva_compliance.group_n8n_fabric_service"):
         raise AccessError("n8n fabric service cannot call the buyer lot portal")
-    if not env.user.has_group("base.group_user"):
-        raise AccessError("internal user required for the buyer lot portal")
+    if not env.user.has_group("sattva_compliance.group_middleware_bff"):
+        raise AccessError("middleware BFF group required")
 
 
 def _buyer_partner_id(value):

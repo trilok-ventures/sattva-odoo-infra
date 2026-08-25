@@ -6,4 +6,7 @@
     <record id="group_compliance_officer" model="res.groups">
         <field name="name">Sattva Compliance Officer</field>
     </record>
+    <record id="group_middleware_bff" model="res.groups">
+        <field name="name">Middleware BFF</field>
+    </record>
 </odoo>

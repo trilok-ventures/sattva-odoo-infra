@@ -17,7 +17,8 @@ The operations BFF reads GREEN brokerage-lot status from Odoo over JSON-2 (`svc.
 - Browsers still call `/api/lots` and `/lots` on `middleware/` only. Root `vercel.json` stays mocks-only. No `NEXT_PUBLIC_` fabric URLs, no WebDAV, no file bytes, no vault paths.
 - When `ODOO_URL`, `ODOO_DB`, `ODOO_USERNAME`, and `ODOO_API_KEY` are all set, `lots()` calls `sattva.fabric.portal.list_lots` (search/read projection). Other adapter methods stay on the in-repo mock.
 - When any of those vars is unset (CI, local without secrets), `lots()` stays on the mock fixtures (L-882 released + L-901 quarantine with `coa_pass=true`).
-- `list_lots` is read-only. It never calls `write`, `action_release`, `action_reject`, `button_confirm`, or `action_confirm`. n8n fabric service cannot call it.
+- `list_lots` is read-only. It never calls `write`, `action_release`, `action_reject`, `button_confirm`, or `action_confirm`. Callers must be in `group_middleware_bff`. n8n fabric service cannot call it even if also in that group.
+- Do not set `ODOO_*` on the public Vercel BFF until Keycloak. Mock persona is still spoofable; live lot reads are for Compose/GCP with the env unset on the public project.
 - Buyer persona passes `ODOO_BUYER_PARTNER_ID`. Lots are those linked via `sattva.dossier.entry` to that partner’s sale orders. Missing partner id → empty list (fail closed). Employees pass no partner id and see every lot.
 - Payload keys match slice 1. Odoo does **not** send `officer_released`; the BFF derives it from `state === "available"`. `coa_pass` remains the GREEN compare field and is never treated as available-for-sale.
 - Buyers still 403 suppliers. Mill legal identity and `vault_href` never leave Odoo on this path.
