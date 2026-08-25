@@ -8,6 +8,7 @@ import {
 } from "@/lib/lot-status";
 import { publicLots } from "@/lib/lot-public";
 import { personaFromSearch } from "@/lib/persona";
+import { LotPager } from "../../lot-pager";
 import { PortalChrome } from "../../portal-chrome";
 
 export const dynamic = "force-dynamic";
@@ -37,6 +38,9 @@ export default async function LotDetailPage({
           <div className="forbidden">
             <h1>Forbidden</h1>
             <p>Suppliers do not read lot boards.</p>
+            <p>
+              <a href={`/?persona=${persona}`}>Back to home</a>
+            </p>
           </div>
         </main>
       </>
@@ -52,7 +56,9 @@ export default async function LotDetailPage({
           <h1>Lot not found</h1>
           <p className="muted">No GREEN lot {id} for this persona.</p>
           <p>
-            <a href={`/lots?persona=${persona}`}>Back to lots</a>
+            <a className="btn" href={`/lots?persona=${persona}`}>
+              Back to lots
+            </a>
           </p>
         </main>
       </>
@@ -62,12 +68,13 @@ export default async function LotDetailPage({
     <>
       <PortalChrome persona={persona} path={`/lots/${id}`} />
       <main>
+        <LotPager persona={persona} lots={lots} currentId={lot.id} />
         <p className="muted">
-          <a href={`/lots?persona=${persona}`}>B1 Lots</a> · B2 {lot.id.toUpperCase()}
+          B2 {lot.id.toUpperCase()}
+          {lot.buyer_order ? ` · ${lot.buyer_order}` : ""}
+          {lot.sku ? ` · ${lot.sku}` : ""}
         </p>
-        <h1>
-          {lot.buyer_order ?? "Lot"} · {lot.sku}
-        </h1>
+        <h1>{lot.id.toUpperCase()}</h1>
         <p>
           <span className={`pill ${lot.state}`}>{saleStatusLabel(lot.state)}</span>{" "}
           <span className="pill">{coaCompareLabel(lot.coa_pass)}</span>

@@ -18,12 +18,24 @@ export function PortalChrome({
   persona: Persona;
   path: string;
 }) {
+  const onHome = path === "/";
+  const onLots = path === "/lots" || path.startsWith("/lots/");
   return (
     <header className="top">
       <strong>Sattva Portal</strong>
-      <Link href={`/?persona=${persona}`}>Home</Link>
-      <Link href={`/lots?persona=${persona}`}>Lots</Link>
-      <nav className="persona" aria-label="Mock persona">
+      <nav className="primary" aria-label="Portal pages">
+        <Link href={`/?persona=${persona}`} className={onHome ? "on" : undefined}>
+          Home
+        </Link>
+        <Link
+          href={`/lots?persona=${persona}`}
+          className={onLots ? "on" : undefined}
+        >
+          Lots
+        </Link>
+      </nav>
+      <nav className="persona" aria-label="View as persona">
+        <span className="nav-label">View as</span>
         {PERSONAS.map((item) => (
           <Link
             key={item}

@@ -80,6 +80,9 @@ const lotsPage = readFileSync(join(root, "src/app/lots/page.tsx"), "utf8");
 assert("lots page has no NEXT_PUBLIC_", !lotsPage.includes("NEXT_PUBLIC_"));
 assert("lots page labels compare separately", lotsPage.includes("coaCompareLabel"));
 assert("lots page uses officer sale status", lotsPage.includes("saleStatusLabel"));
+assert("chrome has view-as persona nav", readFileSync(join(root, "src/app/portal-chrome.tsx"), "utf8").includes("View as"));
+assert("lot detail has pager", readFileSync(join(root, "src/app/lots/[id]/page.tsx"), "utf8").includes("LotPager"));
+assert("lot pager has back previous next", readFileSync(join(root, "src/app/lot-pager.tsx"), "utf8").includes("Back to lots") && readFileSync(join(root, "src/app/lot-pager.tsx"), "utf8").includes("Previous") && readFileSync(join(root, "src/app/lot-pager.tsx"), "utf8").includes("Next"));
 
 const json2Src = readFileSync(join(root, "src/lib/odoo-json2.ts"), "utf8");
 assert("json-2 allowlists portal list_lots", json2Src.includes('ALLOWED_MODEL = "sattva.fabric.portal"') && json2Src.includes('ALLOWED_METHOD = "list_lots"'));
@@ -199,6 +202,10 @@ try {
   assert("detail shows quarantine label", detailText.includes("Quarantine (not released)"));
   assert("detail has no released-for-sale pill", !detailText.includes("Released for sale"));
   assert("detail explains independence", detailText.includes("not available-for-sale"));
+  assert("detail has back to lots", detailText.includes("Back to lots"));
+  assert("detail has previous control", detailText.includes("Previous"));
+  assert("detail has next control", detailText.includes("Next"));
+  assert("header has view as", lotsText.includes("View as"));
 
   const badDoc = await httpJson("/api/documents", {
     method: "POST",

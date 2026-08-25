@@ -33,8 +33,32 @@ h1 { font-size: 1.5rem; margin: 0 0 8px; }
   gap: 12px;
   padding: 12px 16px;
 }
-.top a { color: #d7eadf; }
-.persona { margin-left: auto; display: flex; flex-wrap: wrap; gap: 6px; }
+.top a { color: #d7eadf; text-decoration: none; }
+.primary { display: flex; gap: 8px; }
+.primary a, .btn {
+  font-size: 13px;
+  font-weight: 700;
+  padding: 6px 12px;
+  border-radius: 8px;
+  text-decoration: none;
+  border: 1px solid #2d6a50;
+  background: #1f4d3a;
+  color: #fff;
+  display: inline-block;
+}
+.primary a.on, .persona a.on { background: #fff; color: var(--nav); }
+.pager { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 16px; }
+.btn { color: #fff; }
+.btn.disabled { opacity: 0.45; pointer-events: none; }
+.nav-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: #9cc9b3;
+  align-self: center;
+}
+.persona { margin-left: auto; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .persona a, .pill {
   font-size: 12px;
   font-weight: 700;

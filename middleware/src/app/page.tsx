@@ -29,15 +29,19 @@ export default async function Home({
           stays on a separate Vercel project:
           https://sattva-odoo-infra.vercel.app/
         </p>
-        <p>
-          Health: <a href="/api/health">/api/health</a>
-        </p>
-        <p>
-          Buyer GREEN lots:{" "}
-          <a href={`/lots?persona=${persona === "supplier" ? "buyer" : persona}`}>
-            B1 lots
+        <div className="cards">
+          <a
+            className="card"
+            href={`/lots?persona=${persona === "supplier" ? "buyer" : persona}`}
+          >
+            <p className="muted">B1</p>
+            <h2>Lots</h2>
+            <p className="muted">
+              GREEN metrics and officer release. Open the lot board without
+              typing a URL.
+            </p>
           </a>
-        </p>
+        </div>
       </main>
     </>
   );

@@ -33,6 +33,9 @@ export default async function LotsPage({
           <div className="forbidden">
             <h1>Forbidden</h1>
             <p>Suppliers do not read lot boards.</p>
+            <p>
+              <a href={`/?persona=${persona}`}>Back to home</a>
+            </p>
           </div>
         </main>
       </>
