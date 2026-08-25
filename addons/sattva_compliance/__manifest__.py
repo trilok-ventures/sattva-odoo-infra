@@ -12,6 +12,7 @@
         'security/sattva_security.xml',
         'security/ir.model.access.csv',
         'data/product_category_data.xml',
+        'data/replenishment_cron.xml',
         'views/res_partner_views.xml',
         'views/brokerage_lot_views.xml',
         'views/product_template_views.xml',

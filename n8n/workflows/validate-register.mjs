@@ -25,6 +25,7 @@ const ALLOWED_IDS = new Set([
   "svc.kc.oidc",
   "svc.lead.inbound",
   "svc.dossier.index",
+  "svc.replenishment.nudge",
 ]);
 const FORBIDDEN_IDS = new Set(["svc.portal.nc"]);
 
@@ -76,6 +77,15 @@ for (const row of register.services) {
     }
     if (!blob.includes("/webhook/lead-inbound")) {
       throw new Error("svc.lead.inbound ingress must be /webhook/lead-inbound");
+    }
+  }
+  if (row.id === "svc.replenishment.nudge") {
+    const blob = JSON.stringify(row);
+    if (!/scan_replenishment_nudges/i.test(blob)) {
+      throw new Error("svc.replenishment.nudge must call scan_replenishment_nudges");
+    }
+    if (/stock\.quant|stock\.lot|button_confirm|action_confirm|action_release/i.test(blob)) {
+      throw new Error("svc.replenishment.nudge must not touch inventory or confirm/release");
     }
   }
 }

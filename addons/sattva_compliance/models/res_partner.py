@@ -12,12 +12,23 @@ from .credit_formula import (
     score_punctuality,
     score_volume,
 )
+from .service_security import require_n8n_fabric_service
 
 _SNAPSHOT_FIELDS = (
     "payment_score_financial",
     "payment_score_paydex",
     "industry_sector",
 )
+
+
+def _check_replenishment_nudge_write(env, vals):
+    if "sattva_replenishment_nudge_so_id" not in vals:
+        return
+    if not env.context.get("sattva_replenishment_scan"):
+        raise AccessError(
+            "Replenishment nudge pointer is written only by the scan helper."
+        )
+    require_n8n_fabric_service(env)
 
 
 class ResPartner(models.Model):
@@ -27,6 +38,7 @@ class ResPartner(models.Model):
     def create(self, vals_list):
         prepared = []
         for vals in vals_list:
+            _check_replenishment_nudge_write(self.env, vals)
             check_partner_credit_vals(self.env, vals)
             credit_vals = {
                 field: vals[field] for field in _SNAPSHOT_FIELDS if field in vals
@@ -124,6 +136,14 @@ class ResPartner(models.Model):
         string="SFC licence number",
         help="AMBER identifier only. Licence PDF stays in Nextcloud.",
     )
+    sattva_replenishment_nudge_so_id = fields.Many2one(
+        "sale.order",
+        string="Last replenishment-nudge SO",
+        readonly=True,
+        ondelete="set null",
+        help="AMBER pointer to the last confirmed SO that already opened a "
+        "CRM replenishment activity. Not inventory.",
+    )
 
     spices_board_rcm = fields.Char(string="Spices Board RCM")
     fssai_licence = fields.Char(string="FSSAI licence")
@@ -208,6 +228,7 @@ class ResPartner(models.Model):
     )
 
     def write(self, vals):
+        _check_replenishment_nudge_write(self.env, vals)
         check_partner_credit_vals(self.env, vals)
         credit_vals = {field: vals[field] for field in _SNAPSHOT_FIELDS if field in vals}
         other_vals = {key: value for key, value in vals.items() if key not in credit_vals}
@@ -222,9 +243,10 @@ class ResPartner(models.Model):
 
     def copy_data(self, default=None):
         vals_list = super().copy_data(default)
-        if is_finance_manager(self.env):
-            return vals_list
         for vals in vals_list:
+            vals.pop("sattva_replenishment_nudge_so_id", None)
+            if is_finance_manager(self.env):
+                continue
             for field in _SNAPSHOT_FIELDS:
                 vals.pop(field, None)
         return vals_list

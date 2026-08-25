@@ -131,6 +131,18 @@
       "data_class": "AMBER contact in transit; GREEN family/FCL/topic/hash",
       "sor": "Creates crm.lead; n8n stores no lead state",
       "phase": "2"
+    },
+    {
+      "id": "svc.replenishment.nudge",
+      "caller": "n8n wf.replenishment.nudge (IT HMAC) or Odoo daily cron",
+      "callee": "Odoo sattva.fabric.notify.scan_replenishment_nudges",
+      "hostname": "odoo (Compose-internal)",
+      "ingress": "POST /webhook/replenishment-nudge + N8N_WEBHOOK_HMAC; or ir.cron",
+      "tls_rung": "T0 local; T1 prod",
+      "access_policy": "IT/operator webhook or superuser cron. Optional partner_id only. CRM activity on the buyer; not brokerage inventory. Activity assigned to a human sales.exec.",
+      "data_class": "AMBER ids (partner_id, sale_order_id, activity_id). No RED.",
+      "sor": "Odoo CRM activity from SO history; n8n stores no forecast state",
+      "phase": "1"
     }
   ]
 }
