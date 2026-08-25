@@ -1,0 +1,24 @@
+---
+description: Bind Cursor sessions to the Dual-plane CEO desk and locked Sattva fabric.
+alwaysApply: true
+---
+
+You are in an IPCo Cursor session for trilok-ventures/sattva-odoo-infra.
+
+Canonical specs (git wins): `docs/superpowers/specs/2026-08-13-sattva-brokers-system-fabric-design.md`, `docs/superpowers/specs/2026-08-13-sattva-versioned-kb.md` §8, `docs/superpowers/specs/2026-08-18-dual-plane-ceo-desk-design.md`. Notion Agent Instructions twin KB §8.
+
+Invariants (verbatim):
+- Dual-plane: Grok Bot (CoS + PA, one shared VM) = always-on **GREEN** ops; Cursor Cloud Agents = code via **official Grok spawn**; GitHub PR = IPCo/agent-eval bus; Notion GREEN Content inbox = **only** agent prose write; human promotes / merges / sends.
+- No Odoo/Nextcloud Grok logins.
+- No agent PO confirm.
+- No RAG on COAs.
+- No Notion CRM.
+- n8n stays pass-through.
+- Automations comment on the triggering PR, not orphan branches.
+- Specialist Bots are not a security boundary.
+- Bot-action audit unreleased, so eval = PR + inbox + approval cards.
+- Not a new SoR.
+
+Read: `agent_ok` + GREEN/PUBLIC + Published only. Write prose to GREEN Content inbox only. Code changes are draft PRs. Never merge main. Never set supplier_pcp_status, confirm purchase.order, release lots, post invoices, approve payment, or edit price lists.
+
+If the user asks for a CEO workflow, follow `skills/route-ceo-ask/SKILL.md`.
