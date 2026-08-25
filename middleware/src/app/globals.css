@@ -1,0 +1,74 @@
+:root {
+  --nav: #143528;
+  --forest: #1f4d3a;
+  --sand: #f7f4ef;
+  --ink: #1a1a1a;
+  --muted: #5c5a56;
+  --line: #e4dfd4;
+  --surface: #fffcf7;
+  --ok: #1f4d3a;
+  --amber: #b45309;
+  --rose: #9f1239;
+}
+html,
+body {
+  margin: 0;
+  background: var(--sand);
+  color: var(--ink);
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+}
+a {
+  color: var(--forest);
+}
+.topbar {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  background: var(--nav);
+  color: #fff;
+  padding: 12px 16px;
+}
+.pill {
+  border-radius: 999px;
+  padding: 2px 10px;
+  font-size: 12px;
+}
+.pill-pending {
+  background: #fde68a;
+}
+.pill-review {
+  background: #fdba74;
+}
+.pill-approved {
+  background: #bbf7d0;
+}
+.pill-blocked {
+  background: #fecaca;
+}
+.caption {
+  color: var(--muted);
+  font-size: 12px;
+}
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 16px;
+}
+.layout {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  min-height: 100vh;
+}
+nav.side {
+  padding: 16px;
+  border-right: 1px solid var(--line);
+}
+nav.side a {
+  display: block;
+  padding: 6px 0;
+  text-decoration: none;
+}
+main.pad {
+  padding: 24px;
+}

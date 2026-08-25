@@ -70,12 +70,20 @@ export type CatalogueCard = {
   supplier_display: string;
 };
 
+export type InvoiceRow = {
+  id: string;
+  partner_display: string;
+  amount_label: string;
+  state: "draft" | "posted";
+};
+
 export interface FabricAdapter {
   dashboard(persona: Persona): Promise<Dashboard>;
   complianceQueue(persona: Persona): Promise<QueueRow[]>;
   purchaseOrders(persona: Persona): Promise<PurchaseOrder[]>;
   confirmOrder(persona: Persona, id: string): Promise<ConfirmResult>;
   lots(persona: Persona): Promise<LotGreen[]>;
+  invoices(persona: Persona): Promise<InvoiceRow[]>;
   storeDocument(persona: Persona, filename: string, sha256: string): Promise<DocumentReceipt>;
   activities(persona: Persona): Promise<ActivityRow[]>;
   catalogue(persona: Persona): Promise<CatalogueCard[]>;
