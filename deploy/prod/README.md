@@ -38,6 +38,8 @@ docker compose -f docker-compose.prod.yml run --rm web \
   --without-demo=all --stop-after-init -i sattva_compliance -d sattva
 docker compose -f docker-compose.prod.yml up -d web
 ./harden-nextcloud.sh
+# Config + empty vault trees + service users (no sample partners):
+# sudo ../../gcp/init-sor.sh
 ```
 
 ## Smoke test

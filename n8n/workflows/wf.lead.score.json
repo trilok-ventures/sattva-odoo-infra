@@ -39,7 +39,7 @@
       },
       "parameters": {
         "method": "POST",
-        "url": "={{$env.ODOO_JSON2_URL}}",
+        "url": "=http://odoo:8069/jsonrpc",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
         "sendBody": true,

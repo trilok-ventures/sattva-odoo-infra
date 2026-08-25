@@ -25,6 +25,9 @@ x-n8n-environment: &n8n-environment
   N8N_EDITOR_BASE_URL: https://n8n.trilokventures.org
   N8N_SECURE_COOKIE: "true"
   WEBHOOK_URL: https://n8n.trilokventures.org/
+  # Code/HTTP nodes read $env.ODOO_JSON2_URL and $env.NEXTCLOUD_WEBDAV_BASE.
+  # n8n 2.x workers default to blocking that and finish folder jobs as no-ops.
+  N8N_BLOCK_ENV_ACCESS_IN_NODE: "false"
 
 services:
   db:

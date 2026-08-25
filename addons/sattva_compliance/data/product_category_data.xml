@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <record id="product_category_sattva" model="product.category">
+        <field name="name">Sattva Brokers</field>
+        <field name="parent_id" ref="product.product_category_all"/>
+    </record>
+    <record id="product_category_onion" model="product.category">
+        <field name="name">Onion</field>
+        <field name="parent_id" ref="product_category_sattva"/>
+    </record>
+    <record id="product_category_garlic" model="product.category">
+        <field name="name">Garlic</field>
+        <field name="parent_id" ref="product_category_sattva"/>
+    </record>
+    <record id="product_category_chilli" model="product.category">
+        <field name="name">Chilli</field>
+        <field name="parent_id" ref="product_category_sattva"/>
+    </record>
+    <record id="product_category_turmeric" model="product.category">
+        <field name="name">Turmeric</field>
+        <field name="parent_id" ref="product_category_sattva"/>
+    </record>
+</odoo>
