@@ -22,6 +22,7 @@ jobs:
       - run: node n8n/workflows/leadscore.test.mjs
       - run: node n8n/workflows/lead-inbound.test.mjs
       - run: node n8n/workflows/dossier-index.test.mjs
+      - run: node n8n/workflows/replenishment-nudge.test.mjs
       - name: Validate workflow JSON
         run: |
           shopt -s nullglob

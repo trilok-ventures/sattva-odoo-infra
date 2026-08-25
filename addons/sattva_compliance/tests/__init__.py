@@ -11,3 +11,4 @@ from . import test_product_spec
 from . import test_sale_gates
 from . import test_credit_score
 from . import test_dossier_index
+from . import test_replenishment_nudge

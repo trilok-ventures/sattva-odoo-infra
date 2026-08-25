@@ -33,7 +33,8 @@ for wf in /workflows/wf.coa.verify.json \
   /workflows/wf.buyer.onboard.folder.json \
   /workflows/wf.order.handoff.json \
   /workflows/wf.notify.role.json \
-  /workflows/wf.lead.score.json; do
+  /workflows/wf.lead.score.json \
+  /workflows/wf.replenishment.nudge.json; do
   docker exec "${N8N}" n8n import:workflow --input="${wf}"
   log "imported ${wf}"
 done
@@ -74,7 +75,7 @@ shred -u "$CRED_TMP" 2>/dev/null || rm -f "$CRED_TMP"
 SH
 
 for id in wf-coa-verify wf-supplier-folder wf-buyer-onboard-folder \
-  wf-order-handoff wf-notify-role wf-lead-score; do
+  wf-order-handoff wf-notify-role wf-lead-score wf-replenishment-nudge; do
   if docker exec "${N8N}" n8n update:workflow --id="${id}" --active=true; then
     log "activated ${id}"
   else

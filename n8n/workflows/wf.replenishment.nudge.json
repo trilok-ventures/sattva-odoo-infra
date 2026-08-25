@@ -1,0 +1,64 @@
+{
+  "name": "wf.replenishment.nudge",
+  "id": "wf-replenishment-nudge",
+  "nodes": [
+    {
+      "id": "replenishment-nudge-webhook",
+      "name": "Replenishment nudge webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, 0],
+      "webhookId": "wf-replenishment-nudge",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "replenishment-nudge",
+        "responseMode": "lastNode",
+        "options": {}
+      }
+    },
+    {
+      "id": "allowlist-replenishment-trigger",
+      "name": "Allowlist replenishment trigger",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [240, 0],
+      "parameters": {
+        "jsCode": "// keep in sync with n8n/workflows/replenishment-nudge.mjs\nconst REPLENISHMENT_ALLOWLIST = ['partner_id'];\nfunction assertReplenishmentTrigger(payload) {\n  if (payload == null || typeof payload !== 'object' || Array.isArray(payload)) throw new Error('payload required');\n  for (const key of Object.keys(payload)) {\n    if (!REPLENISHMENT_ALLOWLIST.includes(key)) throw new Error('unknown replenishment key forbidden: ' + key);\n    if (payload[key] != null && typeof payload[key] === 'object') throw new Error('nested objects forbidden');\n  }\n  if ('partner_id' in payload && payload.partner_id !== false && (typeof payload.partner_id !== 'number' || !Number.isInteger(payload.partner_id) || payload.partner_id < 1)) {\n    throw new Error('partner_id must be a positive integer or omitted');\n  }\n}\nconst input = $input.first().json;\nconst headers = input.headers ?? {};\nconst provided = headers['x-sattva-webhook-hmac'] ?? headers['X-Sattva-Webhook-Hmac'];\nconst expected = $env.N8N_WEBHOOK_HMAC;\nif (typeof expected !== 'string' || !expected || typeof provided !== 'string' || provided !== expected) {\n  throw new Error('invalid x-sattva-webhook-hmac');\n}\nconst payload = input.body ?? input;\nassertReplenishmentTrigger(payload);\nreturn [{ json: { partner_id: payload.partner_id ?? false } }];"
+      }
+    },
+    {
+      "id": "scan-replenishment-nudges",
+      "name": "Scan replenishment nudges",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [480, 0],
+      "credentials": {
+        "httpHeaderAuth": {
+          "name": "odooN8nFabric"
+        }
+      },
+      "parameters": {
+        "method": "POST",
+        "url": "=http://odoo:8069/jsonrpc",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\"jsonrpc\":\"2.0\",\"method\":\"call\",\"params\":{\"service\":\"object\",\"method\":\"execute_kw\",\"args\":[\"sattva\",\"{{$env.ODOO_N8N_UID}}\",\"{{$credentials.odooN8nFabric.value}}\",\"sattva.fabric.notify\",\"scan_replenishment_nudges\",[{{$json.partner_id}}]]}}"
+      }
+    }
+  ],
+  "connections": {
+    "Replenishment nudge webhook": {
+      "main": [[{ "node": "Allowlist replenishment trigger", "type": "main", "index": 0 }]]
+    },
+    "Allowlist replenishment trigger": {
+      "main": [[{ "node": "Scan replenishment nudges", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "saveDataSuccessExecution": "none",
+    "saveDataErrorExecution": "none",
+    "executionTimeout": 30
+  }
+}

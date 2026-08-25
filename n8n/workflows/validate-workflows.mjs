@@ -150,6 +150,27 @@ for (const file of files) {
       throw new Error(`${file}: dossier index must list names, hash in memory, apply_index, and skip release/Keycloak`);
     }
   }
+  if (wf.name === "wf.replenishment.nudge") {
+    const code = wf.nodes
+      .map((node) => node.parameters?.jsCode || "")
+      .join("\n");
+    if (
+      !code.includes("REPLENISHMENT_ALLOWLIST") ||
+      !code.includes("unknown replenishment key forbidden") ||
+      !text.includes("sattva.fabric.notify") ||
+      !text.includes("scan_replenishment_nudges") ||
+      text.includes("action_confirm") ||
+      text.includes("button_confirm") ||
+      text.includes("action_release") ||
+      text.includes("stock.quant") ||
+      text.includes("stock.lot") ||
+      /keycloak/i.test(text)
+    ) {
+      throw new Error(
+        `${file}: replenishment nudge must HMAC-allowlist, scan via notify helper, and skip inventory/confirm/Keycloak`,
+      );
+    }
+  }
   if (wf.name === "wf.lead.inbound") {
     const code = wf.nodes
       .map((node) => node.parameters?.jsCode || "")
