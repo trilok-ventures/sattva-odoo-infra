@@ -1,6 +1,6 @@
 # P2 traceability dossier hash index
 
-**Status:** Implementing on `cursor/paas-feature-ranking-952c`  
+**Status:** Implemented on `cursor/paas-feature-ranking-952c` (`TestDossierIndex` green)  
 **Date:** 2026-08-25  
 **Owner:** IPCo  
 **Companion ranking:** `2026-08-24-spice-trade-paas-feature-ranking.md` (P2 #13; substitute for P4 #29)  
