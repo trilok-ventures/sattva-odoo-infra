@@ -1,3 +1,5 @@
+import { coaPresent, officerReleased } from "../lot-status";
+import type { Persona } from "../persona";
 import type {
   ActivityRow,
   CatalogueCard,
@@ -6,10 +8,15 @@ import type {
   DocumentReceipt,
   FabricAdapter,
   LotGreen,
+  LotState,
   PurchaseOrder,
   QueueRow,
 } from "./types";
-import type { Persona } from "../persona";
+
+const COA_HASH_RELEASED =
+  "8f3a9c1e2b4d6a7081928374655eed00aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+const COA_HASH_QUARANTINE =
+  "b1c2d3e4f5061728394a5b6c7d8e9f00bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
 
 const ORDERS: PurchaseOrder[] = [
   {
@@ -66,16 +73,39 @@ const CATALOGUE: CatalogueCard[] = [
   { sku: "CHILLI-FLAKE-C", crop: "chilli", format: "flake", mesh_label: "3-5 mm", supplier_display: "Approved mill (demo)" },
 ];
 
-const LOTS: LotGreen[] = [
-  {
-    id: "l-882",
-    sku: "ONION-FLAKE-A",
+function lotGreen(
+  id: string,
+  sku: string,
+  state: LotState,
+  sha256: string,
+  buyer_order: string,
+): LotGreen {
+  return {
+    id,
+    sku,
+    state,
+    officer_released: officerReleased(state),
+    coa_present: coaPresent(sha256),
+    coa_pass: true,
+    coa_sha256: sha256,
     moisture_pct: 4.8,
     mesh_pass: true,
-    coa_pass: true,
-    coa_sha256: "8f3a9c1e2b4d6a7081928374655eed00",
-    buyer_order: "SO-1042",
-  },
+    salmonella_absent: true,
+    tpc_cfu: 12000,
+    pyruvic_umol: 42,
+    buyer_order,
+  };
+}
+
+const LOTS: LotGreen[] = [
+  lotGreen("l-882", "ONION-FLAKE-A", "available", COA_HASH_RELEASED, "SO-1042"),
+  lotGreen(
+    "l-901",
+    "ONION-FLAKE-A",
+    "quarantine",
+    COA_HASH_QUARANTINE,
+    "SO-1042",
+  ),
 ];
 
 function allowedUploadOrigin(value: string | undefined): string | undefined {

@@ -11,10 +11,13 @@ credentials or connection to the Nextcloud vault.
 ## Status
 
 Phase 2 BFF contract is implemented in **mock mode** (`FABRIC_MODE=mock`).
+Buyer GREEN lot boards live at `/lots` (B1) and `/lots/[id]` (B2).
+`coa_pass` is not available-for-sale; `officer_released` is the officer flag.
 Live adapters are Odoo JSON-2 (`svc.portal.odoo`) and n8n webhooks
 (`svc.portal.n8n`) only. The BFF never speaks WebDAV. File bytes go to
 origin `upload.` (production) or `127.0.0.1:8091` (local T0 test sink).
-Do not treat mock KPIs as production SoR.
+Do not treat mock KPIs as production SoR. `FABRIC_MODE=live` 401s HTML and
+`/api` (except health) until Keycloak.
 
 ## Two Vercel projects
 

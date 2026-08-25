@@ -76,6 +76,18 @@ assert(
   httpSrc.includes('mode === "live"') && httpSrc.includes("Keycloak session required"),
 );
 
+const lotsPage = readFileSync(join(root, "src/app/lots/page.tsx"), "utf8");
+assert("lots page has no NEXT_PUBLIC_", !lotsPage.includes("NEXT_PUBLIC_"));
+assert("lots page labels compare separately", lotsPage.includes("coaCompareLabel"));
+assert("lots page uses officer sale status", lotsPage.includes("saleStatusLabel"));
+
+const publicLotsSrc = readFileSync(join(root, "src/lib/lot-public.ts"), "utf8");
+assert("lots allowlist helper strips RED", publicLotsSrc.includes("stripRedKeys") && publicLotsSrc.includes("officer_released"));
+assert("lots API uses publicLots", readFileSync(join(root, "src/app/api/lots/route.ts"), "utf8").includes("publicLots"));
+
+const edge = readFileSync(join(root, "src/middleware.ts"), "utf8");
+assert("live HTML also 401s", edge.includes("Keycloak session required") && edge.includes('FABRIC_MODE !== "live"'));
+
 const rootVercel = JSON.parse(readFileSync(join(root, "../vercel.json"), "utf8"));
 assert(
   "root vercel.json still publishes mocks only",
@@ -140,7 +152,40 @@ try {
   const lotHits = [];
   walk(buyerLots.body, "$", lotHits);
   assert("buyer lots GREEN", lotHits.length === 0, lotHits.join(","));
-  assert("buyer sees SO-1042 lot", Array.isArray(buyerLots.body.lots) && buyerLots.body.lots.length === 1);
+  assert("buyer sees SO-1042 lots", Array.isArray(buyerLots.body.lots) && buyerLots.body.lots.length === 2);
+  const released = buyerLots.body.lots.find((lot) => lot.id === "l-882");
+  const quarantined = buyerLots.body.lots.find((lot) => lot.id === "l-901");
+  assert("released lot officer flag", released?.officer_released === true && released?.state === "available");
+  assert(
+    "quarantine lot can pass COA without release",
+    quarantined?.coa_pass === true &&
+      quarantined?.officer_released === false &&
+      quarantined?.state === "quarantine",
+  );
+  assert("buyer lots expose coa_present", buyerLots.body.lots.every((lot) => lot.coa_present === true));
+  assert(
+    "buyer lots have no mill key",
+    buyerLots.body.lots.every((lot) => lot.supplier_display === undefined && lot.mill === undefined),
+  );
+
+  const supplierLots = await httpJson("/api/lots", { headers: { "x-sattva-persona": "supplier" } });
+  assert("supplier lots forbidden", supplierLots.res.status === 403, String(supplierLots.res.status));
+
+  const lotsHtml = await fetch(base + "/lots?persona=buyer");
+  const lotsText = await lotsHtml.text();
+  assert("lots page 200", lotsHtml.status === 200, String(lotsHtml.status));
+  assert("lots page labels officer release", lotsText.includes("Released for sale"));
+  assert("lots page labels quarantine separately", lotsText.includes("Quarantine (not released)"));
+  assert("lots page labels COA compare", lotsText.includes("COA compare pass"));
+  assert("lots page has no vault", !/nextcloud|webdav|\/Suppliers\//i.test(lotsText));
+  assert("lots page has no download", !/download/i.test(lotsText));
+
+  const detailHtml = await fetch(base + "/lots/l-901?persona=buyer");
+  const detailText = await detailHtml.text();
+  assert("quarantine detail 200", detailHtml.status === 200);
+  assert("detail shows quarantine label", detailText.includes("Quarantine (not released)"));
+  assert("detail has no released-for-sale pill", !detailText.includes("Released for sale"));
+  assert("detail explains independence", detailText.includes("not available-for-sale"));
 
   const badDoc = await httpJson("/api/documents", {
     method: "POST",

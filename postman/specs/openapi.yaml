@@ -76,10 +76,12 @@ paths:
           description: Rate limited (Cloudflare in Phase 3)
   /api/lots:
     get:
-      summary: GREEN lot metrics
+      summary: GREEN lot metrics plus officer release
       responses:
         "200":
-          description: moisture, mesh, pass, hash only
+          description: >
+            GREEN fields and officer_released only. coa_pass is the compare
+            result and is not available-for-sale. No vault paths or file bytes.
   /api/documents:
     post:
       summary: Supplier document receipt (hash only)
