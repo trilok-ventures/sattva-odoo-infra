@@ -37,3 +37,4 @@ jobs:
       - run: node deploy/prod/validate-prod-stack.mjs
       - run: node deploy/gcp/cloudflare-ingress.test.mjs
       - run: node deploy/gcp/verify-secrets.test.mjs
+      - run: node deploy/gcp/create-access-apps.test.mjs
