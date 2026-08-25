@@ -140,6 +140,7 @@ Each slice needs its own dated plan before code. Do not combine P0 with P4 tools
 4. **GREEN CoA metric pack** (P1 #8) on the lot.
 5. **Credit v1 + term constraints** (P2 #10–11) after invoices exist.
 6. **Vercel inbound GREEN lead form** (P2 #12) on the public/mocks or marketing project. **GREEN lot UI** (P3 #15) only in `middleware/` after T1 BFF / Keycloak unlock. Do not combine into one Vercel project or retarget root `vercel.json`.
+7. **Dossier hash index** (P2 #13) after #1 and #9: list vault names, hash bytes in memory, persist filename + sha256 on the SO/lot. Not a signed pack.
 
 Stop after each slice if it does not close a deal, cut compliance risk, or shorten cash.
 
