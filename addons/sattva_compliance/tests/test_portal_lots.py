@@ -1,3 +1,5 @@
+import uuid
+
 from odoo.exceptions import AccessError, UserError
 from odoo.tests import TransactionCase, tagged
 from odoo.tests.common import new_test_user
@@ -62,14 +64,15 @@ class TestPortalListLots(TransactionCase):
             cls.other_order.id,
             "/Clients/Synthetic_Other_Buyer/Orders/SO_OTHER/",
         )
+        suffix = uuid.uuid4().hex[:8]
         cls.released = cls.env["sattva.brokerage.lot"].create(
-            {"name": "PORTAL-REL-001", "supplier_id": cls.supplier.id}
+            {"name": "PORTAL-REL-%s" % suffix, "supplier_id": cls.supplier.id}
         )
         cls.quarantine = cls.env["sattva.brokerage.lot"].create(
-            {"name": "PORTAL-Q-001", "supplier_id": cls.supplier.id}
+            {"name": "PORTAL-Q-%s" % suffix, "supplier_id": cls.supplier.id}
         )
         cls.unlinked = cls.env["sattva.brokerage.lot"].create(
-            {"name": "PORTAL-UNLINKED", "supplier_id": cls.supplier.id}
+            {"name": "PORTAL-UN-%s" % suffix, "supplier_id": cls.supplier.id}
         )
 
     def _apply_coa(self, lot, sha, moisture=5.0):
@@ -91,14 +94,15 @@ class TestPortalListLots(TransactionCase):
         )
 
     def _index(self, order, lot):
+        filename = "coa-%s.pdf" % lot.id
         return self.env["sattva.fabric.dossier"].with_user(self.fabric_user).apply_index(
             order.id,
             lot.id,
             [
                 {
-                    "filename": "coa.pdf",
+                    "filename": filename,
                     "sha256": SHA,
-                    "vault_href": "%scoa.pdf" % (order.nextcloud_order_folder_path,),
+                    "vault_href": "%s%s" % (order.nextcloud_order_folder_path, filename),
                 }
             ],
         )
@@ -113,6 +117,10 @@ class TestPortalListLots(TransactionCase):
     def test_n8n_cannot_list_lots(self):
         with self.assertRaises(AccessError):
             self._list(self.fabric_user)
+
+    def test_n8n_with_bff_group_still_cannot_list_lots(self):
+        with self.assertRaises(AccessError):
+            self._list(self.n8n_and_bff)
 
     def test_share_user_cannot_list_lots(self):
         with self.assertRaises(AccessError):
@@ -129,11 +137,11 @@ class TestPortalListLots(TransactionCase):
         self._index(self.order, self.released)
         self._index(self.order, self.quarantine)
         rows = {row["id"]: row for row in self._list(self.bff)}
-        self.assertIn("PORTAL-REL-001", rows)
-        self.assertIn("PORTAL-Q-001", rows)
-        self.assertIn("PORTAL-UNLINKED", rows)
-        released = rows["PORTAL-REL-001"]
-        quarantined = rows["PORTAL-Q-001"]
+        self.assertIn(self.released.name, rows)
+        self.assertIn(self.quarantine.name, rows)
+        self.assertIn(self.unlinked.name, rows)
+        released = rows[self.released.name]
+        quarantined = rows[self.quarantine.name]
         self.assertEqual(released["state"], "available")
         self.assertTrue(released["coa_pass"])
         self.assertEqual(released["coa_sha256"], SHA)
@@ -144,7 +152,7 @@ class TestPortalListLots(TransactionCase):
         self.assertNotIn("coa_filename", released)
         self.assertEqual(quarantined["state"], "quarantine")
         self.assertTrue(quarantined["coa_pass"])
-        unlinked = rows["PORTAL-UNLINKED"]
+        unlinked = rows[self.unlinked.name]
         self.assertFalse(unlinked["buyer_order"])
         self.assertFalse(unlinked["coa_pass"])
 
@@ -154,10 +162,10 @@ class TestPortalListLots(TransactionCase):
         self._index(self.order, self.released)
         self._index(self.other_order, self.quarantine)
         mine = self._list(self.bff, self.buyer.id)
-        self.assertEqual([row["id"] for row in mine], ["PORTAL-REL-001"])
+        self.assertEqual([row["id"] for row in mine], [self.released.name])
         self.assertEqual(mine[0]["buyer_order"], self.order.name)
         other = self._list(self.bff, self.other_buyer.id)
-        self.assertEqual([row["id"] for row in other], ["PORTAL-Q-001"])
+        self.assertEqual([row["id"] for row in other], [self.quarantine.name])
         empty = self._list(self.bff, self.supplier.id)
         self.assertEqual(empty, [])
 
