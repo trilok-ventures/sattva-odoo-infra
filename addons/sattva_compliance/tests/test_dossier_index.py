@@ -68,7 +68,16 @@ class TestDossierIndex(TransactionCase):
         self.assertEqual(entry.sale_order_id, self.order)
         self.assertEqual(entry.lot_id, self.lot)
         self.assertEqual(entry.doc_kind, "coa")
-        self.assertFalse(entry.message_ids.mapped("attachment_ids"))
+        self.assertNotIn("message_ids", entry._fields)
+        self.assertNotIn("message_main_attachment_id", entry._fields)
+        self.assertFalse(
+            self.env["ir.attachment"].search(
+                [
+                    ("res_model", "=", "sattva.dossier.entry"),
+                    ("res_id", "=", entry.id),
+                ]
+            )
+        )
         self.assertEqual(self.lot.state, "quarantine")
         self.assertEqual(self.order.state, "draft")
 
@@ -111,6 +120,27 @@ class TestDossierIndex(TransactionCase):
                     )
                 ]
             )
+        with self.assertRaises(UserError):
+            self._apply(
+                entries=[
+                    self._entry(
+                        vault_href="/Clients/Synthetic_Dossier_Buyer/Orders/SO_DOSSIER10/coa.pdf",
+                    )
+                ]
+            )
+        with self.assertRaises(UserError):
+            self._apply(
+                entries=[self._entry(vault_href=self._entry()["vault_href"] + "x")]
+            )
+        with self.assertRaises(UserError):
+            self._apply(
+                entries=[
+                    self._entry(
+                        filename="coa.pdf",
+                        vault_href="/Clients/Synthetic_Dossier_Buyer/Orders/SO_DOSSIER/evilcoa.pdf",
+                    )
+                ]
+            )
 
     def test_apply_index_rejects_direct_create(self):
         with self.assertRaises(AccessError):
@@ -123,12 +153,6 @@ class TestDossierIndex(TransactionCase):
             entry.write({"filename": "other.pdf"})
         with self.assertRaises(AccessError):
             entry.unlink()
-
-    def test_chatter_rejects_attachments(self):
-        entry_id = self._apply()[0]
-        entry = self.env["sattva.dossier.entry"].browse(entry_id)
-        with self.assertRaises(UserError):
-            entry.message_post(body="note", attachments=[("coa.pdf", b"%PDF")])
 
     def test_coa_hash_mismatch_opens_activity_without_release(self):
         self.env["sattva.fabric.lot"].with_user(self.fabric_user).apply_coa_green(

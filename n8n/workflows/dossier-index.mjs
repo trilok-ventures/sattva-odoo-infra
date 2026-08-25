@@ -76,14 +76,11 @@ export function assertDossierTrigger(payload) {
 }
 
 function assertHref(href, orderPath, filename) {
-  if (typeof href !== "string" || !href.startsWith(orderPath)) {
-    throw new Error("vault_href must stay under the order folder");
+  if (typeof orderPath !== "string" || !orderPath.endsWith("/")) {
+    throw new Error("order path must be under /Clients/");
   }
-  if (href.includes("..") || href.includes("//")) {
+  if (href !== `${orderPath}${filename}`) {
     throw new Error("vault_href must stay under the order folder");
-  }
-  if (!href.endsWith(`/${filename}`) && href !== `${orderPath}${filename}`) {
-    throw new Error("vault_href must end with the filename");
   }
 }
 

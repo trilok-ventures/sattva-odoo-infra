@@ -41,6 +41,23 @@ assert.throws(() =>
     orderPath,
   ),
 );
+assert.throws(() =>
+  assertDossierEntries(
+    [{ ...ok, vault_href: `${orderPath}evilcoa.pdf` }],
+    orderPath,
+  ),
+);
+assert.throws(() =>
+  assertDossierEntries(
+    [
+      {
+        ...ok,
+        vault_href: "/Clients/Synthetic_Dossier_Buyer/Orders/SO_DOSSIER10/coa.pdf",
+      },
+    ],
+    orderPath,
+  ),
+);
 assert.doesNotThrow(() => assertDossierEntries([ok], orderPath));
 
 assert.equal(inferDocKind("coa.pdf"), "coa");

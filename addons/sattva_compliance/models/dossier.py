@@ -38,7 +38,6 @@ def infer_doc_kind(filename):
 class DossierEntry(models.Model):
     _name = "sattva.dossier.entry"
     _description = "Vault filename + SHA-256 index row"
-    _inherit = ["mail.thread", "mail.activity.mixin"]
     _order = "id desc"
 
     sale_order_id = fields.Many2one(
@@ -55,7 +54,7 @@ class DossierEntry(models.Model):
         readonly=True,
     )
     filename = fields.Char(required=True, readonly=True)
-    sha256 = fields.Char(required=True, readonly=True, tracking=True)
+    sha256 = fields.Char(required=True, readonly=True)
     vault_href = fields.Char(required=True, readonly=True)
     doc_kind = fields.Selection(
         [
@@ -83,15 +82,6 @@ class DossierEntry(models.Model):
     def unlink(self):
         raise AccessError("Dossier index rows are read-only.")
 
-    def message_post(self, *, attachments=None, attachment_ids=None, **kwargs):
-        if attachments or attachment_ids:
-            raise UserError(
-                "Vault PDFs stay in Nextcloud. Do not attach files to the dossier index."
-            )
-        return super().message_post(
-            attachments=attachments, attachment_ids=attachment_ids, **kwargs
-        )
-
 
 class FabricDossier(models.AbstractModel):
     _name = "sattva.fabric.dossier"
@@ -108,6 +98,7 @@ class FabricDossier(models.AbstractModel):
             not order_path.startswith("/Clients/")
             or "/Orders/" not in order_path
             or ".." in order_path
+            or not order_path.endswith("/")
         ):
             raise UserError("order vault path missing")
         lot = self.env["sattva.brokerage.lot"]
@@ -115,6 +106,13 @@ class FabricDossier(models.AbstractModel):
             lot = self.env["sattva.brokerage.lot"].sudo().browse(int(lot_id))
             if not lot.exists():
                 raise UserError("lot not found")
+            intent = order.purchase_intent_id
+            if (
+                lot.purchase_order_id
+                and intent
+                and lot.purchase_order_id != intent
+            ):
+                raise UserError("lot is not linked to this sale order")
         parsed = _parse_entries(entries, order_path)
         ids = []
         for item in parsed:
@@ -219,13 +217,7 @@ def _parse_entries(entries, order_path):
         if not isinstance(sha256, str) or not _SHA256.match(sha256):
             raise UserError("sha256 must be 64 hex characters")
         href = entry.get("vault_href")
-        if (
-            not isinstance(href, str)
-            or not href.startswith(order_path)
-            or ".." in href
-            or "//" in href
-            or not href.endswith(filename)
-        ):
+        if href != f"{order_path}{filename}":
             raise UserError("vault_href must stay under the order folder")
         kind = entry.get("doc_kind") or infer_doc_kind(filename)
         if kind not in _DOC_KINDS:
