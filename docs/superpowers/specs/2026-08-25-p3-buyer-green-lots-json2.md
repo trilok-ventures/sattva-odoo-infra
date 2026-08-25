@@ -1,6 +1,6 @@
 # P3 buyer GREEN lots — read-only JSON-2 adapter
 
-**Status:** In progress on `cursor/buyer-green-lots-952c`  
+**Status:** Implemented on `cursor/buyer-green-lots-952c` (Odoo TestPortalListLots 8/8, middleware build + contract-check, live JSON-2 `list_lots` + BFF `:3011` against local Odoo)  
 **Date:** 2026-08-25  
 **Owner:** IPCo  
 **Companion ranking:** `2026-08-24-spice-trade-paas-feature-ranking.md` (P3 #15)  
