@@ -5,7 +5,8 @@
 **Owner:** IPCo  
 **Companion ranking:** `2026-08-24-spice-trade-paas-feature-ranking.md` (P3 #16)  
 **Locked fabric:** `2026-08-13-sattva-brokers-system-fabric-design.md` §5.9 / §3.3  
-**Prior path:** `wf.coa.verify` (manual GREEN metadata webhook)
+**Prior path:** `wf.coa.verify` (manual GREEN metadata webhook)  
+**Next increment:** `2026-08-25-p3-coa-ocr-sidecar.md`
 
 ## Goal
 

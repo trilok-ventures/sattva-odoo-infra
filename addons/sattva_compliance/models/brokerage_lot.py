@@ -26,6 +26,9 @@ _GREEN = {
 }
 
 
+_SIDECAR_SUFFIX = ".green.json"
+
+
 def _is_coa_basename(filename):
     if not isinstance(filename, str) or not filename:
         return False
@@ -36,6 +39,15 @@ def _is_coa_basename(filename):
     if ".." in filename:
         return False
     return True
+
+
+def _is_coa_sidecar_basename(name):
+    if not _is_coa_basename(name):
+        return False
+    if not name.endswith(_SIDECAR_SUFFIX) or name.endswith(".pdf"):
+        return False
+    stem = name[: -len(_SIDECAR_SUFFIX)]
+    return _is_coa_basename(stem)
 
 
 def _require_finite(value, name):
@@ -291,6 +303,31 @@ class FabricLot(models.AbstractModel):
         if not coa_pass:
             self._open_capa(lot)
         return {"lot_id": lot.id, "coa_pass": coa_pass, "state": lot.state}
+
+    @api.model
+    def resolve_coa_sidecar(self, lot_id, sidecar_basename):
+        require_n8n_fabric_service(self.env)
+        if not _is_coa_sidecar_basename(sidecar_basename):
+            raise UserError("sidecar_basename must be {filename}.green.json")
+        lot = self.env["sattva.brokerage.lot"].browse(int(lot_id))
+        if not lot.exists():
+            raise UserError("lot not found")
+        path = lot.sudo().supplier_id.nextcloud_folder_path or ""
+        if (
+            not path.startswith("/Suppliers/")
+            or "/Certificates/" not in path
+            or not path.endswith("/")
+            or ".." in path
+        ):
+            raise UserError("supplier vault path missing")
+        href = f"{path}{sidecar_basename}"
+        if not href.endswith(_SIDECAR_SUFFIX) or href.endswith(".pdf"):
+            raise UserError("vault_href must end with .green.json")
+        return {
+            "lot_id": lot.id,
+            "sidecar_basename": sidecar_basename,
+            "vault_href": href,
+        }
 
     def _open_capa(self, lot):
         todo = self.env.ref("mail.mail_activity_data_todo")

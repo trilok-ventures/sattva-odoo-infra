@@ -21,3 +21,7 @@ persists via `apply_coa_green`. Source PDFs stay in Nextcloud — the workflow
 must not WebDAV-GET. Optional Hugging Face classification lives in
 `coa-ocr-green.mjs` (GREEN numbers + sha256 only; off unless `HF_API_TOKEN`
 and `HF_COA_MODEL` are set; not a node in the imported workflow).
+
+`wf.coa.ocr.sidecar` HMAC-gates `{lot_id, sidecar_basename}`, resolves the
+supplier Certificates href in Odoo, WebDAV-GETs only `*.green.json`, and
+persists via `apply_coa_green`. It must not GET CoA PDFs or PROPFIND the folder.
