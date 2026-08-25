@@ -1,0 +1,144 @@
+{
+  "name": "wf.coa.ocr.sidecar",
+  "id": "wf-coa-ocr-sidecar",
+  "nodes": [
+    {
+      "id": "coa-sidecar-webhook",
+      "name": "COA GREEN sidecar webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, 0],
+      "webhookId": "wf-coa-ocr-sidecar",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "coa-ocr-sidecar",
+        "responseMode": "onReceived",
+        "options": {}
+      }
+    },
+    {
+      "id": "coa-sidecar-allowlist",
+      "name": "Allowlist sidecar trigger",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [220, 0],
+      "parameters": {
+        "jsCode": "// keep in sync with n8n/workflows/coa-ocr-extract.mjs\nconst SIDECAR_TRIGGER_ALLOWLIST = ['lot_id','sidecar_basename'];\nconst SIDECAR_SUFFIX = '.green.json';\nfunction assertBasename(name) {\n  if (typeof name !== 'string' || !name) throw new Error('filename must be a basename with no path');\n  if (name.includes('/') || name.includes('\\\\') || name.includes('..') || name.includes('\\0')) {\n    throw new Error('filename must be a basename with no path');\n  }\n}\nfunction assertSidecarBasename(name) {\n  assertBasename(name);\n  if (!name.endsWith(SIDECAR_SUFFIX) || name.endsWith('.pdf')) throw new Error('sidecar_basename must end with .green.json');\n  const stem = name.slice(0, -SIDECAR_SUFFIX.length);\n  assertBasename(stem);\n}\nconst item = $input.first();\nif (item.binary && Object.keys(item.binary).length) throw new Error('RED binary payload forbidden');\nconst input = item.json;\nconst headers = input.headers ?? {};\nconst provided = headers['x-sattva-webhook-hmac'] ?? headers['X-Sattva-Webhook-Hmac'];\nconst expected = $env.N8N_WEBHOOK_HMAC;\nif (typeof expected !== 'string' || !expected || typeof provided !== 'string' || provided !== expected) {\n  throw new Error('invalid x-sattva-webhook-hmac');\n}\nconst payload = input.body ?? input;\nif (payload == null || typeof payload !== 'object' || Array.isArray(payload)) throw new Error('payload required');\nfor (const key of Object.keys(payload)) {\n  if (!SIDECAR_TRIGGER_ALLOWLIST.includes(key)) throw new Error('unknown sidecar trigger key forbidden: ' + key);\n}\nif (typeof payload.lot_id !== 'number' || !Number.isInteger(payload.lot_id) || payload.lot_id < 1) throw new Error('lot_id must be a positive integer');\nassertSidecarBasename(payload.sidecar_basename);\nreturn [{ json: { lot_id: payload.lot_id, sidecar_basename: payload.sidecar_basename } }];\n"
+      }
+    },
+    {
+      "id": "coa-sidecar-resolve",
+      "name": "Resolve sidecar href",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [440, 0],
+      "credentials": {
+        "httpHeaderAuth": {
+          "name": "odooN8nFabric"
+        }
+      },
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.ODOO_JSON2_URL}}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\"jsonrpc\":\"2.0\",\"method\":\"call\",\"params\":{\"service\":\"object\",\"method\":\"execute_kw\",\"args\":[\"sattva\",\"{{$env.ODOO_N8N_UID}}\",\"{{$credentials.odooN8nFabric.value}}\",\"sattva.fabric.lot\",\"resolve_coa_sidecar\",[{{$json.lot_id}},{{JSON.stringify($json.sidecar_basename)}}]]}}"
+      }
+    },
+    {
+      "id": "coa-sidecar-unwrap",
+      "name": "Unwrap sidecar href",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [660, 0],
+      "parameters": {
+        "jsCode": "const trigger = $('Allowlist sidecar trigger').first().json;\nconst raw = $input.first().json;\nconst envelope = raw.result !== undefined ? raw.result : raw;\nconst row = envelope && typeof envelope === 'object' && !Array.isArray(envelope) ? envelope : {};\nif (row.lot_id !== trigger.lot_id) throw new Error('lot_id mismatch');\nif (row.sidecar_basename !== trigger.sidecar_basename) throw new Error('sidecar_basename mismatch');\nconst href = row.vault_href;\nconst sidecar_basename = trigger.sidecar_basename;\nif (typeof href !== 'string' || !href.startsWith('/Suppliers/') || !href.includes('/Certificates/') || href.includes('..')) {\n  throw new Error('sidecar folder must be under /Suppliers/{name}/Certificates/');\n}\nif (!href.endsWith('.green.json') || href.endsWith('.pdf')) throw new Error('vault_href must end with .green.json');\nif (!href.endsWith('/' + sidecar_basename)) throw new Error('vault_href must stay under the supplier Certificates folder');\nreturn [{ json: { lot_id: trigger.lot_id, sidecar_basename, vault_href: href } }];\n"
+      }
+    },
+    {
+      "id": "coa-sidecar-get",
+      "name": "GET GREEN sidecar",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [880, 0],
+      "credentials": {
+        "httpBasicAuth": {
+          "name": "nextcloudN8nVault"
+        }
+      },
+      "parameters": {
+        "method": "GET",
+        "url": "={{$env.NEXTCLOUD_WEBDAV_BASE}}{{$json.vault_href}}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true,
+              "responseFormat": "text"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "coa-sidecar-parse",
+      "name": "Parse sidecar drop bytes",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1100, 0],
+      "parameters": {
+        "jsCode": "// keep in sync with n8n/workflows/coa-ocr-extract.mjs parseSidecarBytes\nconst MAX_SIDECAR_BYTES = 8192;\nconst SIDECAR_SUFFIX = '.green.json';\nconst COA_GREEN_ALLOWLIST = ['lot_id','filename','sha256','moisture_pct','mesh_pass','spec_moisture_max','spec_mesh_required','salmonella_absent','spec_salmonella_required','tpc_cfu','spec_tpc_max','pyruvic_umol','spec_pyruvic_required','spec_pyruvic_min'];\nconst RED_FORBIDDEN = ['bytes','pdf','path','file_bytes','nextcloud_folder_path','vault_href'];\nfunction assertBasename(name) {\n  if (typeof name !== 'string' || !name) throw new Error('filename must be a basename with no path');\n  if (name.includes('/') || name.includes('\\\\') || name.includes('..') || name.includes('\\0')) {\n    throw new Error('filename must be a basename with no path');\n  }\n}\nfunction pdfBasenameFromSidecar(name) {\n  if (!name.endsWith(SIDECAR_SUFFIX)) throw new Error('sidecar_basename must end with .green.json');\n  const stem = name.slice(0, -SIDECAR_SUFFIX.length);\n  assertBasename(stem);\n  return stem;\n}\nfunction persistFields(payload) {\n  if (payload == null || typeof payload !== 'object' || Array.isArray(payload)) throw new Error('payload required');\n  for (const key of Object.keys(payload)) {\n    if (RED_FORBIDDEN.includes(key)) throw new Error('RED COA key forbidden: ' + key);\n    if (!COA_GREEN_ALLOWLIST.includes(key)) throw new Error('unknown COA key forbidden: ' + key);\n    if (payload[key] != null && typeof payload[key] === 'object') throw new Error('nested objects forbidden');\n  }\n  if (typeof payload.lot_id !== 'number' || !Number.isInteger(payload.lot_id) || payload.lot_id < 1) throw new Error('lot_id must be a positive integer');\n  assertBasename(payload.filename);\n  if (typeof payload.sha256 !== 'string' || !/^[a-f0-9]{64}$/i.test(payload.sha256)) throw new Error('sha256 must be 64 hex characters');\n  for (const numKey of ['moisture_pct','spec_moisture_max','tpc_cfu','spec_tpc_max','pyruvic_umol','spec_pyruvic_min']) {\n    if (typeof payload[numKey] !== 'number' || !Number.isFinite(payload[numKey])) throw new Error(numKey + ' must be a number');\n  }\n  for (const boolKey of ['mesh_pass','spec_mesh_required','salmonella_absent','spec_salmonella_required','spec_pyruvic_required']) {\n    if (typeof payload[boolKey] !== 'boolean') throw new Error(boolKey + ' must be boolean');\n  }\n  const out = {};\n  for (const key of COA_GREEN_ALLOWLIST) out[key] = key === 'sha256' ? String(payload.sha256).toLowerCase() : payload[key];\n  return out;\n}\nfunction parseSidecarBytes(buf, trigger) {\n  if (!Buffer.isBuffer(buf)) throw new Error('sidecar bytes required');\n  if (buf.length > MAX_SIDECAR_BYTES) throw new Error('sidecar too large');\n  if (buf.length >= 4 && buf.subarray(0, 4).toString('latin1') === '%PDF') throw new Error('RED PDF payload forbidden');\n  if (buf.includes(0)) throw new Error('RED binary payload forbidden');\n  let payload;\n  try { payload = JSON.parse(buf.toString('utf8')); } catch { throw new Error('sidecar must be GREEN JSON'); }\n  const persist = persistFields(payload);\n  if (persist.lot_id !== trigger.lot_id) throw new Error('lot_id mismatch');\n  if (persist.filename !== pdfBasenameFromSidecar(trigger.sidecar_basename)) throw new Error('filename mismatch');\n  return persist;\n}\nconst trigger = $('Allowlist sidecar trigger').first().json;\nconst item = $input.first();\nlet buf;\nif (item.binary && Object.keys(item.binary).length) {\n  const key = Object.keys(item.binary)[0];\n  buf = Buffer.from(item.binary[key].data, 'base64');\n} else {\n  const raw = item.json;\n  const status = raw.statusCode ?? raw.status;\n  if (status && status !== 200) throw new Error('sidecar GET failed');\n  const headers = raw.headers ?? {};\n  const lenRaw = headers['content-length'] ?? headers['Content-Length'];\n  const len = lenRaw != null ? Number(lenRaw) : NaN;\n  if (Number.isFinite(len) && len > MAX_SIDECAR_BYTES) throw new Error('sidecar too large');\n  if (typeof raw.data === 'string') buf = Buffer.from(raw.data, 'utf8');\n  else if (typeof raw.body === 'string') buf = Buffer.from(raw.body, 'utf8');\n  else if (typeof raw === 'string') buf = Buffer.from(raw, 'utf8');\n  else if (raw && typeof raw.body === 'object') buf = Buffer.from(JSON.stringify(raw.body), 'utf8');\n  else if (raw && typeof raw.data === 'object') buf = Buffer.from(JSON.stringify(raw.data), 'utf8');\n  else throw new Error('sidecar bytes required');\n}\nreturn [{ json: parseSidecarBytes(buf, trigger) }];\n"
+      }
+    },
+    {
+      "id": "coa-sidecar-persist",
+      "name": "Write GREEN compare on brokerage lot",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1320, 0],
+      "credentials": {
+        "httpHeaderAuth": {
+          "name": "odooN8nFabric"
+        }
+      },
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.ODOO_JSON2_URL}}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\"jsonrpc\":\"2.0\",\"method\":\"call\",\"params\":{\"service\":\"object\",\"method\":\"execute_kw\",\"args\":[\"sattva\",\"{{$env.ODOO_N8N_UID}}\",\"{{$credentials.odooN8nFabric.value}}\",\"sattva.fabric.lot\",\"apply_coa_green\",[{{$json.lot_id}},{{JSON.stringify($json.filename)}},{{JSON.stringify($json.sha256)}},{{$json.moisture_pct}},{{$json.mesh_pass}},{{$json.spec_moisture_max}},{{$json.spec_mesh_required}},{{$json.salmonella_absent}},{{$json.spec_salmonella_required}},{{$json.tpc_cfu}},{{$json.spec_tpc_max}},{{$json.pyruvic_umol}},{{$json.spec_pyruvic_required}},{{$json.spec_pyruvic_min}}]]}}"
+      }
+    }
+  ],
+  "connections": {
+    "COA GREEN sidecar webhook": {
+      "main": [[{ "node": "Allowlist sidecar trigger", "type": "main", "index": 0 }]]
+    },
+    "Allowlist sidecar trigger": {
+      "main": [[{ "node": "Resolve sidecar href", "type": "main", "index": 0 }]]
+    },
+    "Resolve sidecar href": {
+      "main": [[{ "node": "Unwrap sidecar href", "type": "main", "index": 0 }]]
+    },
+    "Unwrap sidecar href": {
+      "main": [[{ "node": "GET GREEN sidecar", "type": "main", "index": 0 }]]
+    },
+    "GET GREEN sidecar": {
+      "main": [[{ "node": "Parse sidecar drop bytes", "type": "main", "index": 0 }]]
+    },
+    "Parse sidecar drop bytes": {
+      "main": [[{ "node": "Write GREEN compare on brokerage lot", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "saveDataSuccessExecution": "none",
+    "saveDataErrorExecution": "none",
+    "executionTimeout": 30
+  }
+}

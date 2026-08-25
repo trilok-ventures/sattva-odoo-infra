@@ -23,6 +23,7 @@ jobs:
       - run: node n8n/workflows/lead-inbound.test.mjs
       - run: node n8n/workflows/dossier-index.test.mjs
       - run: node n8n/workflows/coa-ocr-green.test.mjs
+      - run: node n8n/workflows/coa-ocr-extract.test.mjs
       - name: Validate workflow JSON
         run: |
           shopt -s nullglob

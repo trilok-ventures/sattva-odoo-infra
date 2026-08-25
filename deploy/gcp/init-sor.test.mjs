@@ -110,6 +110,9 @@ if (!n8n.includes("import:workflow") || !n8n.includes("wf.coa.verify.json")) {
 if (!n8n.includes("wf.coa.ocr.json") || !n8n.includes("wf-coa-ocr")) {
   fail("n8n init must import and activate GREEN COA OCR (wf.coa.ocr)");
 }
+if (!n8n.includes("wf.coa.ocr.sidecar.json") || !n8n.includes("wf-coa-ocr-sidecar")) {
+  fail("n8n init must import and activate GREEN CoA sidecar producer (wf.coa.ocr.sidecar)");
+}
 if (!n8n.includes("odooN8nFabric") || !n8n.includes("nextcloudN8nVault")) {
   fail("n8n init must create the named credentials");
 }

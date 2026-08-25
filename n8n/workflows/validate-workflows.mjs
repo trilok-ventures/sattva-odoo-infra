@@ -84,6 +84,48 @@ for (const file of files) {
   if (wf.name === "wf.order.folder" && !text.includes("set_order_path")) {
     throw new Error(`${file}: order folder must persist via sattva.fabric.vault.set_order_path`);
   }
+  if (wf.name === "wf.coa.ocr.sidecar") {
+    const code = wf.nodes
+      .map((node) => node.parameters?.jsCode || "")
+      .join("\n");
+    const getNode = wf.nodes.find((node) => node.parameters?.method === "GET");
+    if (
+      !code.includes("N8N_WEBHOOK_HMAC") ||
+      !code.includes("body ??") ||
+      !code.includes("sidecar_basename") ||
+      !code.includes("RED PDF payload forbidden") ||
+      !code.includes("sidecar_basename mismatch") ||
+      !code.includes("content-length") ||
+      !code.includes(".green.json")
+    ) {
+      throw new Error(`${file}: COA sidecar must HMAC-allowlist basename and reject PDF bytes`);
+    }
+    if (
+      !text.includes("resolve_coa_sidecar") ||
+      !text.includes("apply_coa_green") ||
+      !text.includes("JSON.stringify($json.filename)") ||
+      !text.includes("JSON.stringify($json.sha256)")
+    ) {
+      throw new Error(`${file}: COA sidecar must resolve href then persist via apply_coa_green`);
+    }
+    if (
+      !getNode ||
+      !String(getNode.parameters?.url || "").includes("vault_href") ||
+      String(getNode.parameters?.url || "").includes(".pdf") ||
+      getNode.parameters?.options?.response?.response?.responseFormat !== "text"
+    ) {
+      throw new Error(`${file}: COA sidecar GET must fetch vault_href as text, never a .pdf URL`);
+    }
+    if (
+      text.includes("action_release") ||
+      /PROPFIND/i.test(text) ||
+      text.includes("button_confirm") ||
+      text.includes("action_confirm") ||
+      /huggingface/i.test(text)
+    ) {
+      throw new Error(`${file}: COA sidecar must not list PDFs, call HF, confirm, or release`);
+    }
+  }
   if (wf.name === "wf.coa.ocr") {
     const code = wf.nodes
       .map((node) => node.parameters?.jsCode || "")

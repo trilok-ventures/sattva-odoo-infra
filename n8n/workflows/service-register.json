@@ -133,6 +133,18 @@
       "phase": "2"
     },
     {
+      "id": "svc.coa.ocr.sidecar",
+      "caller": "n8n wf.coa.ocr.sidecar (HMAC)",
+      "callee": "Odoo resolve_coa_sidecar then Nextcloud GET of *.green.json then apply_coa_green; never GET PDFs",
+      "hostname": "n8n.trilokventures.org then nextcloud (Compose-internal) then odoo",
+      "ingress": "POST /webhook/coa-ocr-sidecar + N8N_WEBHOOK_HMAC",
+      "tls_rung": "T1 HTTPS webhook; T0/T1 WebDAV cluster-internal for sidecar JSON only",
+      "access_policy": "IT/operator webhook. Trigger keys lot_id + sidecar_basename only. Path from Odoo supplier Certificates pointer. GET *.green.json (8KB). Fail closed on %PDF and RED keys. No lot release.",
+      "data_class": "GREEN sidecar JSON in transit; RED PDF stays in Nextcloud",
+      "sor": "Nextcloud keeps the PDF and sidecar file; Odoo apply_coa_green; n8n stores no lots",
+      "phase": "2"
+    },
+    {
       "id": "svc.lead.inbound",
       "caller": "Public mocks form (operator sessionStorage HMAC)",
       "callee": "n8n webhook wf.lead.inbound",

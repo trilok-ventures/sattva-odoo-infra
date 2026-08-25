@@ -26,6 +26,7 @@ const ALLOWED_IDS = new Set([
   "svc.lead.inbound",
   "svc.dossier.index",
   "svc.coa.ocr.green",
+  "svc.coa.ocr.sidecar",
 ]);
 const FORBIDDEN_IDS = new Set(["svc.portal.nc"]);
 
@@ -77,6 +78,18 @@ for (const row of register.services) {
     }
     if (/action_release/.test(blob) || /PROPFIND/.test(blob)) {
       throw new Error("svc.coa.ocr.green must not list vault files or release lots");
+    }
+  }
+  if (row.id === "svc.coa.ocr.sidecar") {
+    const blob = JSON.stringify(row);
+    if (!blob.includes(".green.json") || !blob.includes("apply_coa_green") || !blob.includes("coa-ocr-sidecar")) {
+      throw new Error("svc.coa.ocr.sidecar must GET *.green.json then apply_coa_green");
+    }
+    if (!/never GET PDFs/i.test(blob)) {
+      throw new Error("svc.coa.ocr.sidecar must never GET CoA PDFs");
+    }
+    if (/huggingface/i.test(blob) || /action_release/.test(blob)) {
+      throw new Error("svc.coa.ocr.sidecar must not send files to HF or release lots");
     }
   }
   if (row.id === "svc.dossier.index") {
